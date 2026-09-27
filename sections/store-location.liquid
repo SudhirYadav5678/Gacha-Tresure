@@ -1,0 +1,233 @@
+{% style %}
+  #shopify-section-{{ section.id }} .store-location {
+    --store-bg: {{ section.settings.background }};
+    --store-text: {{ section.settings.text_color }};
+    --store-accent: {{ section.settings.accent_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--store-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--dark {
+    color: #fff9f2;
+    background: #2a071d;
+    border-color: #2a071d;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="store-location">
+  <div class="store-location__inner lux-page-width">
+    <div class="store-location__image">
+      {% if section.settings.image != blank %}
+        {{ section.settings.image | image_url: width: 1500 | image_tag: widths: '640, 900, 1200, 1500', sizes: '(max-width: 767px) 100vw, 52vw', loading: 'lazy', class: 'store-location__photo' }}
+      {% else %}
+        <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+      {% endif %}
+    </div>
+    <div class="store-location__content">
+      {% if section.settings.eyebrow != blank %}
+        <p class="store-location__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>{{ section.settings.heading }}</h2>
+      {% if section.settings.body != blank %}
+        <div class="store-location__body">{{ section.settings.body }}</div>
+      {% endif %}
+      <div class="store-location__details">
+        {% if section.settings.location != blank %}
+          <p><strong>Visit</strong>{{ section.settings.location }}</p>
+        {% endif %}
+        {% if section.settings.hours != blank %}
+          <p><strong>Hours</strong>{{ section.settings.hours }}</p>
+        {% endif %}
+        {% if section.settings.phone != blank %}
+          <p><strong>Call</strong>{{ section.settings.phone }}</p>
+        {% endif %}
+      </div>
+      {% if section.blocks.size > 0 %}
+        <div class="store-location__stats">
+          {% for block in section.blocks %}
+            <div {{ block.shopify_attributes }}>
+              <strong>{{ block.settings.value }}</strong>
+              <span>{{ block.settings.label }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="lux-button lux-button--dark" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .store-location {
+    color: var(--store-text);
+    background: var(--store-bg);
+  }
+  .store-location__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+    gap: clamp(34px, 7vw, 105px);
+    align-items: center;
+  }
+  .store-location__image {
+    min-height: 480px;
+    overflow: hidden;
+    background: #e7d9c8;
+    box-shadow: 0 26px 70px rgba(35,21,30,.14);
+  }
+  .store-location__photo,
+  .store-location__image .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .store-location__eyebrow {
+    margin: 0 0 14px;
+    color: var(--store-accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .store-location h2 {
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(38px, 4.7vw, 70px);
+    font-weight: 500;
+    line-height: 1.03;
+  }
+  .store-location__body {
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.75;
+    opacity: .73;
+  }
+  .store-location__details {
+    margin-top: 26px;
+    display: grid;
+    gap: 10px;
+  }
+  .store-location__details p {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    gap: 14px;
+    font-size: 14px;
+  }
+  .store-location__details strong {
+    color: var(--store-accent);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 11px;
+  }
+  .store-location__stats {
+    margin-block: 34px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .store-location__stats strong {
+    display: block;
+    color: var(--store-accent);
+    font-family: var(--font-heading-family);
+    font-size: 34px;
+    font-weight: 500;
+  }
+  .store-location__stats span {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 860px) {
+    .store-location__inner { grid-template-columns: 1fr; }
+    .store-location__image { min-height: 340px; }
+  }
+  @media (max-width: 520px) {
+    .store-location__stats { grid-template-columns: 1fr; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Store location",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Store image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Visit the treasure room" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "From one small shop to bigger adventures." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Walk the capsule walls, compare finishes in person, and build a gift with help from people who know the collection.</p>" },
+    { "type": "text", "id": "location", "label": "Location", "default": "Add your address in the Theme Editor" },
+    { "type": "text", "id": "hours", "label": "Hours", "default": "Daily, 11am-8pm" },
+    { "type": "text", "id": "phone", "label": "Phone", "default": "+1 000 000 0000" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Get directions" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F8F1E8" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#23151E" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#C65E8A" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 96 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 112 }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Statistic",
+      "limit": 3,
+      "settings": [
+        { "type": "text", "id": "value", "label": "Value", "default": "35+" },
+        { "type": "text", "id": "label", "label": "Label", "default": "display series" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Store location" }
+  ]
+}
+{% endschema %}

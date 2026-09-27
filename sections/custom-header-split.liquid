@@ -1,0 +1,371 @@
+{% comment %}
+  Filename: custom-header-split.liquid
+  Description: A fully responsive, 3-column header section featuring a back link, primary/accent headings, and a descriptive text block. Matches the layout of "Choose the shape. We'll reveal the memory."
+{% endcomment %}
+
+{% style %}
+  #shopify-section-{{ section.id }} .ch-section {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.accent_color }};
+    
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    
+    --heading-size-desktop: {{ section.settings.heading_size_desktop }}px;
+    --heading-size-mobile: {{ section.settings.heading_size_mobile }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    font-family: var(--font-body-family), sans-serif;
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} .ch-section {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+  }
+
+  .ch-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  .ch-full-width {
+    max-width: 100%;
+    padding: 0 40px;
+  }
+
+  /* --- Grid Layout --- */
+  .ch-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .ch-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .ch-col-link {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media screen and (min-width: 1025px) {
+    .ch-grid {
+      grid-template-columns: 200px 1fr 350px;
+      gap: 60px;
+      align-items: center; /* Aligns the three blocks vertically */
+    }
+    .ch-col-link {
+      grid-column: auto;
+      align-self: start;
+      margin-top: 6px; /* Fine-tune alignment with eyebrow */
+    }
+    .ch-col-desc {
+      align-self: end;
+      margin-bottom: 12px; /* Fine-tune alignment with bottom of heading */
+    }
+  }
+
+  /* --- Back Link --- */
+  .ch-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .ch-back-link:hover {
+    opacity: 0.7;
+    transform: translateX(-4px);
+  }
+
+  .ch-back-link svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* --- Headings --- */
+  .ch-eyebrow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 0 0 24px 0;
+    opacity: 0.9;
+  }
+
+  .ch-title {
+    margin: 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: var(--heading-size-mobile);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text-color);
+  }
+
+  @media screen and (min-width: 768px) {
+    .ch-title {
+      font-size: var(--heading-size-desktop);
+    }
+  }
+
+  .ch-title-main {
+    display: block;
+  }
+
+  .ch-title-accent {
+    display: block;
+    color: var(--accent-color);
+    font-style: italic;
+  }
+
+  /* --- Description --- */
+  .ch-description {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    opacity: 0.85;
+  }
+
+  .ch-description p {
+    margin: 0 0 12px 0;
+  }
+  
+  .ch-description p:last-child {
+    margin-bottom: 0;
+  }
+{% endstyle %}
+
+<section id="LithoHeader-{{ section.id }}" class="ch-section">
+  <div class="ch-container {% if section.settings.use_full_width %}ch-full-width{% endif %}">
+    <div class="ch-grid">
+      
+      <!-- Back Link Column -->
+      <div class="ch-col ch-col-link">
+        {% if section.settings.back_link_text != blank and section.settings.back_link_url != blank %}
+          <a href="{{ section.settings.back_link_url }}" class="ch-back-link">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>{{ section.settings.back_link_text }}</span>
+          </a>
+        {% endif %}
+      </div>
+      
+      <!-- Headings Column -->
+      <div class="ch-col ch-col-heading">
+        {% if section.settings.eyebrow != blank %}
+          <p class="ch-eyebrow">{{ section.settings.eyebrow }}</p>
+        {% endif %}
+        
+        {% if section.settings.heading_1 != blank or section.settings.heading_2 != blank %}
+          <h1 class="ch-title">
+            {% if section.settings.heading_1 != blank %}
+              <span class="ch-title-main">{{ section.settings.heading_1 }}</span>
+            {% endif %}
+            {% if section.settings.heading_2 != blank %}
+              <span class="ch-title-accent">{{ section.settings.heading_2 }}</span>
+            {% endif %}
+          </h1>
+        {% endif %}
+      </div>
+
+      <!-- Description Column -->
+      <div class="ch-col ch-col-desc">
+        {% if section.settings.description != blank %}
+          <div class="ch-description">
+            {{ section.settings.description }}
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Custom Header Split",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Back Link"
+    },
+    {
+      "type": "text",
+      "id": "back_link_text",
+      "label": "Link Text",
+      "default": "Back to 3D Prints"
+    },
+    {
+      "type": "url",
+      "id": "back_link_url",
+      "label": "Link URL"
+    },
+    {
+      "type": "header",
+      "content": "Headings"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow / Subheading",
+      "default": "CUSTOM LITHOPHANES • ELEVEN ILLUMINATED FORMS"
+    },
+    {
+      "type": "text",
+      "id": "heading_1",
+      "label": "Heading Line 1 (Regular)",
+      "default": "Choose the shape."
+    },
+    {
+      "type": "text",
+      "id": "heading_2",
+      "label": "Heading Line 2 (Accent & Italic)",
+      "default": "We'll reveal the memory."
+    },
+    {
+      "type": "header",
+      "content": "Description"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description Text",
+      "default": "<p>Upload one meaningful photo. Our team prepares it for the selected form, sends a proof, and prints only after your approval.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#20121D"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Color",
+      "default": "#D89DB3"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 40,
+      "max": 120,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 84
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 32,
+      "max": 72,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 48
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_full_width",
+      "label": "Use Full Width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1800,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Header Split"
+    }
+  ]
+}
+{% endschema %}

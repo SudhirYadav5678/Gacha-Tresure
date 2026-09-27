@@ -1,0 +1,212 @@
+{% comment %}
+  Filename: armory-care-strip.liquid
+  Description: A responsive 3-column content strip featuring custom SVG icon input, primary heading, accent heading, and supporting text.
+{% endcomment %}
+
+{% style %}
+  #shopify-section-{{ section.id }} .armory-care {
+    --acs-bg: {{ section.settings.background }};
+    --acs-heading: {{ section.settings.heading_color }};
+    --acs-accent: {{ section.settings.accent_color }};
+    --acs-body: {{ section.settings.body_color }};
+    --acs-icon: {{ section.settings.icon_color }};
+    --acs-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --acs-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .armory-care {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="armory-care armory-care--{{ section.settings.desktop_alignment }} armory-care--mobile-{{ section.settings.mobile_alignment }}">
+  <div class="armory-care__inner armory-care__inner--{{ section.settings.content_width }}">
+    
+    {% if section.settings.svg_icon != blank %}
+      <div class="armory-care__icon" aria-hidden="true">
+        {{ section.settings.svg_icon }}
+      </div>
+    {% endif %}
+    
+    <div class="armory-care__heading">
+      {% if section.settings.eyebrow != blank %}
+        <p class="armory-care__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+        <h2>
+          {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+          {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+        </h2>
+      {% endif %}
+    </div>
+    
+    {% if section.settings.body != blank %}
+      <div class="armory-care__body">{{ section.settings.body }}</div>
+    {% endif %}
+    
+  </div>
+</section>
+
+{% stylesheet %}
+  .armory-care {
+    color: var(--acs-body);
+    background: var(--acs-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .armory-care__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: auto minmax(280px, .9fr) minmax(260px, .85fr);
+    gap: clamp(24px, 6vw, 92px);
+    align-items: center;
+  }
+
+  .armory-care__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .armory-care__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .armory-care__icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    color: var(--acs-icon);
+    /* border: 1px solid color-mix(in srgb, var(--acs-icon) 50%, transparent); */
+    border-radius: 999px;
+  }
+  
+  /* Ensure SVG fills the icon container cleanly */
+  .armory-care__icon svg {
+    width: 20px;
+    height: 20px;
+    /* fill: currentColor; */
+  }
+
+  .armory-care__eyebrow {
+    margin: 0 0 16px;
+    color: var(--acs-body);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    opacity: .72;
+  }
+
+  .armory-care h2 {
+    margin: 0;
+    color: var(--acs-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--acs-heading-mobile), 4.6vw, var(--acs-heading-desktop));
+    font-weight: 500;
+    line-height: 1.02;
+  }
+
+  .armory-care h2 span,
+  .armory-care h2 em {
+    display: block;
+  }
+
+  .armory-care h2 em {
+    color: var(--acs-accent);
+    font-style: italic;
+  }
+
+  .armory-care__body {
+    max-width: 620px;
+    font-size: 14px;
+    line-height: 1.75;
+    opacity: .78;
+  }
+
+  .armory-care__body p {
+    margin: 0;
+  }
+
+  .armory-care--center {
+    text-align: center;
+  }
+
+  .armory-care--center .armory-care__inner {
+    justify-items: center;
+  }
+
+  @media (max-width: 900px) {
+    .armory-care__inner {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .armory-care--mobile-left {
+      text-align: left;
+    }
+
+    .armory-care--mobile-center {
+      text-align: center;
+    }
+
+    .armory-care--mobile-center .armory-care__inner {
+      justify-items: center;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .armory-care__inner--page,
+    .armory-care__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Armory Care Strip",
+  "settings": [
+    { 
+      "type": "html", 
+      "id": "svg_icon", 
+      "label": "Custom SVG Icon",
+      "info": "Paste raw SVG code here. It will automatically inherit the Icon Color."
+    },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Collected responsibly" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Chosen with care." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "Offered with clarity." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Every category will open only when product guidance, payment options, delivery rules, and local requirements are clear.</p>" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_alignment", "label": "Desktop alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" }
+    ] },
+    { "type": "select", "id": "mobile_alignment", "label": "Mobile alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 42, "max": 80, "step": 2, "unit": "px", "default": 62 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 32, "max": 54, "step": 2, "unit": "px", "default": 40 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F5EEE4" },
+    { "type": "color", "id": "heading_color", "label": "Heading", "default": "#2A1722" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C7829C" },
+    { "type": "color", "id": "body_color", "label": "Body", "default": "#57454F" },
+    { "type": "color", "id": "icon_color", "label": "Icon", "default": "#C7829C" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 140, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 140, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 36, "max": 90, "step": 2, "unit": "px", "default": 58 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 36, "max": 90, "step": 2, "unit": "px", "default": 60 }
+  ],
+  "presets": [
+    { "name": "Armory Care Strip" }
+  ]
+}
+{% endschema %}

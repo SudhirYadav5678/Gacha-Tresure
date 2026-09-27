@@ -1,0 +1,1464 @@
+{% comment %}
+  Filename: custom-product-builder-all-variants.liquid
+  Description: A complex, two-column split layout for a custom product builder. The left column (preview) is sticky, while the right column (form steps) scrolls. Includes blocks for style selection, file upload, text area, and checkboxes.
+{% endcomment %}
+
+{% assign cpb_product = product %}
+
+{%- comment -%}
+  If style products are configured, the first style product becomes the initial
+  product for the builder. The selected/default VARIANT image is used as the mask.
+{%- endcomment -%}
+{% for block in section.blocks %}
+  {% if block.type == 'style_selector' and block.settings.products != blank %}
+    {% for style_product in block.settings.products limit: 1 %}
+      {% assign cpb_product = style_product %}
+    {% endfor %}
+    {% break %}
+  {% endif %}
+{% endfor %}
+
+{% if cpb_product == blank and section.settings.builder_product != blank %}
+  {% assign cpb_product = section.settings.builder_product %}
+{% endif %}
+
+{% assign cpb_initial_shape_image = blank %}
+{% assign cpb_initial_variant = blank %}
+{% if cpb_product != blank %}
+  {% assign cpb_initial_variant = cpb_product.selected_or_first_available_variant %}
+  {% if cpb_initial_variant != blank %}
+    {% assign cpb_initial_shape_image = cpb_initial_variant.featured_image %}
+    {% if cpb_initial_shape_image == blank and cpb_initial_variant.featured_media != blank %}
+      {% assign cpb_initial_shape_image = cpb_initial_variant.featured_media.preview_image %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+<style>
+  #shopify-section-{{ section.id }} {
+    --bg-left: {{ section.settings.bg_color_left }};
+    --bg-right: {{ section.settings.bg_color_right }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.accent_color }};
+    --border-color: {{ section.settings.border_color }};
+    --btn-bg: {{ section.settings.btn_bg_color }};
+    --btn-text: {{ section.settings.btn_text_color }};
+    
+    font-family: var(--font-body-family), sans-serif;
+    color: var(--text-color);
+  }
+
+  .cpb-product-form {
+    margin: 0;
+  }
+
+  .cpb-submit-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  /* --- Layout --- */
+  .cpb-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cpb-layout {
+      flex-direction: row;
+      align-items: stretch;
+    }
+  }
+
+  /* --- Left Column: Sticky Preview --- */
+  .cpb-preview-col {
+    background-color: var(--bg-left);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cpb-preview-col {
+      width: 50%;
+      /* Sticky behavior */
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 60px 40px;
+      border-right: 1px solid var(--border-color);
+    }
+  }
+
+  .cpb-preview-badge {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    padding: 6px 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 2px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    z-index: 10;
+  }
+  
+  .cpb-preview-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cpb-preview-badge {
+      top: 40px;
+      left: 40px;
+    }
+  }
+
+  .cpb-preview-image-wrapper {
+    flex: 1;
+    min-height: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 28px 0 40px;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background-image:
+      radial-gradient(circle at 50% 48%, rgba(236, 183, 83, 0.30) 0, rgba(236, 183, 83, 0.18) 26%, rgba(236, 183, 83, 0.05) 48%, rgba(236, 183, 83, 0) 68%),
+      radial-gradient(circle, rgba(70, 50, 32, 0.18) 0.8px, transparent 0.9px);
+    background-size: 100% 100%, 10px 10px;
+    background-position: center, center;
+  }
+
+  .cpb-shape-preview {
+    --cpb-shape-mask: none;
+    width: min(78%, 470px);
+    aspect-ratio: 1 / 1;
+    position: relative;
+    display: grid;
+    place-items: center;
+    z-index: 1;
+    filter: drop-shadow(0 18px 34px rgba(103, 72, 33, 0.12));
+  }
+
+  .cpb-shape-preview::before {
+    content: "";
+    position: absolute;
+    inset: 5%;
+    border-radius: 50%;
+    background: rgba(240, 190, 92, 0.18);
+    filter: blur(42px);
+    z-index: -1;
+  }
+
+  .cpb-shape-photo,
+  .cpb-shape-guide,
+  .cpb-shape-placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Customer image. The selected product variant's assigned image supplies the alpha mask. */
+  .cpb-shape-photo {
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    z-index: 2;
+  }
+
+  .cpb-shape-preview.has-mask .cpb-shape-photo {
+    -webkit-mask-image: var(--cpb-shape-mask);
+    mask-image: var(--cpb-shape-mask);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+
+  .cpb-shape-preview.no-mask .cpb-shape-photo {
+    border-radius: 12px;
+  }
+
+  /* Before a customer uploads a photo, show the selected product variant's assigned image. */
+  .cpb-shape-guide {
+    object-fit: contain;
+    object-position: center;
+    z-index: 3;
+    transition: opacity 0.22s ease;
+  }
+
+  .cpb-shape-guide.is-hidden,
+  .cpb-shape-preview.has-customer-photo .cpb-shape-guide {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cpb-shape-photo.is-empty {
+    opacity: 0;
+  }
+
+  .cpb-shape-placeholder {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, rgba(255, 245, 213, 0.92), rgba(239, 198, 114, 0.52));
+    color: rgba(74, 52, 31, 0.64);
+    text-align: center;
+    padding: 28%;
+    transition: opacity 0.22s ease;
+    z-index: 1;
+    border-radius: 12px;
+  }
+
+  .cpb-shape-placeholder.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cpb-shape-placeholder svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .cpb-shape-placeholder span {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media screen and (max-width: 767px) {
+    .cpb-preview-image-wrapper {
+      min-height: 360px;
+      margin-top: 40px;
+    }
+
+    .cpb-shape-preview {
+      width: min(86%, 390px);
+    }
+  }
+
+  .cpb-preview-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 24px;
+  }
+
+  .cpb-footer-eyebrow {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+  }
+
+  .cpb-footer-title {
+    font-family: var(--font-heading-family), serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 0 0 4px 0;
+  }
+
+  .cpb-footer-desc {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin: 0;
+  }
+
+  .cpb-footer-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.6rem;
+    opacity: 0.6;
+    margin-top: 12px;
+  }
+  
+  .cpb-footer-note svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* --- Right Column: Form Steps --- */
+  .cpb-form-col {
+    background-color: var(--bg-right);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cpb-form-col {
+      width: 50%;
+      padding: 60px 40px 60px 60px; /* Extra left padding for breathing room */
+      /* This column scrolls naturally */
+    }
+  }
+
+  .cpb-form-header {
+    margin-bottom: 40px;
+  }
+
+  .cpb-form-eyebrow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 40px;
+  }
+
+  /* Step Block Styles */
+  .cpb-step {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 40px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .cpb-step:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .cpb-step-number {
+    position: absolute;
+    left: -30px; /* Pulls number out to the left slightly on desktop */
+    top: 6px;
+    font-size: 0.6rem;
+    opacity: 0.6;
+    display: none;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cpb-step-number {
+      display: block;
+    }
+  }
+
+  .cpb-step-title {
+    font-family: var(--font-heading-family), serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin: 0 0 8px 0;
+    color: var(--text-color);
+  }
+
+  .cpb-step-desc {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    opacity: 0.7;
+    margin: 0 0 24px 0;
+  }
+
+  /* Style Grid (Block Type: style_selector) */
+  .cpb-style-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 768px) {
+    .cpb-style-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .cpb-style-item {
+    position: relative;
+    padding: 20px 16px;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    background: transparent;
+    transition: background-color 0.2s ease;
+    text-align: left;
+  }
+  
+  /* Fix right/bottom borders for grid layout */
+  .cpb-style-item:nth-child(2n) { border-right: none; }
+  @media screen and (min-width: 768px) {
+    .cpb-style-item:nth-child(2n) { border-right: 1px solid var(--border-color); }
+    .cpb-style-item:nth-child(3n) { border-right: none; }
+    .cpb-style-item:nth-last-child(-n+3) { border-bottom: none; }
+  }
+
+  .cpb-style-item:hover {
+    background-color: rgba(0,0,0,0.02);
+  }
+
+  .cpb-style-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .cpb-style-item.is-selected {
+    background-color: rgba(216, 157, 179, 0.1); /* Light accent background */
+    border: 1px solid var(--accent-color);
+    z-index: 2; /* Bring border above others */
+  }
+
+  .cpb-style-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 16px;
+    object-fit: contain;
+  }
+
+  .cpb-style-preview {
+    --cpb-card-mask: none;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .cpb-style-preview-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    -webkit-mask-image: var(--cpb-card-mask);
+    mask-image: var(--cpb-card-mask);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+
+  .cpb-style-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    display: block;
+  }
+
+  .cpb-style-meta {
+    font-size: 0.6rem;
+    opacity: 0.6;
+    margin: 0;
+    line-height: 1.3;
+  }
+  
+  .cpb-check-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 14px;
+    height: 14px;
+    color: var(--accent-color);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .cpb-style-item.is-selected .cpb-check-icon {
+    opacity: 1;
+  }
+
+  /* File Upload (Block Type: upload) */
+  .cpb-upload-wrap {
+    position: relative;
+  }
+
+  .cpb-upload-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .cpb-upload-box {
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  .cpb-upload-box:hover,
+  .cpb-upload-input:focus-visible + .cpb-upload-box {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(216, 157, 179, 0.10);
+  }
+
+  .cpb-upload-box.has-file {
+    border-color: var(--accent-color);
+    background-color: rgba(216, 157, 179, 0.06);
+  }
+
+  .cpb-upload-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .cpb-upload-icon {
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .cpb-upload-text {
+    min-width: 0;
+  }
+
+  .cpb-upload-text strong {
+    display: block;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cpb-upload-text span {
+    font-size: 0.65rem;
+    opacity: 0.6;
+  }
+
+  .cpb-upload-feedback {
+    display: none;
+    margin-top: 10px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+
+  .cpb-upload-feedback.is-visible {
+    display: block;
+  }
+
+  .cpb-upload-feedback.is-error {
+    color: #a22929;
+  }
+
+  /* Textarea (Block Type: message) */
+  .cpb-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    resize: vertical;
+  }
+  
+  .cpb-textarea::placeholder {
+    opacity: 0.5;
+  }
+  
+  .cpb-char-count {
+    display: block;
+    text-align: right;
+    font-size: 0.6rem;
+    opacity: 0.5;
+    margin-top: 8px;
+  }
+
+  /* Input/Checkbox (Block Type: review) */
+  .cpb-input-group {
+    margin-bottom: 16px;
+  }
+
+  .cpb-text-input {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .cpb-text-input input {
+    border: none;
+    background: transparent;
+    flex: 1;
+    outline: none;
+    color: inherit;
+  }
+  
+  .cpb-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+
+  .cpb-checkbox-label input {
+    margin-top: 2px;
+    accent-color: var(--accent-color); /* Modern CSS for checkbox color */
+  }
+  
+  .cpb-checkbox-text strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  
+  .cpb-checkbox-text span {
+    font-size: 0.65rem;
+    opacity: 0.6;
+  }
+
+  /* --- Form Footer / Submit --- */
+  .cpb-submit-area {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+  }
+
+  .cpb-submit-status {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .cpb-submit-btn {
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    padding: 16px 32px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.3s ease;
+  }
+
+  @media screen and (min-width: 768px) {
+    .cpb-submit-btn {
+      width: auto;
+      margin-left: auto;
+    }
+  }
+
+  .cpb-submit-btn:hover {
+    opacity: 0.9;
+  }
+
+</style>
+
+{% capture cpb_builder_markup %}
+<div class="cpb-layout">
+  
+  <!-- Left Column: Sticky Preview -->
+  <div class="cpb-preview-col">
+    {% if section.settings.preview_badge != blank %}
+      <div class="cpb-preview-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1.5 7.5L12 18l-6.5 3.5L7 14l-5-5 7-1z"></path></svg>
+        {{ section.settings.preview_badge }}
+      </div>
+    {% endif %}
+
+    <div class="cpb-preview-image-wrapper">
+      <div
+        id="CpbShapeMask-{{ section.id }}"
+        class="cpb-shape-preview {% if cpb_initial_shape_image != blank %}has-mask{% else %}no-mask{% endif %}{% if section.settings.preview_image != blank %} has-customer-photo{% endif %}"
+        {% if cpb_initial_shape_image != blank %}
+          style="--cpb-shape-mask: url('{{ cpb_initial_shape_image | image_url: width: 1400 }}');"
+        {% endif %}
+      >
+        <img
+          id="CpbShapePreview-{{ section.id }}"
+          class="cpb-shape-photo{% if section.settings.preview_image == blank %} is-empty{% endif %}"
+          {% if section.settings.preview_image != blank %}
+            src="{{ section.settings.preview_image | image_url: width: 1000 }}"
+            srcset="
+              {{ section.settings.preview_image | image_url: width: 500 }} 500w,
+              {{ section.settings.preview_image | image_url: width: 800 }} 800w,
+              {{ section.settings.preview_image | image_url: width: 1000 }} 1000w
+            "
+            sizes="(min-width: 1025px) 42vw, 86vw"
+          {% else %}
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+          {% endif %}
+          alt="{% if cpb_product != blank %}{{ cpb_product.title | escape }}{% else %}{{ section.settings.preview_title | escape }}{% endif %}"
+          width="1000"
+          height="1000"
+          loading="eager"
+        >
+
+        <img
+          id="CpbShapeGuide-{{ section.id }}"
+          class="cpb-shape-guide{% if cpb_initial_shape_image == blank or section.settings.preview_image != blank %} is-hidden{% endif %}"
+          {% if cpb_initial_shape_image != blank %}
+            src="{{ cpb_initial_shape_image | image_url: width: 1000 }}"
+          {% else %}
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+          {% endif %}
+          alt=""
+          width="1000"
+          height="1000"
+          aria-hidden="true"
+        >
+
+        <div
+          id="CpbShapePlaceholder-{{ section.id }}"
+          class="cpb-shape-placeholder{% if cpb_initial_shape_image != blank or section.settings.preview_image != blank %} is-hidden{% endif %}"
+          aria-hidden="true"
+        >
+          <div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <path d="M21 15l-5-5L5 21"></path>
+            </svg>
+            <span>Upload your photo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cpb-preview-footer">
+      <div class="cpb-footer-eyebrow">SELECTED STYLE</div>
+      <h3 id="CpbPreviewTitle-{{ section.id }}" class="cpb-footer-title">
+        {% if cpb_product != blank %}
+          {{ cpb_product.title }}
+        {% else %}
+          {{ section.settings.preview_title | default: 'Custom Preview' }}
+        {% endif %}
+      </h3>
+      <p class="cpb-footer-desc">{{ section.settings.preview_desc | default: 'A sculpted keepsake for love & milestones. Final dimensions and price confirmed with your proof.' }}</p>
+      <div class="cpb-footer-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        {{ section.settings.preview_note | default: 'This preview uses the selected variant image as the shape. Final production may vary slightly.' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Form Steps -->
+  <div class="cpb-form-col">
+    <div class="cpb-form-header">
+      <div class="cpb-form-eyebrow">{{ section.settings.form_eyebrow | default: 'BUILD YOUR KEEPSAKE' }}</div>
+    </div>
+
+    <!-- Iterate through blocks to build steps -->
+    {% for block in section.blocks %}
+      <div class="cpb-step" {{ block.shopify_attributes }}>
+        <span class="cpb-step-number">0{{ forloop.index }}</span>
+        
+        <h3 class="cpb-step-title">{{ block.settings.title }}</h3>
+        <p class="cpb-step-desc">{{ block.settings.description }}</p>
+
+        {% case block.type %}
+          
+          {% when 'style_selector' %}
+            <div class="cpb-style-grid">
+              {% if block.settings.products != blank %}
+                {% for style_product in block.settings.products %}
+                  {% for style_variant in style_product.variants %}
+                    {% assign shape_image = style_variant.featured_image %}
+                    {% if shape_image == blank and style_variant.featured_media != blank %}
+                      {% assign shape_image = style_variant.featured_media.preview_image %}
+                    {% endif %}
+
+                    {% assign display_name = style_variant.title %}
+                    {% if display_name == blank or display_name == 'Default Title' %}
+                      {% assign display_name = style_product.title %}
+                    {% endif %}
+
+                    {% assign is_initial_variant = false %}
+                    {% if cpb_initial_variant != blank and style_variant.id == cpb_initial_variant.id %}
+                      {% assign is_initial_variant = true %}
+                    {% endif %}
+
+                    <label
+                      class="cpb-style-item{% if is_initial_variant %} is-selected{% endif %}"
+                      data-product-title="{{ display_name | escape }}"
+                      data-product-name="{{ style_product.title | escape }}"
+                      data-variant-title="{{ style_variant.title | escape }}"
+                      data-variant-id="{{ style_variant.id }}"
+                      data-available="{{ style_variant.available }}"
+                      {% if shape_image != blank %}
+                        data-mask-url="{{ shape_image | image_url: width: 1400 }}"
+                        data-guide-url="{{ shape_image | image_url: width: 1000 }}"
+                      {% endif %}
+                    >
+                      <input
+                        type="radio"
+                        name="properties[Style]"
+                        value="{{ display_name | escape }}"
+                        class="cpb-style-input"
+                        {% if is_initial_variant %}checked{% endif %}
+                      >
+
+                      <svg class="cpb-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+
+                      {% if shape_image != blank and section.settings.preview_image != blank %}
+                        <div class="cpb-style-preview" style="--cpb-card-mask: url('{{ shape_image | image_url: width: 400 }}');">
+                          <img
+                            src="{{ section.settings.preview_image | image_url: width: 300 }}"
+                            class="cpb-style-preview-photo"
+                            alt="{{ display_name | escape }}"
+                            loading="lazy"
+                            data-cpb-card-preview
+                          >
+                        </div>
+                      {% elsif shape_image != blank %}
+                        {{ shape_image | image_url: width: 160 | image_tag:
+                          class: 'cpb-style-icon',
+                          loading: 'lazy',
+                          alt: display_name
+                        }}
+                      {% else %}
+                        <div style="width: 40px; height: 40px; background: #e0d5c1; border-radius: 4px; margin-bottom: 12px;"></div>
+                      {% endif %}
+
+                      <span class="cpb-style-name">{{ display_name }}</span>
+                      <span class="cpb-style-meta">
+                        {% if style_variant.available %}
+                          {{ style_product.title }}
+                        {% else %}
+                          Currently unavailable
+                        {% endif %}
+                      </span>
+                    </label>
+                  {% endfor %}
+                {% endfor %}
+
+              {% elsif cpb_product != blank %}
+                {% for style_variant in cpb_product.variants %}
+                  {% assign shape_image = style_variant.featured_image %}
+                  {% if shape_image == blank and style_variant.featured_media != blank %}
+                    {% assign shape_image = style_variant.featured_media.preview_image %}
+                  {% endif %}
+
+                  {% assign display_name = style_variant.title %}
+                  {% if display_name == blank or display_name == 'Default Title' %}
+                    {% assign display_name = cpb_product.title %}
+                  {% endif %}
+
+                  {% assign is_initial_variant = false %}
+                  {% if cpb_initial_variant != blank and style_variant.id == cpb_initial_variant.id %}
+                    {% assign is_initial_variant = true %}
+                  {% endif %}
+
+                  <label
+                    class="cpb-style-item{% if is_initial_variant %} is-selected{% endif %}"
+                    data-product-title="{{ display_name | escape }}"
+                    data-product-name="{{ cpb_product.title | escape }}"
+                    data-variant-title="{{ style_variant.title | escape }}"
+                    data-variant-id="{{ style_variant.id }}"
+                    data-available="{{ style_variant.available }}"
+                    {% if shape_image != blank %}
+                      data-mask-url="{{ shape_image | image_url: width: 1400 }}"
+                      data-guide-url="{{ shape_image | image_url: width: 1000 }}"
+                    {% endif %}
+                  >
+                    <input
+                      type="radio"
+                      name="properties[Style]"
+                      value="{{ display_name | escape }}"
+                      class="cpb-style-input"
+                      {% if is_initial_variant %}checked{% endif %}
+                    >
+
+                    <svg class="cpb-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+
+                    {% if shape_image != blank and section.settings.preview_image != blank %}
+                      <div class="cpb-style-preview" style="--cpb-card-mask: url('{{ shape_image | image_url: width: 400 }}');">
+                        <img
+                          src="{{ section.settings.preview_image | image_url: width: 300 }}"
+                          class="cpb-style-preview-photo"
+                          alt="{{ display_name | escape }}"
+                          loading="lazy"
+                          data-cpb-card-preview
+                        >
+                      </div>
+                    {% elsif shape_image != blank %}
+                      {{ shape_image | image_url: width: 160 | image_tag:
+                        class: 'cpb-style-icon',
+                        loading: 'lazy',
+                        alt: display_name
+                      }}
+                    {% else %}
+                      <div style="width: 40px; height: 40px; background: #e0d5c1; border-radius: 4px; margin-bottom: 12px;"></div>
+                    {% endif %}
+
+                    <span class="cpb-style-name">{{ display_name }}</span>
+                    <span class="cpb-style-meta">
+                      {% if style_variant.available %}Select this variant{% else %}Currently unavailable{% endif %}
+                    </span>
+                  </label>
+                {% endfor %}
+              {% else %}
+                <div style="grid-column: 1 / -1; padding: 20px; font-size: .75rem;">
+                  Select a product in the Style Selector block or Product fallback setting.
+                </div>
+              {% endif %}
+            </div>
+
+            <div style="font-size: 0.6rem; opacity: 0.5; margin-top: 12px; text-align: right;">
+              Every product variant is shown separately. Its assigned variant image controls the mask, and the default customer photo is shown inside it.
+            </div>
+
+          {% when 'upload' %}
+            <div class="cpb-upload-wrap">
+              <input
+                id="CpbPhotoUpload-{{ section.id }}"
+                class="cpb-upload-input"
+                type="file"
+                name="properties[Custom Photo]"
+                accept="image/jpeg,image/png"
+                data-max-mb="{{ section.settings.max_upload_mb }}"
+                required
+              >
+
+              <label class="cpb-upload-box" for="CpbPhotoUpload-{{ section.id }}">
+                <div class="cpb-upload-content">
+                  <svg class="cpb-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="cpb-upload-text">
+                    <strong class="cpb-upload-name">Choose a JPG or PNG</strong>
+                    <span>Up to {{ section.settings.max_upload_mb }} MB. Your photo appears instantly inside the selected product shape.</span>
+                  </div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              </label>
+
+              <div id="CpbUploadFeedback-{{ section.id }}" class="cpb-upload-feedback" aria-live="polite"></div>
+            </div>
+
+          {% when 'message' %}
+            <textarea class="cpb-textarea" name="properties[Message]" placeholder="{{ block.settings.placeholder }}"></textarea>
+            <span class="cpb-char-count">0/200</span>
+
+          {% when 'review' %}
+            <div class="cpb-input-group">
+              <div class="cpb-text-input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <input type="email" placeholder="Email for your digital proof" name="properties[Email Proof]">
+              </div>
+            </div>
+            
+            <label class="cpb-checkbox-label">
+              <input type="checkbox" checked>
+              <div class="cpb-checkbox-text">
+                <strong>Send me a digital proof before printing</strong>
+                <span>Nothing is printed until you approve it.</span>
+              </div>
+            </label>
+
+            <label class="cpb-checkbox-label">
+              <input type="checkbox">
+              <div class="cpb-checkbox-text">
+                <strong>I own or have permission to use this image</strong>
+                <span>Required for personal photos, artwork, logos, and characters.</span>
+              </div>
+            </label>
+
+        {% endcase %}
+      </div>
+    {% endfor %}
+
+    <!-- Submit Area -->
+    <div class="cpb-submit-area">
+      <span class="cpb-submit-status">{{ section.settings.submit_status | default: 'Confirmed after style & size review' }}</span>
+      <button
+        type="submit"
+        name="add"
+        class="cpb-submit-btn"
+        data-cpb-add-to-cart
+        {% if cpb_product == blank %}disabled aria-disabled="true"{% endif %}
+      >
+        {{ section.settings.btn_text | default: 'Add to cart' }}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+{% endcapture %}
+
+{% assign cpb_form_id = 'CpbProductForm-' | append: section.id %}
+{% if cpb_product != blank %}
+  {% form 'product', cpb_product, id: cpb_form_id, class: 'cpb-product-form', enctype: 'multipart/form-data' %}
+    <input class="cpb-selected-variant-id" type="hidden" name="id" value="{{ cpb_product.selected_or_first_available_variant.id }}">
+    <input type="hidden" name="quantity" value="1">
+    <input type="hidden" name="return_to" value="{{ routes.cart_url }}">
+    {{ cpb_builder_markup }}
+  {% endform %}
+{% else %}
+  <div class="cpb-product-form">
+    {{ cpb_builder_markup }}
+  </div>
+{% endif %}
+
+<script>
+  (() => {
+    const section = document.getElementById('shopify-section-{{ section.id }}');
+    if (!section || section.dataset.cpbReady === 'true') return;
+    section.dataset.cpbReady = 'true';
+
+    const styleItems = section.querySelectorAll('.cpb-style-item');
+    const variantInput = section.querySelector('.cpb-selected-variant-id');
+    const previewShape = section.querySelector('#CpbShapeMask-{{ section.id }}');
+    const previewImage = section.querySelector('#CpbShapePreview-{{ section.id }}');
+    const previewGuide = section.querySelector('#CpbShapeGuide-{{ section.id }}');
+    const previewPlaceholder = section.querySelector('#CpbShapePlaceholder-{{ section.id }}');
+    const previewTitle = section.querySelector('#CpbPreviewTitle-{{ section.id }}');
+    const submitButton = section.querySelector('.cpb-submit-btn');
+    const productForm = section.querySelector('.cpb-product-form');
+
+    if (productForm && submitButton) {
+      productForm.addEventListener('submit', function(event) {
+        const selectedStyle = section.querySelector('.cpb-style-item.is-selected');
+        const variantId = selectedStyle?.dataset.variantId || variantInput?.value || '';
+        const isAvailable = selectedStyle?.dataset.available !== 'false';
+
+        if (!variantId || !isAvailable) {
+          event.preventDefault();
+          submitButton.disabled = true;
+          submitButton.setAttribute('aria-disabled', 'true');
+          return;
+        }
+
+        submitButton.dataset.originalText = submitButton.textContent.trim();
+        submitButton.textContent = 'Adding to cart…';
+        submitButton.style.pointerEvents = 'none';
+      });
+    }
+
+    const applyStyle = (item) => {
+      if (!item) return;
+
+      styleItems.forEach((styleItem) => styleItem.classList.remove('is-selected'));
+      item.classList.add('is-selected');
+
+      const radio = item.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const variantId = item.dataset.variantId || '';
+      const maskUrl = item.dataset.maskUrl || '';
+      const guideUrl = item.dataset.guideUrl || '';
+      const productTitle = item.dataset.productTitle || 'Custom Preview';
+      const isAvailable = item.dataset.available !== 'false';
+
+      if (variantInput && variantId) {
+        variantInput.value = variantId;
+      }
+
+      if (previewTitle) {
+        previewTitle.textContent = productTitle;
+      }
+
+      if (previewShape) {
+        if (maskUrl) {
+          previewShape.style.setProperty('--cpb-shape-mask', `url("${maskUrl}")`);
+          previewShape.classList.add('has-mask');
+          previewShape.classList.remove('no-mask');
+        } else {
+          previewShape.style.removeProperty('--cpb-shape-mask');
+          previewShape.classList.remove('has-mask');
+          previewShape.classList.add('no-mask');
+        }
+      }
+
+      if (previewGuide) {
+        if (guideUrl) {
+          previewGuide.src = guideUrl;
+          if (!previewShape || !previewShape.classList.contains('has-customer-photo')) {
+            previewGuide.classList.remove('is-hidden');
+          }
+        } else {
+          previewGuide.removeAttribute('src');
+          previewGuide.classList.add('is-hidden');
+        }
+      }
+
+      if (previewPlaceholder) {
+        const hasCustomerPhoto = previewShape && previewShape.classList.contains('has-customer-photo');
+        previewPlaceholder.classList.toggle('is-hidden', Boolean(guideUrl) || Boolean(hasCustomerPhoto));
+      }
+
+      if (submitButton) {
+        submitButton.disabled = !variantId || !isAvailable;
+        submitButton.setAttribute('aria-disabled', String(!variantId || !isAvailable));
+      }
+    };
+
+    styleItems.forEach((item) => {
+      item.addEventListener('click', () => applyStyle(item));
+    });
+
+    applyStyle(section.querySelector('.cpb-style-item.is-selected') || styleItems[0]);
+
+    const textarea = section.querySelector('.cpb-textarea');
+    const charCount = section.querySelector('.cpb-char-count');
+    if (textarea && charCount) {
+      textarea.maxLength = 200;
+      const updateCount = () => {
+        charCount.textContent = `${textarea.value.length}/200`;
+      };
+      textarea.addEventListener('input', updateCount);
+      updateCount();
+    }
+
+    const uploadInput = section.querySelector('#CpbPhotoUpload-{{ section.id }}');
+    const uploadBox = section.querySelector('label[for="CpbPhotoUpload-{{ section.id }}"]');
+    const uploadName = section.querySelector('.cpb-upload-name');
+    const feedback = section.querySelector('#CpbUploadFeedback-{{ section.id }}');
+
+    let activeObjectUrl = null;
+
+    const resetFeedback = () => {
+      if (!feedback) return;
+      feedback.textContent = '';
+      feedback.classList.remove('is-visible', 'is-error');
+    };
+
+    const showError = (message) => {
+      if (!feedback) return;
+      feedback.textContent = message;
+      feedback.classList.add('is-visible', 'is-error');
+    };
+
+    if (uploadInput && previewImage) {
+      uploadInput.addEventListener('change', function() {
+        resetFeedback();
+
+        const file = this.files && this.files[0];
+        if (!file) return;
+
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        const maxMb = Number(this.dataset.maxMb || 15);
+        const maxBytes = maxMb * 1024 * 1024;
+
+        if (!allowedTypes.includes(file.type)) {
+          this.value = '';
+          showError('Please upload a JPG or PNG image.');
+          return;
+        }
+
+        if (file.size > maxBytes) {
+          this.value = '';
+          showError(`Please choose an image smaller than ${maxMb} MB.`);
+          return;
+        }
+
+        if (activeObjectUrl) {
+          URL.revokeObjectURL(activeObjectUrl);
+        }
+
+        activeObjectUrl = URL.createObjectURL(file);
+        previewImage.src = activeObjectUrl;
+        previewImage.removeAttribute('srcset');
+        previewImage.classList.remove('is-empty');
+
+        section.querySelectorAll('[data-cpb-card-preview]').forEach((cardPreview) => {
+          cardPreview.src = activeObjectUrl;
+        });
+
+        if (previewShape) {
+          previewShape.classList.add('has-customer-photo');
+        }
+
+        if (previewGuide) {
+          previewGuide.classList.add('is-hidden');
+        }
+
+        if (previewPlaceholder) {
+          previewPlaceholder.classList.add('is-hidden');
+        }
+
+        if (uploadBox) {
+          uploadBox.classList.add('has-file');
+        }
+
+        if (uploadName) {
+          uploadName.textContent = file.name;
+        }
+
+        if (feedback) {
+          const selectedStyle = section.querySelector('.cpb-style-item.is-selected');
+          const selectedName = selectedStyle?.dataset.productTitle || 'selected shape';
+          feedback.textContent = `Photo loaded. Your image is now shown inside ${selectedName}.`;
+          feedback.classList.add('is-visible');
+          feedback.classList.remove('is-error');
+        }
+      });
+    }
+
+    window.addEventListener('pagehide', () => {
+      if (activeObjectUrl) {
+        URL.revokeObjectURL(activeObjectUrl);
+      }
+    }, { once: true });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Custom Product Builder",
+  "settings": [
+    {
+      "type": "product",
+      "id": "builder_product",
+      "label": "Product fallback",
+      "info": "Only needed when this section is used outside a product template."
+    },
+    {
+      "type": "header",
+      "content": "Left Column (Preview)"
+    },
+    {
+      "type": "color",
+      "id": "bg_color_left",
+      "label": "Left Background Color",
+      "default": "#e6decb"
+    },
+    {
+      "type": "text",
+      "id": "preview_badge",
+      "label": "Badge Text",
+      "default": "LIVE PREVIEW"
+    },
+    {
+      "type": "image_picker",
+      "id": "preview_image",
+      "label": "Default Customer Photo (optional)"
+    },
+    {
+      "type": "range",
+      "id": "max_upload_mb",
+      "label": "Max Photo Size",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "unit": "MB",
+      "default": 15
+    },
+    {
+      "type": "text",
+      "id": "preview_title",
+      "label": "Footer Title",
+      "default": "Custom Preview"
+    },
+    {
+      "type": "textarea",
+      "id": "preview_desc",
+      "label": "Footer Description",
+      "default": "A sculpted keepsake for love & milestones. Final dimensions and price confirmed with your proof."
+    },
+    {
+      "type": "text",
+      "id": "preview_note",
+      "label": "Footer Note",
+      "default": "This preview uses the selected variant image as the shape. Final production may vary slightly."
+    },
+    {
+      "type": "header",
+      "content": "Right Column (Form)"
+    },
+    {
+      "type": "color",
+      "id": "bg_color_right",
+      "label": "Right Background Color",
+      "default": "#fdfbf7"
+    },
+    {
+      "type": "text",
+      "id": "form_eyebrow",
+      "label": "Form Eyebrow",
+      "default": "BUILD YOUR KEEPSAKE"
+    },
+    {
+      "type": "text",
+      "id": "submit_status",
+      "label": "Submit Status Text",
+      "default": "Confirmed after style & size review"
+    },
+    {
+      "type": "text",
+      "id": "btn_text",
+      "label": "Button Text",
+      "default": "Add to cart"
+    },
+    {
+      "type": "color",
+      "id": "btn_bg_color",
+      "label": "Button Background",
+      "default": "#d89db3"
+    },
+    {
+      "type": "color",
+      "id": "btn_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Global Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#2b1828"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Color",
+      "default": "#d89db3"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#e6e0d8"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "style_selector",
+      "name": "Step: Style Selector",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "product_list",
+          "id": "products",
+          "label": "Style products",
+          "limit": 11,
+          "info": "Select one or more products here. Every variant is shown as its own style card. Assign a transparent PNG or WebP mask image to each variant. The Default Customer Photo is automatically shown inside every variant mask."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Step Title",
+          "default": "Choose your style"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Choose a style variant. Every variant is displayed separately and its assigned image is used as the mask for your uploaded photo."
+        }
+      ]
+    },
+    {
+      "type": "upload",
+      "name": "Step: Image Upload",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Step Title",
+          "default": "Upload your photo"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Choose a clear, high-resolution image with the subject easy to see."
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "name": "Step: Text Message",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Step Title",
+          "default": "Add a message"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "For memorials, milestones, names, or a short dedication."
+        },
+        {
+          "type": "text",
+          "id": "placeholder",
+          "label": "Textarea Placeholder",
+          "default": "Example: In loving memory - Forever in our hearts"
+        }
+      ]
+    },
+    {
+      "type": "review",
+      "name": "Step: Review & Proof",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Step Title",
+          "default": "Review & proof"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "We improve contrast, prepare the relief, and send the final layout before printing."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Product Builder",
+      "blocks": [
+        { "type": "style_selector" },
+        { "type": "upload" },
+        { "type": "message" },
+        { "type": "review" }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,552 @@
+{% comment %}
+  Filename: image-with-litho-features.liquid
+  Description: A two-column feature section with a prominent image, mixed-style typography, an options grid, and a call-to-action button. Fully responsive with mobile-first CSS.
+{% endcomment %}
+
+<style>
+  /* --- Variables & Base Setup --- */
+  #shopify-section-{{ section.id }} .litho-section {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.heading_2_color }};
+    --grid-border-color: {{ section.settings.grid_border_color }};
+    --btn-bg: {{ section.settings.btn_bg_color }};
+    --btn-text: {{ section.settings.btn_text_color }};
+    
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  .litho-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    width: 100%;
+    /* Boxed vs Full Width logic */
+    padding: 0 {% if section.settings.full_width %}0{% else %}20px{% endif %};
+  }
+
+  /* --- Grid Layout (Mobile First) --- */
+  .litho-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* Mobile Stacking Order */
+  .litho-image-col {
+    order: {% if section.settings.mobile_image_first %}1{% else %}2{% endif %};
+    width: 100%;
+  }
+  .litho-content-col {
+    order: {% if section.settings.mobile_image_first %}2{% else %}1{% endif %};
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    /* Content Alignment */
+    text-align: {{ section.settings.content_alignment }};
+    align-items: {% if section.settings.content_alignment == 'center' %}center{% elsif section.settings.content_alignment == 'right' %}flex-end{% else %}flex-start{% endif %};
+  }
+
+  /* --- Image Styling --- */
+  .litho-image-wrapper {
+    position: relative;
+    width: 100%;
+    /* Ensure no layout shift before image loads */
+    aspect-ratio: {{ section.settings.image_aspect_ratio }};
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.05);
+  }
+  .litho-image-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .litho-image-wrapper svg.placeholder-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    fill: #ccc;
+  }
+
+  /* --- Typography --- */
+  .litho-subheading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  .litho-heading {
+    margin: 0 0 20px 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text-color);
+  }
+  
+  .litho-heading-line2 {
+    display: block;
+    color: var(--accent-color);
+    font-style: italic;
+  }
+
+  .litho-desc {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 600px;
+    opacity: 0.85;
+  }
+  .litho-desc p { margin: 0 0 10px 0; }
+  .litho-desc p:last-child { margin-bottom: 0; }
+
+  /* --- Options Grid --- */
+  .litho-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 cols on mobile for space */
+    gap: 1px;
+    background-color: var(--grid-border-color);
+    border: 1px solid var(--grid-border-color);
+    margin-bottom: 32px;
+    width: 100%;
+    max-width: 500px; /* Constrain width of the table */
+  }
+
+  .litho-option-item {
+    background-color: var(--bg-color); /* Matches section bg to create borders via grid gap */
+    padding: 12px 10px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --- Button --- */
+  .litho-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    padding: 14px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: opacity 0.3s ease;
+  }
+  .litho-btn:hover {
+    opacity: 0.85;
+  }
+  .litho-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+  }
+  .litho-btn:hover svg {
+    transform: translateX(4px);
+  }
+
+  /* --- Breakpoints --- */
+  
+  /* Tablet (768px - 1024px) */
+  @media screen and (min-width: 768px) {
+    .litho-grid {
+      flex-direction: row;
+      gap: 40px;
+      align-items: stretch;
+    }
+    
+    .litho-image-col {
+      width: 45%;
+      order: {% if section.settings.desktop_image_position == 'left' %}1{% else %}2{% endif %};
+    }
+    
+    .litho-content-col {
+      width: 55%;
+      order: {% if section.settings.desktop_image_position == 'left' %}2{% else %}1{% endif %};
+      padding: 40px 0;
+    }
+
+    .litho-options-grid {
+      grid-template-columns: repeat(3, 1fr); /* 3 cols on tablet/desktop */
+    }
+  }
+
+  /* Desktop (1025px and up) */
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} .litho-section {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+    
+    .litho-grid {
+      gap: 80px;
+    }
+
+    .litho-image-col {
+      width: 35%; /* Tighter image column matching design */
+    }
+    
+    .litho-content-col {
+      width: 65%;
+      padding: 60px 40px 60px 0; /* Extra breathing room */
+    }
+
+    /* Adjust padding if image is on the right */
+    .litho-content-col.position-right {
+      padding: 60px 0 60px 40px; 
+    }
+
+    .litho-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+      margin-bottom: 24px;
+    }
+
+    .litho-desc {
+      font-size: 1rem;
+      margin-bottom: 40px;
+    }
+
+    .litho-option-item {
+      padding: 16px 12px;
+      font-size: 0.875rem;
+    }
+  }
+</style>
+
+<div class="litho-section">
+  <div class="litho-container">
+    <div class="litho-grid">
+      
+      <!-- Image Column -->
+      <div class="litho-image-col">
+        <div class="litho-image-wrapper">
+          {% if section.settings.image != blank %}
+            {{ section.settings.image | image_url: width: 1200 | image_tag: 
+              loading: 'lazy', 
+              sizes: '(min-width: 1025px) 35vw, (min-width: 768px) 45vw, 100vw',
+              widths: '400, 600, 800, 1200',
+              alt: section.settings.image.alt | escape
+            }}
+          {% else %}
+            {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Content Column -->
+      <div class="litho-content-col {% if section.settings.desktop_image_position == 'right' %}position-right{% endif %}">
+        {% if section.settings.subheading != blank %}
+          <div class="litho-subheading">{{ section.settings.subheading }}</div>
+        {% endif %}
+
+        {% if section.settings.heading_1 != blank or section.settings.heading_2 != blank %}
+          <h2 class="litho-heading">
+            {% if section.settings.heading_1 != blank %}
+              {{ section.settings.heading_1 }}
+            {% endif %}
+            {% if section.settings.heading_2 != blank %}
+              <span class="litho-heading-line2">{{ section.settings.heading_2 }}</span>
+            {% endif %}
+          </h2>
+        {% endif %}
+
+        {% if section.settings.description != blank %}
+          <div class="litho-desc">
+            {{ section.settings.description }}
+          </div>
+        {% endif %}
+
+        {% if section.blocks.size > 0 %}
+          <div class="litho-options-grid">
+            {% for block in section.blocks %}
+              <div class="litho-option-item" {{ block.shopify_attributes }}>
+                {{ block.settings.title }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if section.settings.btn_text != blank and section.settings.btn_link != blank %}
+          <a href="{{ section.settings.btn_link }}" class="litho-btn">
+            {{ section.settings.btn_text }}
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M4.16669 10H15.8334M15.8334 10L10 4.16669M15.8334 10L10 15.8334" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Feature w/ Options Grid",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Image Settings"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Main Image"
+    },
+    {
+      "type": "select",
+      "id": "image_aspect_ratio",
+      "label": "Image Aspect Ratio",
+      "options": [
+        { "value": "3/4", "label": "Portrait (3:4)" },
+        { "value": "2/3", "label": "Tall Portrait (2:3)" },
+        { "value": "1/1", "label": "Square (1:1)" }
+      ],
+      "default": "2/3"
+    },
+    {
+      "type": "select",
+      "id": "desktop_image_position",
+      "label": "Desktop Image Position",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "checkbox",
+      "id": "mobile_image_first",
+      "label": "Show image first on mobile",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Content Settings"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "A memory, printed in light"
+    },
+    {
+      "type": "text",
+      "id": "heading_1",
+      "label": "Heading Line 1",
+      "default": "More than a photo."
+    },
+    {
+      "type": "text",
+      "id": "heading_2",
+      "label": "Heading Line 2 (Italic & Colored)",
+      "default": "A keepsake that glows."
+    },
+    {
+      "type": "color",
+      "id": "heading_2_color",
+      "label": "Heading Line 2 Color",
+      "default": "#9c687e"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description text",
+      "default": "<p>Choose one of eleven lithophane forms, upload a meaningful image, and approve the prepared relief before our team prints it.</p>"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Content Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "Button Settings"
+    },
+    {
+      "type": "text",
+      "id": "btn_text",
+      "label": "Button Text",
+      "default": "Open the lithophane studio"
+    },
+    {
+      "type": "url",
+      "id": "btn_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "color",
+      "id": "btn_bg_color",
+      "label": "Button Background Color",
+      "default": "#381e35"
+    },
+    {
+      "type": "color",
+      "id": "btn_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Styling & Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Section Background",
+      "default": "#F9F6F0"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "grid_border_color",
+      "label": "Options Grid Border Color",
+      "default": "#e6e0d8"
+    },
+    {
+      "type": "header",
+      "content": "Typography Settings"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 24,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 20,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 32
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Make section full width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 800,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "label": "Max Container Width",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 40
+    }
+  ],
+  "blocks": [
+    {
+      "type": "grid_item",
+      "name": "Option Item",
+      "limit": 6,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Label",
+          "default": "Flat"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Feature w/ Options Grid",
+      "blocks": [
+        { "type": "grid_item", "settings": { "title": "Flat" } },
+        { "type": "grid_item", "settings": { "title": "Heart" } },
+        { "type": "grid_item", "settings": { "title": "Night Light" } },
+        { "type": "grid_item", "settings": { "title": "Lamp" } },
+        { "type": "grid_item", "settings": { "title": "Globe" } },
+        { "type": "grid_item", "settings": { "title": "Color" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

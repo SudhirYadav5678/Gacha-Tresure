@@ -1,0 +1,764 @@
+{% comment %}
+  Filename: footer-gacha.liquid
+  Description: A fully responsive, 4-column footer section featuring brand messaging, Shopify menu integration, location details, and social links.
+{% endcomment %}
+
+<style>
+  #shopify-section-{{ section.id }} .gf-section {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    font-family: var(--font-body-family), sans-serif;
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} .gf-section {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+  }
+
+  #shopify-section-{{ section.id }} .gf-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  /* --- Grid Layout --- */
+  #shopify-section-{{ section.id }} .gf-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px 32px;
+  }
+
+  @media screen and (min-width: 768px) {
+    #shopify-section-{{ section.id }} .gf-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} .gf-grid {
+      grid-template-columns: 3fr 1.25fr 1.25fr 2.5fr;
+      gap: 40px;
+    }
+  }
+
+  /* --- Typography & Elements --- */
+  #shopify-section-{{ section.id }} .gf-block-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 24px 0;
+    opacity: 0.9;
+  }
+
+  /* Brand Block */
+  #shopify-section-{{ section.id }} .gf-brand-logo {
+    display: block;
+    margin-bottom: 32px;
+  }
+
+  #shopify-section-{{ section.id }} .gf-brand-logo img,
+  #shopify-section-{{ section.id }} .gf-brand-logo svg {
+    width: 100%;
+    max-width: var(--logo-width, 240px);
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  #shopify-section-{{ section.id }} .gf-brand-heading {
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1;
+    margin: 0 0 24px 0;
+    white-space: normal;
+  }
+
+  @media screen and (min-width: 768px) {
+    #shopify-section-{{ section.id }} .gf-brand-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+  }
+
+  #shopify-section-{{ section.id }} .gf-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--text-color);
+    transition: opacity 0.3s ease;
+  }
+
+  #shopify-section-{{ section.id }} .gf-link:hover {
+    opacity: 0.7;
+  }
+
+  #shopify-section-{{ section.id }} .gf-link svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Menu Block */
+  #shopify-section-{{ section.id }} .gf-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #shopify-section-{{ section.id }} .gf-menu a {
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.875rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+  }
+
+  #shopify-section-{{ section.id }} .gf-menu a:hover {
+    opacity: 1;
+  }
+
+  /* Location/Info Block */
+  #shopify-section-{{ section.id }} .gf-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  #shopify-section-{{ section.id }} .gf-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+
+  #shopify-section-{{ section.id }} .gf-info-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Social Icons */
+  #shopify-section-{{ section.id }} .gf-socials {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  #shopify-section-{{ section.id }} .gf-social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+    line-height: 1;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  #shopify-section-{{ section.id }} .gf-social-link:hover {
+    opacity: 0.7;
+    transform: translateY(-2px);
+  }
+
+  #shopify-section-{{ section.id }} .gf-social-link svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  /* Bottom Bar */
+  #shopify-section-{{ section.id }} .gf-bottom-bar {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.6;
+  }
+
+  @media screen and (min-width: 768px) {
+    #shopify-section-{{ section.id }} .gf-bottom-bar {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 80px;
+    }
+
+    #shopify-section-{{ section.id }} .gf-bottom-text-right {
+      text-align: right;
+    }
+  }
+</style>
+
+<footer class="gf-section">
+  <div class="gf-container">
+    <div class="gf-grid">
+
+      {% for block in section.blocks %}
+        <div class="gf-block" {{ block.shopify_attributes }}>
+
+          {% case block.type %}
+
+            {% when 'brand' %}
+              <div
+                class="gf-brand-content"
+                style="--logo-width: {{ block.settings.logo_width }}px;"
+              >
+                {% if block.settings.logo != blank %}
+                  <a
+                    href="{{ routes.root_url }}"
+                    class="gf-brand-logo"
+                    aria-label="Home"
+                  >
+                    {{
+                      block.settings.logo
+                      | image_url: width: 600
+                      | image_tag: loading: 'lazy'
+                    }}
+                  </a>
+                {% else %}
+                  <a
+                    href="{{ routes.root_url }}"
+                    class="gf-brand-logo"
+                    aria-label="Home"
+                  >
+                    {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+                  </a>
+                {% endif %}
+
+                {% if block.settings.heading != blank %}
+                  <h2 class="gf-brand-heading">
+                    {{ block.settings.heading | newline_to_br }}
+                  </h2>
+                {% endif %}
+
+                {% if block.settings.cta_text != blank %}
+                  <a
+                    href="{{ block.settings.cta_link | default: '#' }}"
+                    class="gf-link"
+                  >
+                    {{ block.settings.cta_text }}
+
+                    <svg
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M1 13L13 1M13 1H4M13 1V10"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="square"
+                      />
+                    </svg>
+                  </a>
+                {% endif %}
+              </div>
+
+            {% when 'menu' %}
+              {% if block.settings.title != blank %}
+                <h3 class="gf-block-title">
+                  {{ block.settings.title }}
+                </h3>
+              {% endif %}
+
+              {% if block.settings.menu != blank %}
+                <ul class="gf-menu">
+                  {% for link in linklists[block.settings.menu].links %}
+                    <li>
+                      <a href="{{ link.url }}">
+                        {{ link.title }}
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <ul class="gf-menu">
+                  <li><a href="#">Example Link 1</a></li>
+                  <li><a href="#">Example Link 2</a></li>
+                  <li><a href="#">Example Link 3</a></li>
+                </ul>
+              {% endif %}
+
+            {% when 'locations' %}
+              {% if block.settings.title != blank %}
+                <h3 class="gf-block-title">
+                  {{ block.settings.title }}
+                </h3>
+              {% endif %}
+
+              <div class="gf-info-list">
+
+                {% if block.settings.location_1 != blank %}
+                  <div class="gf-info-item">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+
+                    <span>
+                      {{ block.settings.location_1 | newline_to_br }}
+                    </span>
+                  </div>
+                {% endif %}
+
+                {% if block.settings.location_2 != blank %}
+                  <div class="gf-info-item">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+
+                    <span>
+                      {{ block.settings.location_2 | newline_to_br }}
+                    </span>
+                  </div>
+                {% endif %}
+
+              </div>
+
+              {% if block.settings.cta_text != blank %}
+                <a
+                  href="{{ block.settings.cta_link | default: '#' }}"
+                  class="gf-link"
+                >
+                  {{ block.settings.cta_text }}
+
+                  <svg
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M1 13L13 1M13 1H4M13 1V10"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="square"
+                    />
+                  </svg>
+                </a>
+              {% endif %}
+
+              <div class="gf-socials">
+
+                {% if block.settings.social_1_text != blank %}
+                  <a
+                    href="{{ block.settings.social_1_link | default: '#' }}"
+                    class="gf-social-link"
+                    aria-label="{{ block.settings.social_1_text }}"
+                    title="{{ block.settings.social_1_text }}"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="5"
+                        ry="5"
+                      ></rect>
+
+                      <path d="M16.5 7.5h.01"></path>
+
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="4"
+                      ></circle>
+                    </svg>
+                  </a>
+                {% endif %}
+
+                {% if block.settings.social_2_text != blank %}
+                  <a
+                    href="{{ block.settings.social_2_link | default: '#' }}"
+                    class="gf-social-link"
+                    aria-label="{{ block.settings.social_2_text }}"
+                    title="{{ block.settings.social_2_text }}"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M16.6 5.8c1 .7 2.2 1.1 3.4 1.2v2.8c-1.2 0-2.4-.3-3.4-.8v5.4c0 3.6-2.9 6.3-6.5 6.3S3.6 18 3.6 14.6c0-3.6 2.9-6.4 6.5-6.4.3 0 .5 0 .8.1v3.1c-.2-.1-.5-.1-.8-.1-1.8 0-3.3 1.4-3.3 3.3 0 1.7 1.4 3.2 3.3 3.2 2 0 3.3-1.6 3.3-3.2V3h3.2c.1 1.1.7 2.1 1.5 2.8.8.7 1.8 1.1 2.9 1.2v0-1.2c-.8-.2-1.6-.5-2.2-1z"/>
+                    </svg>
+                  </a>
+                {% endif %}
+
+                {% if block.settings.social_3_text != blank %}
+                  <a
+                    href="{{ block.settings.social_3_link | default: '#' }}"
+                    class="gf-social-link"
+                    aria-label="{{ block.settings.social_3_text }}"
+                    title="{{ block.settings.social_3_text }}"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M13.5 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5H16.7V4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V10H7.3v3H10V21h3.5z"/>
+                    </svg>
+                  </a>
+                {% endif %}
+
+              </div>
+
+          {% endcase %}
+
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <div class="gf-bottom-bar">
+      <div class="gf-bottom-text-left">
+        {{ section.settings.bottom_text_left | replace: '[year]', 'now' | date: "%Y" }}
+      </div>
+
+      <div class="gf-bottom-text-right">
+        {{ section.settings.bottom_text_right }}
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Footer (Gacha)",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#311428"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#fcfaf7"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 24,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "label": "Brand Heading Size (Desktop)",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 24,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Brand Heading Size (Mobile)",
+      "default": 36
+    },
+    {
+      "type": "header",
+      "content": "Bottom Bar"
+    },
+    {
+      "type": "text",
+      "id": "bottom_text_left",
+      "label": "Left Copyright Text",
+      "default": "© 2026 GACHA TREASURES"
+    },
+    {
+      "type": "text",
+      "id": "bottom_text_right",
+      "label": "Right Disclaimer Text",
+      "default": "CONCEPT STOREFRONT FOR DESIGN APPROVAL - AVAILABILITY AND PRICING SUBJECT TO FINAL CONFIRMATION"
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1800,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 32
+    }
+  ],
+  "blocks": [
+    {
+      "type": "brand",
+      "name": "Brand Info",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "logo",
+          "label": "Logo Image"
+        },
+        {
+          "type": "range",
+          "id": "logo_width",
+          "min": 100,
+          "max": 400,
+          "step": 10,
+          "unit": "px",
+          "label": "Logo Max Width",
+          "default": 240
+        },
+        {
+          "type": "textarea",
+          "id": "heading",
+          "label": "Heading",
+          "default": "A new treasure\nevery turn."
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "CTA Text",
+          "default": "Start the hunt"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "CTA Link"
+        }
+      ]
+    },
+    {
+      "type": "menu",
+      "name": "Menu",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Menu Title",
+          "default": "EXPLORE"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Shopify Menu",
+          "info": "Select a menu to display links."
+        }
+      ]
+    },
+    {
+      "type": "locations",
+      "name": "Locations & Socials",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Block Title",
+          "default": "FIND & FOLLOW US"
+        },
+        {
+          "type": "textarea",
+          "id": "location_1",
+          "label": "Location 1 (Pin Icon)",
+          "default": "Fantastic Indoor Swap Meet + Fremont\nLas Vegas, Nevada"
+        },
+        {
+          "type": "textarea",
+          "id": "location_2",
+          "label": "Location 2 (Sparkle Icon)",
+          "default": "Online + two Las Vegas locations"
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "Link Text",
+          "default": "Visit details"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Link URL"
+        },
+        {
+          "type": "header",
+          "content": "Social Links"
+        },
+        {
+          "type": "text",
+          "id": "social_1_text",
+          "label": "Social 1 Name",
+          "default": "Instagram"
+        },
+        {
+          "type": "url",
+          "id": "social_1_link",
+          "label": "Social 1 Link"
+        },
+        {
+          "type": "text",
+          "id": "social_2_text",
+          "label": "Social 2 Name",
+          "default": "TikTok"
+        },
+        {
+          "type": "url",
+          "id": "social_2_link",
+          "label": "Social 2 Link"
+        },
+        {
+          "type": "text",
+          "id": "social_3_text",
+          "label": "Social 3 Name",
+          "default": "Facebook"
+        },
+        {
+          "type": "url",
+          "id": "social_3_link",
+          "label": "Social 3 Link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Footer (Gacha)",
+      "blocks": [
+        {
+          "type": "brand"
+        },
+        {
+          "type": "menu",
+          "settings": {
+            "title": "EXPLORE"
+          }
+        },
+        {
+          "type": "menu",
+          "settings": {
+            "title": "HELP"
+          }
+        },
+        {
+          "type": "locations"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,223 @@
+{% style %}
+  #shopify-section-{{ section.id }} .case-system {
+    --cs-bg: {{ section.settings.background }};
+    --cs-text: {{ section.settings.text_color }};
+    --cs-muted: {{ section.settings.muted_text_color }};
+    --cs-accent: {{ section.settings.accent_color }};
+    --cs-card: {{ section.settings.card_background }};
+    --cs-border: {{ section.settings.card_border }};
+    --cs-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --cs-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="case-system">
+  <div class="case-system__inner case-system__inner--{{ section.settings.content_width }}">
+    <div class="case-system__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p class="case-system__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>
+        {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+        {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+      </h2>
+      {% if section.settings.body != blank %}
+        <div class="case-system__body">{{ section.settings.body }}</div>
+      {% endif %}
+    </div>
+
+    {% if section.blocks.size > 0 %}
+      <div class="case-system__cards case-system__cards--{{ section.settings.columns }}">
+        {% for block in section.blocks %}
+          <article class="case-system__card" {{ block.shopify_attributes }}>
+            <span>{{ block.settings.number }}</span>
+            <div>
+              <h3>{{ block.settings.heading }}</h3>
+              {{ block.settings.text }}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-system {
+    color: var(--cs-text);
+    background: var(--cs-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .case-system__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(260px, .65fr) minmax(0, 1fr);
+    gap: clamp(34px, 8vw, 110px);
+    align-items: end;
+  }
+
+  .case-system__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .case-system__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .case-system__eyebrow {
+    margin: 0 0 20px;
+    color: var(--cs-muted);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .case-system h2 {
+    margin: 0;
+    color: var(--cs-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--cs-heading-mobile), 5vw, var(--cs-heading-desktop));
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .case-system h2 span,
+  .case-system h2 em {
+    display: block;
+  }
+
+  .case-system h2 em {
+    color: var(--cs-accent);
+    font-style: italic;
+  }
+
+  .case-system__body {
+    max-width: 520px;
+    margin-top: 24px;
+    color: var(--cs-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .case-system__body p,
+  .case-system__card p {
+    margin: 0;
+  }
+
+  .case-system__cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .case-system__cards--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .case-system__card {
+    min-width: 0;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    background: var(--cs-card);
+    border: 1px solid var(--cs-border);
+  }
+
+  .case-system__card span {
+    color: var(--cs-accent);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .case-system__card h3 {
+    margin: 0 0 7px;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .case-system__card div {
+    color: var(--cs-muted);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 980px) {
+    .case-system__inner {
+      grid-template-columns: 1fr;
+    }
+
+    .case-system__cards,
+    .case-system__cards--2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .case-system {
+      padding-top: 62px;
+      padding-bottom: 52px;
+    }
+
+    .case-system__inner--page,
+    .case-system__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Case System Intro",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "The interchangeable case system" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "One clear case." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "New art anytime." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Start with a compatible clear shell, then swap printed backplates whenever the mood changes.</p>" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "columns", "label": "Card columns", "default": "3", "options": [
+      { "value": "2", "label": "2" },
+      { "value": "3", "label": "3" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 44, "max": 82, "step": 2, "unit": "px", "default": 60 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 56, "step": 2, "unit": "px", "default": 42 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F7F0E7" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#746970" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C63B73" },
+    { "type": "color", "id": "card_background", "label": "Card background", "default": "#FCF8F2" },
+    { "type": "color", "id": "card_border", "label": "Card border", "default": "#D9CEC4" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 48, "max": 160, "step": 4, "unit": "px", "default": 96 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 36, "max": 120, "step": 4, "unit": "px", "default": 36 }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "System step",
+      "settings": [
+        { "type": "text", "id": "number", "label": "Number", "default": "1" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Start with the full case" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Use the compatible clear shell and first printed insert.</p>" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Case System Intro",
+      "blocks": [
+        { "type": "step", "settings": { "number": "1", "heading": "Start with the full case", "text": "<p>Use the compatible clear shell and first printed insert.</p>" } },
+        { "type": "step", "settings": { "number": "2", "heading": "Add new backplates", "text": "<p>Order fresh artwork without replacing the full case.</p>" } },
+        { "type": "step", "settings": { "number": "3", "heading": "Insert and swap", "text": "<p>Change the look whenever the mood changes.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,243 @@
+{% style %}
+  #shopify-section-{{ section.id }} .mystery-steps {
+    --ms-bg: {{ section.settings.background }};
+    --ms-text: {{ section.settings.text_color }};
+    --ms-heading: {{ section.settings.heading_color }};
+    --ms-accent: {{ section.settings.accent_color }};
+    --ms-divider: {{ section.settings.divider_color }};
+    --ms-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --ms-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .mystery-steps {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="mystery-steps">
+  <div class="mystery-steps__inner mystery-steps__inner--{{ section.settings.content_width }}">
+    <div class="mystery-steps__header mystery-steps__header--{{ section.settings.alignment }}">
+      {% if section.settings.eyebrow != blank %}
+        <p class="mystery-steps__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2>{{ section.settings.heading }}</h2>
+      {% endif %}
+    </div>
+
+    {% if section.blocks.size > 0 %}
+      <div class="mystery-steps__grid mystery-steps__grid--{{ section.settings.desktop_columns }}{% if section.settings.show_dividers %} mystery-steps__grid--divided{% endif %}">
+        {% for block in section.blocks %}
+          <article class="mystery-step" {{ block.shopify_attributes }}>
+            {% if section.settings.show_step_numbers and block.settings.number != blank %}
+              <p class="mystery-step__number">{{ block.settings.number }}</p>
+            {% endif %}
+            {% if block.settings.heading != blank %}
+              <h3>{{ block.settings.heading }}</h3>
+            {% endif %}
+            {% if block.settings.text != blank %}
+              <div class="mystery-step__text">{{ block.settings.text }}</div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .mystery-steps {
+    color: var(--ms-text);
+    background: var(--ms-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .mystery-steps__inner {
+    margin-inline: auto;
+  }
+
+  .mystery-steps__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .mystery-steps__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .mystery-steps__header {
+    max-width: 760px;
+  }
+
+  .mystery-steps__header--center {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .mystery-steps__header--right {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .mystery-steps__eyebrow {
+    margin: 0 0 24px;
+    color: var(--ms-accent);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .mystery-steps h2 {
+    margin: 0;
+    color: var(--ms-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--ms-heading-mobile), 4.8vw, var(--ms-heading-desktop));
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .mystery-steps__grid {
+    margin-top: clamp(54px, 7vw, 94px);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mystery-steps__grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mystery-step {
+    min-width: 0;
+    padding: 0 clamp(24px, 4vw, 54px);
+  }
+
+  .mystery-step:first-child {
+    padding-left: 0;
+  }
+
+  .mystery-step:last-child {
+    padding-right: 0;
+  }
+
+  .mystery-steps__grid--divided .mystery-step + .mystery-step {
+    border-left: 1px solid var(--ms-divider);
+  }
+
+  .mystery-step__number {
+    margin: 0 0 34px;
+    color: var(--ms-accent);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .12em;
+  }
+
+  .mystery-step h3 {
+    margin: 0;
+    color: var(--ms-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(24px, 2vw, 34px);
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  .mystery-step__text {
+    max-width: 420px;
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: .78;
+  }
+
+  .mystery-step__text p {
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .mystery-steps__grid,
+    .mystery-steps__grid--2 {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .mystery-step,
+    .mystery-step:first-child,
+    .mystery-step:last-child {
+      padding: 0;
+    }
+
+    .mystery-steps__grid--divided .mystery-step + .mystery-step {
+      padding-top: 30px;
+      border-left: 0;
+      border-top: 1px solid var(--ms-divider);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .mystery-steps__inner--page,
+    .mystery-steps__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Mystery how it works",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "How the pull works" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Three steps. One surprise." },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_columns", "label": "Desktop columns", "default": "3", "options": [
+      { "value": "2", "label": "2" },
+      { "value": "3", "label": "3" }
+    ] },
+    { "type": "select", "id": "alignment", "label": "Heading alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "checkbox", "id": "show_step_numbers", "label": "Show step numbers", "default": true },
+    { "type": "checkbox", "id": "show_dividers", "label": "Show dividers", "default": true },
+    { "type": "color", "id": "background", "label": "Background", "default": "#2A0B20" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#FCF8F1" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#FCF8F1" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#E79BB9" },
+    { "type": "color", "id": "divider_color", "label": "Divider color", "default": "#5A2A49" },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 44, "max": 86, "step": 2, "unit": "px", "default": 66 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 56, "step": 2, "unit": "px", "default": 42 },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 108 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 42, "max": 120, "step": 2, "unit": "px", "default": 62 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 42, "max": 120, "step": 2, "unit": "px", "default": 74 }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "Step",
+      "settings": [
+        { "type": "text", "id": "number", "label": "Number", "default": "01" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Pick a size" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Choose a pocket-size capsule or a grand pull.</p>" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Mystery how it works",
+      "blocks": [
+        { "type": "step", "settings": { "number": "01", "heading": "Pick a size", "text": "<p>Go pocket-size or choose the grand pull.</p>" } },
+        { "type": "step", "settings": { "number": "02", "heading": "Share a little guidance", "text": "<p>Tell us the age range, theme, and who it is for, or leave it entirely to chance.</p>" } },
+        { "type": "step", "settings": { "number": "03", "heading": "We pull and pack", "text": "<p>We match available stock while keeping the collectible a genuine mystery.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,189 @@
+{% style %}
+  #shopify-section-{{ section.id }} .case-intro {
+    --ci-bg: {{ section.settings.background }};
+    --ci-heading: {{ section.settings.heading_color }};
+    --ci-accent: {{ section.settings.accent_color }};
+    --ci-body: {{ section.settings.body_color }};
+    --ci-divider: {{ section.settings.divider_color }};
+    --ci-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --ci-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --ci-eyebrow: {{ section.settings.eyebrow_size }}px;
+    --ci-body-size: {{ section.settings.body_size }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .case-intro {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="case-intro{% if section.settings.show_divider %} case-intro--divided{% endif %}">
+  <div class="case-intro__inner case-intro__inner--{{ section.settings.content_width }} case-intro__inner--{{ section.settings.desktop_layout }}">
+    <div class="case-intro__heading case-intro__heading--{{ section.settings.desktop_alignment }} case-intro__heading--mobile-{{ section.settings.mobile_alignment }}">
+      {% if section.settings.eyebrow != blank %}
+        <p>{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+        <h1>
+          {% if section.settings.heading != blank %}
+            <span>{{ section.settings.heading }}</span>
+          {% endif %}
+          {% if section.settings.accent_heading != blank %}
+            <em>{{ section.settings.accent_heading }}</em>
+          {% endif %}
+        </h1>
+      {% endif %}
+    </div>
+    {% if section.settings.body != blank %}
+      <div class="case-intro__body">{{ section.settings.body }}</div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-intro {
+    color: var(--ci-body);
+    background: var(--ci-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .case-intro--divided {
+    border-bottom: 1px solid var(--ci-divider);
+  }
+
+  .case-intro__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, .55fr);
+    gap: clamp(28px, 7vw, 120px);
+    align-items: end;
+  }
+
+  .case-intro__inner--stacked {
+    grid-template-columns: 1fr;
+  }
+
+  .case-intro__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .case-intro__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .case-intro__heading p {
+    margin: 0 0 12px;
+    color: var(--ci-body);
+    font-size: var(--ci-eyebrow);
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .case-intro__heading h1 {
+    margin: 0;
+    color: var(--ci-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--ci-heading-mobile), 5.4vw, var(--ci-heading-desktop));
+    font-weight: 500;
+    line-height: .98;
+  }
+
+  .case-intro__heading em {
+    color: var(--ci-accent);
+    font-style: italic;
+  }
+
+  .case-intro__heading--center {
+    text-align: center;
+  }
+
+  .case-intro__heading--right {
+    text-align: right;
+  }
+
+  .case-intro__body {
+    max-width: 450px;
+    justify-self: end;
+    color: var(--ci-body);
+    font-size: var(--ci-body-size);
+    line-height: 1.7;
+    opacity: .82;
+  }
+
+  .case-intro__body p {
+    margin: 0;
+  }
+
+  @media (max-width: 767px) {
+    .case-intro__inner,
+    .case-intro__inner--stacked {
+      width: min(100% - 36px, var(--page-width, 1360px));
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .case-intro__body {
+      justify-self: start;
+    }
+
+    .case-intro__heading--mobile-center {
+      text-align: center;
+    }
+
+    .case-intro__heading--mobile-right {
+      text-align: right;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Case Intro Banner",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Gacha custom studio - Las Vegas" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Make it yours." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "See it before we print it." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Select the phone, format, artwork, color, and print notes before sending your custom case to our shop team.</p>" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "wide", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_layout", "label": "Desktop layout", "default": "split", "options": [
+      { "value": "split", "label": "Split" },
+      { "value": "stacked", "label": "Stacked" }
+    ] },
+    { "type": "select", "id": "desktop_alignment", "label": "Desktop alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "select", "id": "mobile_alignment", "label": "Mobile alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "checkbox", "id": "show_divider", "label": "Show divider", "default": false },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 44, "max": 90, "step": 2, "unit": "px", "default": 64 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 58, "step": 2, "unit": "px", "default": 42 },
+    { "type": "range", "id": "eyebrow_size", "label": "Eyebrow size", "min": 10, "max": 14, "step": 1, "unit": "px", "default": 11 },
+    { "type": "range", "id": "body_size", "label": "Body size", "min": 12, "max": 17, "step": 1, "unit": "px", "default": 13 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#290A20" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#FCF8F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#E6A2BC" },
+    { "type": "color", "id": "body_color", "label": "Body color", "default": "#FCF8F2" },
+    { "type": "color", "id": "divider_color", "label": "Divider color", "default": "#5B2548" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 24, "max": 100, "step": 4, "unit": "px", "default": 36 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 24, "max": 100, "step": 4, "unit": "px", "default": 36 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 20, "max": 80, "step": 2, "unit": "px", "default": 30 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 20, "max": 80, "step": 2, "unit": "px", "default": 34 }
+  ],
+  "presets": [
+    { "name": "Case Intro Banner" }
+  ]
+}
+{% endschema %}

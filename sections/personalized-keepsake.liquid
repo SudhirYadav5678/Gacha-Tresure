@@ -1,0 +1,226 @@
+{% liquid
+  assign image = section.settings.image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .keepsake {
+    --keepsake-bg: {{ section.settings.background }};
+    --keepsake-text: {{ section.settings.text_color }};
+    --keepsake-accent: {{ section.settings.accent_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--keepsake-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--dark {
+    color: #fff9f2;
+    background: #2a071d;
+    border-color: #2a071d;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="keepsake">
+  <div class="keepsake__inner lux-page-width keepsake__inner--{{ section.settings.image_position }}">
+    <div class="keepsake__image">
+      {% if image != blank %}
+        {{ image | image_url: width: 1300 | image_tag: widths: '500, 760, 1000, 1300', sizes: '(max-width: 767px) 100vw, 42vw', loading: 'lazy', class: 'keepsake__photo' }}
+      {% else %}
+        <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+      {% endif %}
+    </div>
+    <div class="keepsake__content">
+      {% if section.settings.eyebrow != blank %}
+        <p class="keepsake__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>
+        {{ section.settings.heading }}
+        {% if section.settings.accent_heading != blank %}
+          <em>{{ section.settings.accent_heading }}</em>
+        {% endif %}
+      </h2>
+      {% if section.settings.body != blank %}
+        <div class="keepsake__body">{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.blocks.size > 0 %}
+        <dl class="keepsake__features">
+          {% for block in section.blocks %}
+            <div {{ block.shopify_attributes }}>
+              <dt>{{ block.settings.label }}</dt>
+              <dd>{{ block.settings.value }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="lux-button lux-button--dark" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .keepsake {
+    color: var(--keepsake-text);
+    background: var(--keepsake-bg);
+  }
+  .keepsake__inner {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: clamp(30px, 8vw, 120px);
+    align-items: center;
+  }
+  .keepsake__inner--right .keepsake__image { order: 2; }
+  .keepsake__image {
+    min-height: 420px;
+    overflow: hidden;
+    background: #eadcca;
+  }
+  .keepsake__photo,
+  .keepsake__image .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .keepsake__eyebrow {
+    margin: 0 0 14px;
+    color: var(--keepsake-accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .keepsake h2 {
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(40px, 5vw, 76px);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .keepsake h2 em {
+    display: block;
+    color: var(--keepsake-accent);
+    font-style: italic;
+  }
+  .keepsake__body {
+    max-width: 620px;
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: .74;
+  }
+  .keepsake__features {
+    width: min(100%, 580px);
+    margin: 34px 0;
+    border: 1px solid rgba(35,21,30,.14);
+  }
+  .keepsake__features div {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    border-bottom: 1px solid rgba(35,21,30,.14);
+  }
+  .keepsake__features div:last-child { border-bottom: 0; }
+  .keepsake dt,
+  .keepsake dd {
+    margin: 0;
+    padding: 13px 16px;
+    font-size: 12px;
+  }
+  .keepsake dt {
+    color: var(--keepsake-accent);
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-right: 1px solid rgba(35,21,30,.14);
+  }
+  @media (max-width: 860px) {
+    .keepsake__inner { grid-template-columns: 1fr; }
+    .keepsake__inner--right .keepsake__image { order: 0; }
+  }
+  @media (max-width: 520px) {
+    .keepsake__image { min-height: 320px; }
+    .keepsake__features div { grid-template-columns: 1fr; }
+    .keepsake dt { border-right: 0; border-bottom: 1px solid rgba(35,21,30,.1); }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Personalized keepsake",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "select", "id": "image_position", "label": "Image position", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Personalized keepsake" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "More than a photo." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "A keepsake that glows." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Turn a favorite face, place, or memory into a display piece made to glow softly at home.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Open the keepsake studio" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FFF9F2" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#23151E" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#C65E8A" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 96 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 96 }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "Feature",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Label", "default": "Material" },
+        { "type": "text", "id": "value", "label": "Value", "default": "Crystal" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Personalized keepsake" }
+  ]
+}
+{% endschema %}

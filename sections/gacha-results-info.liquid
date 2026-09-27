@@ -1,0 +1,90 @@
+{% style %}
+  #shopify-section-{{ section.id }} .gacha-results {
+    --gr-bg: {{ section.settings.background }};
+    --gr-text: {{ section.settings.text_color }};
+    --gr-border: {{ section.settings.border_color }};
+    --gr-size: {{ section.settings.font_size }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="gacha-results{% if section.settings.uppercase %} gacha-results--upper{% endif %}{% unless section.settings.mobile_visible %} gacha-results--mobile-hidden{% endunless %}">
+  <div class="gacha-results__inner">
+    {% if section.settings.show_dynamic_count and collection != blank %}
+      <p>{{ collection.products_count }} {{ section.settings.dynamic_count_label }}</p>
+    {% elsif section.settings.left_text != blank %}
+      <p>{{ section.settings.left_text }}</p>
+    {% endif %}
+
+    {% if section.settings.right_text != blank %}
+      <p>{{ section.settings.right_text }}</p>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .gacha-results {
+    color: var(--gr-text);
+    background: var(--gr-bg);
+    border-bottom: 1px solid var(--gr-border);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+    font-size: var(--gr-size);
+  }
+
+  .gacha-results--upper {
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .gacha-results__inner {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .gacha-results p {
+    margin: 0;
+    font-weight: 800;
+    opacity: .62;
+  }
+
+  @media (max-width: 767px) {
+    .gacha-results__inner {
+      width: min(100% - 36px, var(--page-width, 1360px));
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .gacha-results--mobile-hidden {
+      display: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gacha results info",
+  "settings": [
+    { "type": "checkbox", "id": "show_dynamic_count", "label": "Use dynamic collection product count", "default": true },
+    { "type": "text", "id": "dynamic_count_label", "label": "Dynamic count label", "default": "treasures found" },
+    { "type": "text", "id": "left_text", "label": "Left text", "default": "Featured finds - more arriving soon" },
+    { "type": "text", "id": "right_text", "label": "Right text", "default": "Capsules, collectibles, custom creations and 3D prints" },
+    { "type": "checkbox", "id": "uppercase", "label": "Uppercase text", "default": true },
+    { "type": "checkbox", "id": "mobile_visible", "label": "Show on mobile", "default": true },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FBF6EE" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#281920" },
+    { "type": "color", "id": "border_color", "label": "Border color", "default": "#DDD1C6" },
+    { "type": "range", "id": "font_size", "label": "Font size", "min": 10, "max": 14, "step": 1, "unit": "px", "default": 11 },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 8, "max": 36, "step": 2, "unit": "px", "default": 18 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 8, "max": 36, "step": 2, "unit": "px", "default": 18 }
+  ],
+  "presets": [
+    { "name": "Gacha results info" }
+  ]
+}
+{% endschema %}

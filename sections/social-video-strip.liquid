@@ -1,0 +1,260 @@
+{% style %}
+  #shopify-section-{{ section.id }} .social-strip {
+    --social-bg: {{ section.settings.background }};
+    --social-text: {{ section.settings.text_color }};
+    --social-accent: {{ section.settings.accent_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--social-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--outline {
+    color: inherit;
+    background: transparent;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="social-strip" data-social-strip>
+  <div class="social-strip__header lux-page-width">
+    <div>
+      {% if section.settings.eyebrow != blank %}
+        <p>{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>{{ section.settings.heading }}</h2>
+    </div>
+    {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+      <a class="lux-button lux-button--outline" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+    {% endif %}
+  </div>
+  <div class="social-strip__viewport">
+    <div class="social-strip__rail" data-social-rail>
+      {% if section.blocks.size > 0 %}
+        {% for block in section.blocks %}
+          <article class="social-card" {{ block.shopify_attributes }}>
+            {% if block.settings.video != blank %}
+              {{ block.settings.video | video_tag: autoplay: section.settings.autoplay, loop: section.settings.loop_video, muted: true, controls: false, image_size: '720x', class: 'social-card__media' }}
+            {% elsif block.settings.image != blank %}
+              {{ block.settings.image | image_url: width: 720 | image_tag: widths: '320, 480, 640, 720', sizes: '(max-width: 767px) 76vw, 18vw', loading: 'lazy', class: 'social-card__media' }}
+            {% else %}
+              <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+            {% endif %}
+            {% if block.settings.caption != blank %}
+              <p>{{ block.settings.caption }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        {% for index in (1..6) %}
+          <article class="social-card">
+            <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+            <p>Reveal moment {{ index }}</p>
+          </article>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+  {% if section.settings.show_arrows %}
+    <div class="social-strip__controls lux-page-width">
+      <button type="button" data-social-prev aria-label="Previous media">‹</button>
+      <button type="button" data-social-next aria-label="Next media">›</button>
+    </div>
+  {% endif %}
+</section>
+
+{% stylesheet %}
+  .social-strip {
+    color: var(--social-text);
+    background: var(--social-bg);
+    overflow: hidden;
+  }
+  .social-strip__header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: clamp(28px, 4vw, 52px);
+  }
+  .social-strip__header p {
+    margin: 0 0 14px;
+    color: var(--social-accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .social-strip h2 {
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(42px, 5.2vw, 80px);
+    font-weight: 500;
+    line-height: 1;
+    white-space: pre-line;
+  }
+  .social-strip h2 em {
+    color: var(--social-accent);
+    font-style: italic;
+  }
+  .social-strip__viewport {
+    width: 100%;
+    overflow: hidden;
+  }
+  .social-strip__rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(220px, 18vw, 330px);
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-inline: max(24px, calc((100vw - var(--page-width)) / 2));
+    padding-bottom: 8px;
+  }
+  .social-card {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    scroll-snap-align: start;
+    background: #2a071d;
+    border: 1px solid rgba(255,255,255,.15);
+  }
+  .social-card__media,
+  .social-card .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .social-card p {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    margin: 0;
+    padding: 10px 12px;
+    color: var(--lux-ivory);
+    background: rgba(23,9,19,.72);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .social-strip__controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .social-strip__controls button {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 0;
+    color: var(--social-text);
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .social-strip__controls button:hover { background: rgba(255,255,255,.08); }
+  .social-strip__controls button:focus-visible {
+    outline: 2px solid var(--social-accent);
+    outline-offset: 3px;
+  }
+  @media (max-width: 767px) {
+    .social-strip__header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .social-strip__rail {
+      grid-auto-columns: 74%;
+      padding-inline: 18px;
+    }
+    .social-strip__controls { display: none; }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.querySelectorAll('[data-social-strip]').forEach((section) => {
+    const rail = section.querySelector('[data-social-rail]');
+    const prev = section.querySelector('[data-social-prev]');
+    const next = section.querySelector('[data-social-next]');
+    if (!rail || !prev || !next) return;
+    const step = () => Math.max(240, rail.clientWidth * 0.8);
+    prev.addEventListener('click', () => rail.scrollBy({ left: -step(), behavior: 'smooth' }));
+    next.addEventListener('click', () => rail.scrollBy({ left: step(), behavior: 'smooth' }));
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Social video strip",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Reveals in motion" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "See the treasure. <em>Watch it take shape.</em>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Watch more" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay hosted videos", "default": true },
+    { "type": "checkbox", "id": "loop_video", "label": "Loop hosted videos", "default": true },
+    { "type": "checkbox", "id": "show_arrows", "label": "Show desktop arrows", "default": true },
+    { "type": "color", "id": "background", "label": "Background", "default": "#2A071D" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#FFF9F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#F0AFCA" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 92 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 96 }
+  ],
+  "blocks": [
+    {
+      "type": "media",
+      "name": "Media",
+      "settings": [
+        { "type": "video", "id": "video", "label": "Shopify-hosted video" },
+        { "type": "image_picker", "id": "image", "label": "Fallback image" },
+        { "type": "text", "id": "caption", "label": "Caption", "default": "A collector reveal" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Social video strip" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,114 @@
+{% liquid
+  assign message = section.settings.message
+  assign link_label = section.settings.link_label
+  assign link_url = section.settings.link_url
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .lux-announcement {
+    --bar-bg: {{ section.settings.background }};
+    --bar-text: {{ section.settings.text_color }};
+    --bar-padding: {{ section.settings.padding }}px;
+    --bar-size: {{ section.settings.font_size }}px;
+    background: var(--bar-bg);
+    color: var(--bar-text);
+    font-size: var(--bar-size);
+  }
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstyle %}
+
+<div class="lux-announcement lux-announcement--{{ section.settings.alignment }}">
+  <div class="lux-announcement__inner lux-page-width">
+    <div class="lux-announcement__message">
+      {% if section.settings.show_icon %}
+        <span class="lux-announcement__icon" aria-hidden="true">✦</span>
+      {% endif %}
+      {% if message != blank %}
+        <span>{{ message }}</span>
+      {% endif %}
+      {% if link_label != blank and link_url != blank %}
+        <a class="lux-announcement__link" href="{{ link_url }}">{{ link_label }}</a>
+      {% endif %}
+    </div>
+    {% if section.settings.utility_text != blank %}
+      <span class="lux-announcement__utility">{{ section.settings.utility_text }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .lux-announcement__inner {
+    min-height: 34px;
+    padding-block: var(--bar-padding);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .lux-announcement--center .lux-announcement__inner { justify-content: center; }
+  .lux-announcement--right .lux-announcement__inner { justify-content: flex-end; }
+  .lux-announcement__message {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    font-weight: 650;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .lux-announcement__icon { color: var(--lux-pink); }
+  .lux-announcement__link {
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .lux-announcement__utility {
+    font-size: .9em;
+    opacity: .78;
+    white-space: nowrap;
+  }
+  @media (max-width: 767px) {
+    .lux-announcement__inner {
+      width: min(100% - 32px, var(--page-width));
+      justify-content: center;
+      text-align: center;
+    }
+    .lux-announcement__message {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .lux-announcement__utility { display: none; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Luxury announcement",
+  "settings": [
+    { "type": "text", "id": "message", "label": "Message", "default": "New treasures arrive weekly" },
+    { "type": "checkbox", "id": "show_icon", "label": "Show icon", "default": true },
+    { "type": "text", "id": "link_label", "label": "Link label", "default": "Shop arrivals" },
+    { "type": "url", "id": "link_url", "label": "Link" },
+    { "type": "text", "id": "utility_text", "label": "Desktop utility text", "default": "Gacha Treasures" },
+    { "type": "select", "id": "alignment", "label": "Alignment", "default": "center", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "color", "id": "background", "label": "Background", "default": "#2A071D" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#FFF9F2" },
+    { "type": "range", "id": "font_size", "label": "Font size", "min": 10, "max": 16, "step": 1, "unit": "px", "default": 11 },
+    { "type": "range", "id": "padding", "label": "Vertical padding", "min": 2, "max": 14, "step": 1, "unit": "px", "default": 5 }
+  ],
+  "presets": [
+    { "name": "Luxury announcement" }
+  ]
+}
+{% endschema %}

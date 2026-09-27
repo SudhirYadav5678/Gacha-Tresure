@@ -1,0 +1,203 @@
+{% style %}
+  #shopify-section-{{ section.id }} .visit-faq {
+    --vf-bg: {{ section.settings.background }};
+    --vf-text: {{ section.settings.text_color }};
+    --vf-muted: {{ section.settings.muted_text_color }};
+    --vf-accent: {{ section.settings.accent_color }};
+    --vf-border: {{ section.settings.divider_color }};
+    --vf-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --vf-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .visit-faq {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="visit-faq">
+  <div class="visit-faq__inner visit-faq__inner--{{ section.settings.content_width }}">
+    <div class="visit-faq__intro">
+      {% if section.settings.eyebrow != blank %}
+        <p class="visit-faq__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2>{{ section.settings.heading }}</h2>
+      {% endif %}
+    </div>
+
+    {% if section.blocks.size > 0 %}
+      <div class="visit-faq__items">
+        {% for block in section.blocks %}
+          <details class="visit-faq-item" {% if section.settings.open_first and forloop.first %}open{% endif %} {{ block.shopify_attributes }}>
+            <summary>
+              <span>{{ block.settings.question }}</span>
+              <span aria-hidden="true">+</span>
+            </summary>
+            <div class="visit-faq-item__answer">{{ block.settings.answer }}</div>
+          </details>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .visit-faq {
+    color: var(--vf-text);
+    background: var(--vf-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .visit-faq__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(240px, .45fr) minmax(0, 1fr);
+    gap: clamp(28px, 7vw, 110px);
+  }
+
+  .visit-faq__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .visit-faq__inner--narrow {
+    width: min(1080px, calc(100vw - 96px));
+  }
+
+  .visit-faq__eyebrow {
+    margin: 0 0 18px;
+    color: var(--vf-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .visit-faq h2 {
+    margin: 0;
+    color: var(--vf-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--vf-heading-mobile), 4vw, var(--vf-heading-desktop));
+    font-weight: 500;
+    line-height: 1.06;
+  }
+
+  .visit-faq__items {
+    border-top: 1px solid var(--vf-border);
+  }
+
+  .visit-faq-item {
+    border-bottom: 1px solid var(--vf-border);
+  }
+
+  .visit-faq-item summary {
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  .visit-faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .visit-faq-item summary:focus-visible {
+    outline: 2px solid var(--vf-accent);
+    outline-offset: 4px;
+  }
+
+  .visit-faq-item summary span:last-child {
+    color: var(--vf-accent);
+    transition: transform .2s ease;
+  }
+
+  .visit-faq-item[open] summary span:last-child {
+    transform: rotate(45deg);
+  }
+
+  .visit-faq-item__answer {
+    max-width: 760px;
+    padding: 0 0 24px;
+    color: var(--vf-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .visit-faq-item__answer p {
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .visit-faq__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .visit-faq__inner--page,
+    .visit-faq__inner--narrow {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .visit-faq-item summary span:last-child {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Visit Contact FAQ",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Good to know" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Before you visit." },
+    { "type": "checkbox", "id": "open_first", "label": "Open first item", "default": true },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "narrow", "label": "Narrow" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 38, "max": 72, "step": 2, "unit": "px", "default": 54 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 30, "max": 50, "step": 2, "unit": "px", "default": 36 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FCF8F2" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#2D1723" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#786A70" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C83E76" },
+    { "type": "color", "id": "divider_color", "label": "Divider", "default": "#DDD1C7" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 140, "step": 4, "unit": "px", "default": 84 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 140, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 36, "max": 90, "step": 2, "unit": "px", "default": 58 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 36, "max": 90, "step": 2, "unit": "px", "default": 60 }
+  ],
+  "blocks": [
+    {
+      "type": "question",
+      "name": "Question",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question", "default": "Where are your Las Vegas locations?" },
+        { "type": "richtext", "id": "answer", "label": "Answer", "default": "<p>Visit the location cards above for current addresses, hours, and direction links.</p>" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Visit Contact FAQ",
+      "blocks": [
+        { "type": "question" },
+        { "type": "question", "settings": { "question": "Can I ask about a specific collectible?", "answer": "<p>Yes. Use the contact form and include as much detail as possible so the shop can reply with useful guidance.</p>" } },
+        { "type": "question", "settings": { "question": "Are custom cases made in-store?", "answer": "<p>Custom case availability can vary by location and timing. Send a message before visiting if you need a specific model or design service.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

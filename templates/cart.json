@@ -1,0 +1,23 @@
+{
+  "sections": {
+    "main": {
+      "type": "treasure-cart",
+      "settings": {
+        "eyebrow": "Your treasure bag",
+        "heading": "The bag is waiting.",
+        "empty_icon": "BAG",
+        "empty_heading": "No treasures-yet.",
+        "empty_text": "<p>Start with a mystery pull or browse the newest finds.</p>",
+        "primary_label": "Browse the district",
+        "primary_link": "/collections/all",
+        "secondary_label": "Try a mystery capsule",
+        "secondary_link": "/products/mystery-gashapon-capsule",
+        "continue_label": "Continue the hunt",
+        "continue_link": "/collections/all"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

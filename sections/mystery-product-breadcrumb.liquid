@@ -1,0 +1,112 @@
+{% style %}
+  #shopify-section-{{ section.id }} .mystery-breadcrumb {
+    --mb-bg: {{ section.settings.background }};
+    --mb-text: {{ section.settings.text_color }};
+    --mb-link: {{ section.settings.link_color }};
+    --mb-size: {{ section.settings.font_size }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+{% if section.settings.show_breadcrumb %}
+  <nav class="mystery-breadcrumb{% if section.settings.uppercase %} mystery-breadcrumb--uppercase{% endif %}{% unless section.settings.mobile_visible %} mystery-breadcrumb--mobile-hidden{% endunless %}" aria-label="Breadcrumb">
+    <ol class="mystery-breadcrumb__inner mystery-breadcrumb__inner--{{ section.settings.content_width }}">
+      <li><a href="{{ routes.root_url }}">Home</a></li>
+      {% if collection != blank %}
+        <li aria-hidden="true">{{ section.settings.separator }}</li>
+        <li><a href="{{ collection.url }}">{{ collection.title }}</a></li>
+      {% elsif product.collections.first != blank %}
+        <li aria-hidden="true">{{ section.settings.separator }}</li>
+        <li><a href="{{ product.collections.first.url }}">{{ product.collections.first.title }}</a></li>
+      {% endif %}
+      <li aria-hidden="true">{{ section.settings.separator }}</li>
+      <li aria-current="page">{{ product.title }}</li>
+    </ol>
+  </nav>
+{% endif %}
+
+{% stylesheet %}
+  .mystery-breadcrumb {
+    color: var(--mb-text);
+    background: var(--mb-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+    font-size: var(--mb-size);
+  }
+
+  .mystery-breadcrumb--uppercase {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+  }
+
+  .mystery-breadcrumb__inner {
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    list-style: none;
+    opacity: .72;
+  }
+
+  .mystery-breadcrumb__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .mystery-breadcrumb__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .mystery-breadcrumb a {
+    color: var(--mb-link);
+    text-decoration: none;
+  }
+
+  .mystery-breadcrumb a:hover {
+    color: inherit;
+  }
+
+  .mystery-breadcrumb a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 767px) {
+    .mystery-breadcrumb__inner--page,
+    .mystery-breadcrumb__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+      gap: 8px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .mystery-breadcrumb--mobile-hidden {
+      display: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Mystery breadcrumb",
+  "settings": [
+    { "type": "checkbox", "id": "show_breadcrumb", "label": "Show breadcrumb", "default": true },
+    { "type": "checkbox", "id": "uppercase", "label": "Uppercase", "default": true },
+    { "type": "checkbox", "id": "mobile_visible", "label": "Show on mobile", "default": true },
+    { "type": "text", "id": "separator", "label": "Separator", "default": "/" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "range", "id": "font_size", "label": "Font size", "min": 10, "max": 14, "step": 1, "unit": "px", "default": 11 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F8F2E9" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#74676D" },
+    { "type": "color", "id": "link_color", "label": "Link color", "default": "#74676D" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 8, "max": 48, "step": 2, "unit": "px", "default": 28 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 8, "max": 48, "step": 2, "unit": "px", "default": 18 }
+  ],
+  "presets": [
+    { "name": "Mystery breadcrumb" }
+  ]
+}
+{% endschema %}

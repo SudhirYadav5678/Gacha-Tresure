@@ -1,0 +1,240 @@
+{% liquid
+  assign story_image = section.settings.image
+  assign mobile_image = section.settings.mobile_image | default: story_image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .mystery-story {
+    --mst-bg: {{ section.settings.background }};
+    --mst-text: {{ section.settings.text_color }};
+    --mst-muted: {{ section.settings.muted_text_color }};
+    --mst-accent: {{ section.settings.accent_color }};
+    --mst-image-width: {{ section.settings.image_width }}%;
+    --mst-gap: {{ section.settings.column_gap }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .mystery-story {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="mystery-story mystery-story--{{ section.settings.layout_direction }}">
+  <div class="mystery-story__inner mystery-story__inner--{{ section.settings.content_width }}">
+    <div class="mystery-story__media">
+      {% if story_image != blank %}
+        <picture>
+          {% if mobile_image != blank %}
+            <source media="(max-width: 767px)" srcset="{{ mobile_image | image_url: width: 900 }}">
+          {% endif %}
+          {{ story_image | image_url: width: 1400 | image_tag: widths: '540, 720, 900, 1200, 1400', sizes: '(max-width: 767px) 100vw, 50vw', loading: 'lazy', class: 'mystery-story__image' }}
+        </picture>
+      {% else %}
+        <div class="mystery-story__placeholder">
+          {{ 'lifestyle-1' | placeholder_svg_tag }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="mystery-story__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p class="mystery-story__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+        <h2>
+          {% if section.settings.heading != blank %}
+            <span>{{ section.settings.heading }}</span>
+          {% endif %}
+          {% if section.settings.accent_heading != blank %}
+            <em>{{ section.settings.accent_heading }}</em>
+          {% endif %}
+        </h2>
+      {% endif %}
+      {% if section.settings.body != blank %}
+        <div class="mystery-story__body">{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="mystery-story__button" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .mystery-story {
+    color: var(--mst-text);
+    background: var(--mst-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .mystery-story__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, var(--mst-image-width)) minmax(0, calc(100% - var(--mst-image-width)));
+    gap: var(--mst-gap);
+    align-items: center;
+  }
+
+  .mystery-story--text_first .mystery-story__media {
+    order: 2;
+  }
+
+  .mystery-story__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .mystery-story__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .mystery-story__media {
+    min-width: 0;
+    overflow: hidden;
+    background: #eae0d4;
+  }
+
+  .mystery-story__image,
+  .mystery-story__placeholder {
+    width: 100%;
+    min-height: 520px;
+    object-fit: cover;
+  }
+
+  .mystery-story__placeholder {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #f8f2e9, #dbc7b2);
+  }
+
+  .mystery-story__placeholder svg {
+    width: min(260px, 52%);
+    opacity: .4;
+  }
+
+  .mystery-story__copy {
+    max-width: 620px;
+  }
+
+  .mystery-story__eyebrow {
+    margin: 0 0 18px;
+    color: var(--mst-accent);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .mystery-story h2 {
+    margin: 0;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(42px, 5vw, 74px);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .mystery-story h2 span,
+  .mystery-story h2 em {
+    display: block;
+  }
+
+  .mystery-story h2 em {
+    color: var(--mst-accent);
+    font-style: italic;
+  }
+
+  .mystery-story__body {
+    margin-top: 24px;
+    color: var(--mst-muted);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .mystery-story__body p {
+    margin: 0;
+  }
+
+  .mystery-story__button {
+    min-height: 44px;
+    margin-top: 30px;
+    padding-inline: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--mst-accent);
+    border: 1px solid var(--mst-accent);
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .mystery-story__button:focus-visible {
+    outline: 2px solid var(--mst-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .mystery-story__inner {
+      grid-template-columns: 1fr;
+    }
+
+    .mystery-story--text_first .mystery-story__media {
+      order: 0;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .mystery-story__inner--page,
+    .mystery-story__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .mystery-story__image,
+    .mystery-story__placeholder {
+      min-height: 340px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Mystery product story",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Desktop image" },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "A little story in every shell" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Picked with care." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "Kept a mystery." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Use this section for collector notes, gift guidance, store pickup details, or a seasonal capsule story.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "layout_direction", "label": "Layout direction", "default": "image_first", "options": [
+      { "value": "image_first", "label": "Image first" },
+      { "value": "text_first", "label": "Text first" }
+    ] },
+    { "type": "range", "id": "image_width", "label": "Desktop image width", "min": 40, "max": 60, "step": 1, "unit": "%", "default": 50 },
+    { "type": "range", "id": "column_gap", "label": "Column gap", "min": 28, "max": 110, "step": 2, "unit": "px", "default": 74 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FCF8F1" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#74676D" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#C73F76" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 96 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 32, "max": 100, "step": 2, "unit": "px", "default": 56 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 32, "max": 100, "step": 2, "unit": "px", "default": 64 }
+  ],
+  "presets": [
+    { "name": "Mystery product story" }
+  ]
+}
+{% endschema %}

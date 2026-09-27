@@ -1,0 +1,1315 @@
+{% liquid
+  assign hero_image = section.settings.image
+  assign mobile_image = section.settings.mobile_image | default: hero_image
+
+  assign has_intro = false
+
+  if section.settings.eyebrow != blank
+    assign has_intro = true
+  endif
+
+  if section.settings.heading != blank
+    assign has_intro = true
+  endif
+
+  if section.settings.body != blank
+    assign has_intro = true
+  endif
+
+  if section.settings.primary_label != blank
+    assign has_intro = true
+  endif
+
+  if section.settings.secondary_label != blank
+    assign has_intro = true
+  endif
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .cinematic-hero {
+    --hero-text: {{ section.settings.text_color }};
+    --hero-accent: {{ section.settings.accent_color }};
+    --hero-muted: {{ section.settings.muted_text_color }};
+    --hero-overlay: {{ section.settings.overlay_color }};
+    --hero-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    --hero-card-bg: {{ section.settings.card_background }};
+    --hero-card-border: {{ section.settings.card_border }};
+    --hero-card-badge-bg: {{ section.settings.card_badge_background }};
+    --hero-card-badge-text: {{ section.settings.card_badge_text }};
+    --hero-min-height: {{ section.settings.desktop_min_height }}px;
+    --hero-mobile-min-height: {{ section.settings.mobile_min_height }}px;
+    --hero-content-width: {{ section.settings.content_width }}px;
+    --hero-market-width: {{ section.settings.market_content_width }}px;
+    --hero-cards-width: {{ section.settings.cards_width }}px;
+    --hero-gap: {{ section.settings.card_gap }}px;
+    --hero-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --hero-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --hero-market-heading: {{ section.settings.market_heading_size }}px;
+    --hero-card-height: {{ section.settings.card_height }}px;
+    --hero-card-image-height: {{ section.settings.card_image_height }}px;
+    --hero-focal: {{ section.settings.image_position }};
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .cinematic-hero {
+      --hero-card-height: auto;
+    }
+  }
+{% endstyle %}
+
+<section class="cinematic-hero">
+
+  <div class="cinematic-hero__media" aria-hidden="true">
+    {% if hero_image != blank %}
+      <picture>
+
+        {% if mobile_image != blank %}
+          <source
+            media="(max-width: 767px)"
+            srcset="{{ mobile_image | image_url: width: 900 }}"
+          >
+        {% endif %}
+
+        {{
+          hero_image
+          | image_url: width: 2400
+          | image_tag:
+            widths: '750, 1100, 1500, 2000, 2400',
+            sizes: '100vw',
+            loading: 'eager',
+            class: 'cinematic-hero__image'
+        }}
+
+      </picture>
+    {% else %}
+      <div class="cinematic-hero__placeholder">
+        {{ 'lifestyle-1' | placeholder_svg_tag }}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="cinematic-hero__shade"></div>
+
+  <div class="cinematic-hero__inner{% unless has_intro %} cinematic-hero__inner--district-only{% endunless %}">
+
+    {% if has_intro %}
+
+      <div class="cinematic-hero__top">
+
+        <div class="cinematic-hero__content">
+
+          {% if section.settings.eyebrow != blank %}
+            <p class="cinematic-hero__eyebrow">
+              {{ section.settings.eyebrow }}
+            </p>
+          {% endif %}
+
+          {% if section.settings.heading != blank %}
+            <h1>
+              {{ section.settings.heading }}
+            </h1>
+          {% endif %}
+
+          {% if section.settings.body != blank %}
+            <div class="cinematic-hero__body">
+              {{ section.settings.body }}
+            </div>
+          {% endif %}
+
+          {% if section.settings.primary_label != blank
+            or section.settings.secondary_label != blank
+          %}
+
+            <div class="cinematic-hero__buttons">
+
+              {% if section.settings.primary_label != blank
+                and section.settings.primary_link != blank
+              %}
+                <a
+                  class="cinematic-hero__button cinematic-hero__button--light"
+                  href="{{ section.settings.primary_link }}"
+                >
+                  {{ section.settings.primary_label }}
+                </a>
+              {% endif %}
+
+              {% if section.settings.secondary_label != blank
+                and section.settings.secondary_link != blank
+              %}
+                <a
+                  class="cinematic-hero__button cinematic-hero__button--outline"
+                  href="{{ section.settings.secondary_link }}"
+                >
+                  {{ section.settings.secondary_label }}
+                </a>
+              {% endif %}
+
+            </div>
+
+          {% endif %}
+
+        </div>
+
+      </div>
+
+    {% endif %}
+
+    <div class="cinematic-hero__districts">
+
+      <div class="cinematic-hero__market">
+
+        {% if section.settings.market_eyebrow != blank %}
+          <p class="cinematic-hero__market-eyebrow">
+            {{ section.settings.market_eyebrow }}
+          </p>
+        {% endif %}
+
+        {% if section.settings.market_heading != blank
+          or section.settings.market_accent_heading != blank
+        %}
+
+          <h2>
+
+            {% if section.settings.market_heading != blank %}
+              <span>
+                {{ section.settings.market_heading }}
+              </span>
+            {% endif %}
+
+            {% if section.settings.market_accent_heading != blank %}
+              <em>
+                {{ section.settings.market_accent_heading }}
+              </em>
+            {% endif %}
+
+          </h2>
+
+        {% endif %}
+
+        {% if section.settings.market_body != blank %}
+          <div class="cinematic-hero__market-body">
+            {{ section.settings.market_body }}
+          </div>
+        {% endif %}
+
+      </div>
+
+      {% if section.blocks.size > 0 %}
+
+        <div
+          class="cinematic-hero__cards"
+          aria-label="{{ section.settings.cards_label }}"
+        >
+
+          {% for block in section.blocks %}
+
+            {% liquid
+              assign collection = block.settings.collection
+              assign title = block.settings.title | default: collection.title
+              assign link = block.settings.custom_link | default: collection.url
+              assign image = block.settings.image | default: collection.featured_image
+              assign mobile_card_image = block.settings.mobile_image | default: image
+            %}
+
+            <article
+              class="cinematic-hero-card"
+              {{ block.shopify_attributes }}
+            >
+
+              {% if link != blank %}
+                <a
+                  class="cinematic-hero-card__link"
+                  href="{{ link }}"
+                  aria-label="{{ title | escape }}"
+                >
+              {% endif %}
+
+                <div class="cinematic-hero-card__media">
+
+                  {% if image != blank %}
+
+                    <picture>
+
+                      {% if mobile_card_image != blank %}
+                        <source
+                          media="(max-width: 767px)"
+                          srcset="{{ mobile_card_image | image_url: width: 720 }}"
+                        >
+                      {% endif %}
+
+                      {{
+                        image
+                        | image_url: width: 1200
+                        | image_tag:
+                          widths: '500, 720, 900, 1200',
+                          sizes: '(max-width: 767px) 90vw, 36vw',
+                          loading: 'eager',
+                          class: 'cinematic-hero-card__image'
+                      }}
+
+                    </picture>
+
+                  {% else %}
+
+                    <div class="cinematic-hero__placeholder">
+                      {{ 'collection-1' | placeholder_svg_tag }}
+                    </div>
+
+                  {% endif %}
+
+                </div>
+
+                <div class="cinematic-hero-card__content">
+
+                  {% if block.settings.eyebrow != blank %}
+                    <p class="cinematic-hero-card__badge">
+                      {{ block.settings.eyebrow }}
+                    </p>
+                  {% endif %}
+
+                  {% if title != blank %}
+                    <h3>
+                      {{ title }}
+                    </h3>
+                  {% endif %}
+
+                  {% if block.settings.description != blank %}
+                    <p class="cinematic-hero-card__description">
+                      {{ block.settings.description }}
+                    </p>
+                  {% endif %}
+
+                  {% if block.settings.button_label != blank %}
+                    <span class="cinematic-hero-card__cta">
+                      {{ block.settings.button_label }}
+                    </span>
+                  {% endif %}
+
+                </div>
+
+              {% if link != blank %}
+                </a>
+              {% endif %}
+
+            </article>
+
+          {% endfor %}
+
+        </div>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</section>
+
+{% stylesheet %}
+
+  .cinematic-hero {
+    position: relative;
+    min-height: var(--hero-min-height);
+    overflow: hidden;
+    color: var(--hero-text);
+    background: #170913;
+    font-family:
+      var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .cinematic-hero__media,
+  .cinematic-hero__media picture,
+  .cinematic-hero__image,
+  .cinematic-hero__shade {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cinematic-hero__image {
+    object-fit: cover;
+    object-position: var(--hero-focal);
+    transform: scale(1.01);
+  }
+
+  .cinematic-hero__placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(
+        135deg,
+        #4b1735,
+        #170913 68%
+      );
+  }
+
+  .cinematic-hero__placeholder svg {
+    width: min(220px, 56%);
+    opacity: 0.28;
+  }
+
+  .cinematic-hero__shade {
+    z-index: 1;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(23, 9, 19, 0.98) 0%,
+        rgba(23, 9, 19, 0.78) 34%,
+        rgba(23, 9, 19, 0.28) 70%,
+        rgba(23, 9, 19, 0.68) 100%
+      ),
+      linear-gradient(
+        0deg,
+        rgba(23, 9, 19, 0.96) 0%,
+        rgba(23, 9, 19, 0.72) 24%,
+        rgba(23, 9, 19, 0.08) 68%
+      ),
+      var(--hero-overlay);
+
+    opacity: var(--hero-overlay-opacity);
+  }
+
+  /* ==========================================
+     MAIN HERO CONTAINER
+  ========================================== */
+
+  .cinematic-hero__inner {
+    position: relative;
+    z-index: 2;
+
+    width: min(
+      var(--page-width, 1720px),
+      calc(100vw - 96px)
+    );
+
+    min-height: var(--hero-min-height);
+
+    margin-inline: auto;
+
+    padding-top: clamp(70px, 7vw, 110px);
+    padding-bottom: clamp(70px, 7vw, 110px);
+
+    display: grid;
+    grid-template-rows: auto auto;
+
+    align-content: center;
+
+    gap: clamp(32px, 4vw, 64px);
+  }
+
+  /*
+    IMPORTANT:
+    When the upper hero intro isn't being used,
+    the complete district layout is vertically
+    centered in the hero.
+  */
+
+  .cinematic-hero__inner--district-only {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    min-height: var(--hero-min-height);
+
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+
+  .cinematic-hero__inner--district-only
+  .cinematic-hero__districts {
+    width: 100%;
+    margin: auto 0;
+  }
+
+  /* ==========================================
+     INTRO
+  ========================================== */
+
+  .cinematic-hero__top {
+    display: flex;
+    align-items: center;
+  }
+
+  .cinematic-hero__content {
+    width: min(
+      100%,
+      var(--hero-content-width)
+    );
+
+    animation:
+      cinematic-hero-rise
+      0.65s ease both;
+  }
+
+  .cinematic-hero__eyebrow,
+  .cinematic-hero__market-eyebrow {
+    margin: 0;
+
+    color: var(--hero-text);
+
+    font-size: 12px;
+    font-weight: 850;
+
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+
+    opacity: 0.84;
+  }
+
+  .cinematic-hero h1 {
+    margin: 26px 0 0;
+
+    color: var(--hero-accent);
+
+    font-family:
+      var(--font-heading-family, Georgia, serif);
+
+    font-size: clamp(
+      var(--hero-heading-mobile),
+      6vw,
+      var(--hero-heading-desktop)
+    );
+
+    font-style: italic;
+    font-weight: 500;
+    line-height: 0.92;
+  }
+
+  .cinematic-hero__body {
+    width: min(100%, 620px);
+
+    margin-top: 26px;
+
+    color: var(--hero-text);
+
+    font-size:
+      clamp(
+        15px,
+        1.12vw,
+        18px
+      );
+
+    font-weight: 650;
+    line-height: 1.65;
+
+    opacity: 0.9;
+  }
+
+  .cinematic-hero__body p,
+  .cinematic-hero__market-body p,
+  .cinematic-hero-card__description {
+    margin: 0;
+  }
+
+  .cinematic-hero__buttons {
+    margin-top: 34px;
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 13px;
+  }
+
+  .cinematic-hero__button {
+    min-height: 44px;
+
+    padding: 0 22px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid currentColor;
+
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1;
+
+    letter-spacing: 0.04em;
+
+    text-transform: uppercase;
+    text-decoration: none;
+
+    transition:
+      transform 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  .cinematic-hero__button--light {
+    color: #170913;
+
+    background: #fff9f2;
+    border-color: #fff9f2;
+  }
+
+  .cinematic-hero__button--outline {
+    color: inherit;
+    background: transparent;
+  }
+
+  /* ==========================================
+     DISTRICT SECTION
+  ========================================== */
+
+  .cinematic-hero__districts {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+      minmax(280px, var(--hero-market-width))
+      minmax(0, var(--hero-cards-width));
+
+    gap: clamp(42px, 5vw, 78px);
+
+    align-items: center;
+  }
+
+  .cinematic-hero__market {
+    padding-bottom: 0;
+  }
+
+  .cinematic-hero__market-eyebrow {
+    color: var(--hero-accent);
+
+    margin-bottom: 24px;
+  }
+
+  .cinematic-hero__market h2 {
+    margin: 0;
+
+    color: var(--hero-text);
+
+    font-family:
+      var(--font-heading-family, Georgia, serif);
+
+    font-size: clamp(
+      42px,
+      4.2vw,
+      var(--hero-market-heading)
+    );
+
+    font-weight: 500;
+
+    line-height: 0.98;
+  }
+
+  .cinematic-hero__market h2 span,
+  .cinematic-hero__market h2 em {
+    display: block;
+  }
+
+  .cinematic-hero__market h2 em {
+    color: var(--hero-accent);
+
+    font-style: italic;
+  }
+
+  .cinematic-hero__market-body {
+    max-width: 480px;
+
+    margin-top: 28px;
+
+    color: var(--hero-text);
+
+    font-size: 14px;
+
+    line-height: 1.75;
+
+    opacity: 0.86;
+  }
+
+  /* ==========================================
+     DISTRICT CARDS
+  ========================================== */
+
+  .cinematic-hero__cards {
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: var(--hero-gap);
+  }
+
+  .cinematic-hero-card {
+    min-height: var(--hero-card-height);
+
+    overflow: hidden;
+
+    color: var(--hero-text);
+
+    background: var(--hero-card-bg);
+
+    border:
+      1px solid
+      var(--hero-card-border);
+  }
+
+  .cinematic-hero-card__link {
+    min-height: inherit;
+
+    display: grid;
+
+    grid-template-rows:
+      var(--hero-card-image-height)
+      1fr;
+
+    color: inherit;
+
+    text-decoration: none;
+  }
+
+  .cinematic-hero-card__media {
+    min-height:
+      var(--hero-card-image-height);
+
+    overflow: hidden;
+
+    background: #2a071d;
+  }
+
+  .cinematic-hero-card__media picture,
+  .cinematic-hero-card__image {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+  }
+
+  .cinematic-hero-card__image {
+    object-fit: cover;
+
+    object-position: center;
+
+    transition:
+      transform 0.45s ease;
+  }
+
+  .cinematic-hero-card__content {
+    padding:
+      clamp(
+        22px,
+        2.8vw,
+        34px
+      );
+  }
+
+  .cinematic-hero-card__badge {
+    width: fit-content;
+
+    margin:
+      0 0 18px;
+
+    padding:
+      8px 12px;
+
+    color:
+      var(--hero-card-badge-text);
+
+    background:
+      var(--hero-card-badge-bg);
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+    letter-spacing: 0.12em;
+
+    text-transform: uppercase;
+  }
+
+  .cinematic-hero-card h3 {
+    margin: 0;
+
+    color: var(--hero-text);
+
+    font-family:
+      var(--font-heading-family, Georgia, serif);
+
+    font-size:
+      clamp(
+        30px,
+        2.8vw,
+        42px
+      );
+
+    font-weight: 500;
+
+    line-height: 1.03;
+  }
+
+  .cinematic-hero-card__description {
+    max-width: 520px;
+
+    margin-top: 12px;
+
+    color: var(--hero-text);
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    opacity: 0.8;
+  }
+
+  .cinematic-hero-card__cta {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 24px;
+
+    padding-bottom: 8px;
+
+    color: var(--hero-text);
+
+    border-bottom:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--hero-text) 72%,
+        transparent
+      );
+
+    font-size: 12px;
+
+    font-weight: 850;
+  }
+
+  .cinematic-hero-card__cta::after {
+    content: "→";
+
+    color: var(--hero-accent);
+
+    transition:
+      transform 0.2s ease;
+  }
+
+  .cinematic-hero-card:hover
+  .cinematic-hero-card__image {
+    transform:
+      scale(1.045);
+  }
+
+  .cinematic-hero-card:hover
+  .cinematic-hero-card__cta::after {
+    transform:
+      translateX(3px);
+  }
+
+  .cinematic-hero__button:hover,
+  .cinematic-hero-card:hover {
+    filter:
+      brightness(1.04);
+  }
+
+  .cinematic-hero__button:focus-visible,
+  .cinematic-hero-card__link:focus-visible {
+    outline:
+      3px solid
+      var(--hero-accent);
+
+    outline-offset: -6px;
+  }
+
+  @keyframes cinematic-hero-rise {
+    from {
+      opacity: 0;
+
+      transform:
+        translateY(18px);
+    }
+
+    to {
+      opacity: 1;
+
+      transform:
+        translateY(0);
+    }
+  }
+
+  /* ==========================================
+     TABLET
+  ========================================== */
+
+  @media (max-width: 1180px) {
+
+    .cinematic-hero__inner {
+      width:
+        min(
+          var(--page-width, 1720px),
+          calc(100vw - 64px)
+        );
+    }
+
+    .cinematic-hero__districts {
+      grid-template-columns: 1fr;
+
+      gap: 38px;
+    }
+
+    .cinematic-hero__market {
+      max-width: 620px;
+    }
+
+    .cinematic-hero__inner--district-only {
+      justify-content: center;
+    }
+
+  }
+
+  /* ==========================================
+     MOBILE
+  ========================================== */
+
+  @media (max-width: 767px) {
+
+    .cinematic-hero {
+      min-height:
+        var(--hero-mobile-min-height);
+    }
+
+    .cinematic-hero__shade {
+      background:
+        linear-gradient(
+          0deg,
+          rgba(23, 9, 19, 0.97) 0%,
+          rgba(23, 9, 19, 0.78) 46%,
+          rgba(23, 9, 19, 0.28) 100%
+        ),
+        var(--hero-overlay);
+    }
+
+    .cinematic-hero__inner,
+    .cinematic-hero__inner--district-only {
+      width:
+        calc(100% - 36px);
+
+      min-height:
+        var(--hero-mobile-min-height);
+
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+
+    .cinematic-hero__inner--district-only {
+      justify-content: center;
+    }
+
+    .cinematic-hero__districts {
+      grid-template-columns: 1fr;
+
+      gap: 32px;
+    }
+
+    .cinematic-hero__cards {
+      grid-template-columns: 1fr;
+    }
+
+    .cinematic-hero-card__link {
+      grid-template-rows:
+        132px 1fr;
+    }
+
+    .cinematic-hero__buttons {
+      display: grid;
+    }
+
+    .cinematic-hero__button {
+      width: 100%;
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    .cinematic-hero__content,
+    .cinematic-hero__button,
+    .cinematic-hero-card__image,
+    .cinematic-hero-card__cta::after {
+      animation: none;
+
+      transition: none;
+    }
+
+  }
+
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Cinematic hero",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Desktop background image"
+    },
+    {
+      "type": "image_picker",
+      "id": "mobile_image",
+      "label": "Mobile background image"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Image focal point",
+      "default": "center center",
+      "options": [
+        {
+          "value": "center center",
+          "label": "Center"
+        },
+        {
+          "value": "center top",
+          "label": "Top"
+        },
+        {
+          "value": "center bottom",
+          "label": "Bottom"
+        },
+        {
+          "value": "left center",
+          "label": "Left"
+        },
+        {
+          "value": "right center",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "overlay_color",
+      "label": "Overlay color",
+      "default": "#170913"
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Overlay opacity",
+      "min": 0,
+      "max": 95,
+      "step": 5,
+      "unit": "%",
+      "default": 80
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow",
+      "default": "Explore Las Vegas' Gacha & Armory Districts"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Find your treasure."
+    },
+    {
+      "type": "richtext",
+      "id": "body",
+      "label": "Body",
+      "default": "<p>Step into Gacha District today for capsule surprises, collectibles, custom cases, and 3D-printed keepsakes. Preview the Armory District being prepared for the next chapter.</p>"
+    },
+    {
+      "type": "text",
+      "id": "primary_label",
+      "label": "Primary button label"
+    },
+    {
+      "type": "url",
+      "id": "primary_link",
+      "label": "Primary button link"
+    },
+    {
+      "type": "text",
+      "id": "secondary_label",
+      "label": "Secondary button label"
+    },
+    {
+      "type": "url",
+      "id": "secondary_link",
+      "label": "Secondary button link"
+    },
+    {
+      "type": "header",
+      "content": "District intro"
+    },
+    {
+      "type": "text",
+      "id": "market_eyebrow",
+      "label": "Eyebrow",
+      "default": "One marketplace, two worlds"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "market_heading",
+      "label": "Heading",
+      "default": "Choose your"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "market_accent_heading",
+      "label": "Accent heading",
+      "default": "district."
+    },
+    {
+      "type": "richtext",
+      "id": "market_body",
+      "label": "Body",
+      "default": "<p>Start with the colorful thrill of Gacha District, or preview the collector-focused Armory District being prepared for the next chapter.</p>"
+    },
+    {
+      "type": "text",
+      "id": "cards_label",
+      "label": "Cards aria label",
+      "default": "Shop districts"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#FFF9F2"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#F0AFCA"
+    },
+    {
+      "type": "color",
+      "id": "muted_text_color",
+      "label": "Muted text",
+      "default": "#D8C8D0"
+    },
+    {
+      "type": "color",
+      "id": "card_background",
+      "label": "Card background",
+      "default": "#2A071D"
+    },
+    {
+      "type": "color",
+      "id": "card_border",
+      "label": "Card border",
+      "default": "#704B60"
+    },
+    {
+      "type": "color",
+      "id": "card_badge_background",
+      "label": "Card badge background",
+      "default": "#C83E76"
+    },
+    {
+      "type": "color",
+      "id": "card_badge_text",
+      "label": "Card badge text",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "content_width",
+      "label": "Intro content width",
+      "min": 420,
+      "max": 760,
+      "step": 20,
+      "unit": "px",
+      "default": 620
+    },
+    {
+      "type": "range",
+      "id": "market_content_width",
+      "label": "Market intro width",
+      "min": 300,
+      "max": 560,
+      "step": 20,
+      "unit": "px",
+      "default": 420
+    },
+    {
+      "type": "range",
+      "id": "cards_width",
+      "label": "Cards width",
+      "min": 720,
+      "max": 1240,
+      "step": 20,
+      "unit": "px",
+      "default": 1120
+    },
+    {
+      "type": "range",
+      "id": "card_gap",
+      "label": "Card gap",
+      "min": 10,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "card_height",
+      "label": "Card height",
+      "min": 280,
+      "max": 420,
+      "step": 20,
+      "unit": "px",
+      "default": 360
+    },
+    {
+      "type": "range",
+      "id": "card_image_height",
+      "label": "Card image height",
+      "min": 100,
+      "max": 180,
+      "step": 10,
+      "unit": "px",
+      "default": 140
+    },
+    {
+      "type": "range",
+      "id": "desktop_min_height",
+      "label": "Desktop minimum height",
+      "min": 720,
+      "max": 980,
+      "step": 20,
+      "unit": "px",
+      "default": 860
+    },
+    {
+      "type": "range",
+      "id": "mobile_min_height",
+      "label": "Mobile minimum height",
+      "min": 780,
+      "max": 1180,
+      "step": 20,
+      "unit": "px",
+      "default": 1000
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "label": "Heading size desktop",
+      "min": 64,
+      "max": 126,
+      "step": 2,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Heading size mobile",
+      "min": 42,
+      "max": 72,
+      "step": 2,
+      "unit": "px",
+      "default": 54
+    },
+    {
+      "type": "range",
+      "id": "market_heading_size",
+      "label": "Market heading size",
+      "min": 52,
+      "max": 86,
+      "step": 2,
+      "unit": "px",
+      "default": 68
+    }
+  ],
+  "blocks": [
+    {
+      "type": "district",
+      "name": "District",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "mobile_image",
+          "label": "Mobile image"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "Badge",
+          "default": "Now open"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Gacha District"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Capsules, blind boxes, plushies, miniatures, figures, and small surprises."
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Button label",
+          "default": "Enter the district"
+        },
+        {
+          "type": "url",
+          "id": "custom_link",
+          "label": "Custom link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Cinematic hero",
+      "blocks": [
+        {
+          "type": "district"
+        },
+        {
+          "type": "district",
+          "settings": {
+            "eyebrow": "Coming soon",
+            "title": "Armory District",
+            "description": "Anime blades, display pieces, and craftsmanship-led collectibles.",
+            "button_label": "Preview what's coming"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

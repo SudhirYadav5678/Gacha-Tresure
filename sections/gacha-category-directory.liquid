@@ -1,0 +1,263 @@
+{% style %}
+  #shopify-section-{{ section.id }} .gacha-directory {
+    --gd-bg: {{ section.settings.background }};
+    --gd-text: {{ section.settings.text_color }};
+    --gd-heading: {{ section.settings.heading_color }};
+    --gd-accent: {{ section.settings.accent_color }};
+    --gd-border: {{ section.settings.divider_color }};
+    --gd-left: {{ section.settings.left_width }}%;
+    --gd-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --gd-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --gd-row-gap: {{ section.settings.row_spacing }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .gacha-directory {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="gacha-directory">
+  <div class="gacha-directory__inner">
+    <div class="gacha-directory__intro">
+      {% if section.settings.eyebrow != blank %}
+        <p class="gacha-directory__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>
+        <span>{{ section.settings.heading }}</span>
+        {% if section.settings.accent_heading != blank %}
+          <em>{{ section.settings.accent_heading }}</em>
+        {% endif %}
+      </h2>
+      {% if section.settings.description != blank %}
+        <div class="gacha-directory__description">{{ section.settings.description }}</div>
+      {% endif %}
+    </div>
+
+    <div class="gacha-directory__list" role="list">
+      {% for block in section.blocks %}
+        {% liquid
+          assign category_collection = block.settings.collection
+          assign category_url = block.settings.custom_url | default: category_collection.url
+        %}
+        <div class="gacha-directory__row" role="listitem" {{ block.shopify_attributes }}>
+          {% if category_url != blank %}<a href="{{ category_url }}">{% endif %}
+            {% if section.settings.show_numbers %}
+              <span class="gacha-directory__number">{{ block.settings.number }}</span>
+            {% endif %}
+            <span class="gacha-directory__label">{{ block.settings.title | default: category_collection.title }}</span>
+            {% if block.settings.subtitle != blank %}
+              <span class="gacha-directory__subtitle">{{ block.settings.subtitle }}</span>
+            {% endif %}
+            {% if block.settings.enable_arrow %}
+              <span class="gacha-directory__arrow" aria-hidden="true">↗</span>
+            {% endif %}
+          {% if category_url != blank %}</a>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .gacha-directory {
+    color: var(--gd-text);
+    background: var(--gd-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .gacha-directory__inner {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(260px, var(--gd-left)) minmax(0, 1fr);
+    gap: clamp(44px, 9vw, 130px);
+    align-items: start;
+  }
+
+  .gacha-directory__eyebrow {
+    margin: 0 0 16px;
+    color: var(--gd-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+  }
+
+  .gacha-directory h2 {
+    margin: 0;
+    color: var(--gd-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--gd-heading-mobile), 5.2vw, var(--gd-heading-desktop));
+    line-height: .98;
+    font-weight: 500;
+  }
+
+  .gacha-directory h2 span,
+  .gacha-directory h2 em {
+    display: block;
+  }
+
+  .gacha-directory h2 em {
+    color: var(--gd-accent);
+    font-style: italic;
+  }
+
+  .gacha-directory__description {
+    max-width: 440px;
+    margin-top: 24px;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: .68;
+  }
+
+  .gacha-directory__description p {
+    margin: 0;
+  }
+
+  .gacha-directory__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--gd-border);
+  }
+
+  .gacha-directory__row {
+    border-bottom: 1px solid var(--gd-border);
+  }
+
+  .gacha-directory__row:nth-child(odd) {
+    border-right: 1px solid var(--gd-border);
+  }
+
+  .gacha-directory__row a,
+  .gacha-directory__row > span {
+    min-height: calc(44px + var(--gd-row-gap));
+  }
+
+  .gacha-directory__row a,
+  .gacha-directory__row:not(:has(a)) {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color .2s ease, color .2s ease;
+  }
+
+  .gacha-directory__row a:hover {
+    color: var(--gd-accent);
+    background: rgba(232,154,185,.07);
+  }
+
+  .gacha-directory__row a:focus-visible {
+    outline: 2px solid var(--gd-accent);
+    outline-offset: -2px;
+  }
+
+  .gacha-directory__number {
+    color: var(--gd-accent);
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .gacha-directory__label {
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .gacha-directory__subtitle {
+    grid-column: 2 / 4;
+    margin-top: -8px;
+    font-size: 12px;
+    opacity: .62;
+  }
+
+  .gacha-directory__arrow {
+    color: var(--gd-accent);
+    font-size: 14px;
+  }
+
+  @media (max-width: 900px) {
+    .gacha-directory__inner {
+      grid-template-columns: 1fr;
+      gap: 38px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .gacha-directory__inner {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .gacha-directory__list {
+      grid-template-columns: 1fr;
+    }
+
+    .gacha-directory__row:nth-child(odd) {
+      border-right: 0;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gacha category directory",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Explore the Gacha District" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Eleven ways" },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "to find a treasure." },
+    { "type": "richtext", "id": "description", "label": "Description", "default": "<p>From the turn of a capsule to a photo glowing inside a custom lithophane, every corner is made for discovery.</p>" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F8F1E7" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#281920" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#3A1730" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#CA6E8D" },
+    { "type": "color", "id": "divider_color", "label": "Divider color", "default": "#DDD1C6" },
+    { "type": "checkbox", "id": "show_numbers", "label": "Show numbers", "default": true },
+    { "type": "range", "id": "left_width", "label": "Desktop intro width", "min": 35, "max": 55, "step": 5, "unit": "%", "default": 40 },
+    { "type": "range", "id": "row_spacing", "label": "Row spacing", "min": 0, "max": 28, "step": 2, "unit": "px", "default": 6 },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 48, "max": 92, "step": 2, "unit": "px", "default": 72 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 58, "step": 2, "unit": "px", "default": 44 },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 160, "step": 4, "unit": "px", "default": 104 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 160, "step": 4, "unit": "px", "default": 112 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 32, "max": 100, "step": 4, "unit": "px", "default": 60 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 32, "max": 100, "step": 4, "unit": "px", "default": 64 }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        { "type": "text", "id": "number", "label": "Number", "default": "01" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Gachapon machines and capsules" },
+        { "type": "text", "id": "subtitle", "label": "Subtitle" },
+        { "type": "collection", "id": "collection", "label": "Collection" },
+        { "type": "url", "id": "custom_url", "label": "Custom URL" },
+        { "type": "checkbox", "id": "enable_arrow", "label": "Show arrow", "default": false }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Gacha category directory",
+      "blocks": [
+        { "type": "category", "settings": { "number": "01", "title": "Gachapon machines and capsules" } },
+        { "type": "category", "settings": { "number": "02", "title": "Blind boxes" } },
+        { "type": "category", "settings": { "number": "03", "title": "Anime figures" } },
+        { "type": "category", "settings": { "number": "04", "title": "Gundam and model kits" } },
+        { "type": "category", "settings": { "number": "05", "title": "Rare and limited collectibles" } },
+        { "type": "category", "settings": { "number": "06", "title": "Custom phone cases" } },
+        { "type": "category", "settings": { "number": "07", "title": "Interchangeable faceplates" } },
+        { "type": "category", "settings": { "number": "08", "title": "Plushies" } },
+        { "type": "category", "settings": { "number": "09", "title": "DIY miniature building kits" } },
+        { "type": "category", "settings": { "number": "10", "title": "Keychains and mini earrings" } },
+        { "type": "category", "settings": { "number": "11", "title": "Custom 3D prints and lithophanes" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

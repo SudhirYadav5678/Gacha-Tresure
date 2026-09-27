@@ -1,0 +1,810 @@
+{% style %}
+  #shopify-section-{{ section.id }} .treasure-cart {
+    --tc-bg: {{ section.settings.background }};
+    --tc-panel: {{ section.settings.panel_background }};
+    --tc-text: {{ section.settings.text_color }};
+    --tc-muted: {{ section.settings.muted_text_color }};
+    --tc-accent: {{ section.settings.accent_color }};
+    --tc-border: {{ section.settings.border_color }};
+    --tc-primary-bg: {{ section.settings.primary_background }};
+    --tc-primary-text: {{ section.settings.primary_text }};
+    --tc-secondary-bg: {{ section.settings.secondary_background }};
+    --tc-secondary-text: {{ section.settings.secondary_text }};
+    --tc-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --tc-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --tc-empty-min: {{ section.settings.empty_panel_min_height }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .treasure-cart {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="treasure-cart">
+  <div class="treasure-cart__inner treasure-cart__inner--{{ section.settings.content_width }}">
+    <header class="treasure-cart__header">
+      {% if section.settings.eyebrow != blank %}
+        <p class="treasure-cart__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h1>{{ section.settings.heading }}</h1>
+      {% endif %}
+    </header>
+
+    {% if cart == empty %}
+      <div class="treasure-cart__empty">
+        {% if section.settings.empty_icon != blank %}
+          <div class="treasure-cart__icon" aria-hidden="true">{{ section.settings.empty_icon }}</div>
+        {% endif %}
+        {% if section.settings.empty_heading != blank %}
+          <h2>{{ section.settings.empty_heading }}</h2>
+        {% endif %}
+        {% if section.settings.empty_text != blank %}
+          <div class="treasure-cart__empty-text">{{ section.settings.empty_text }}</div>
+        {% endif %}
+        <div class="treasure-cart__actions">
+          {% if section.settings.primary_label != blank and section.settings.primary_link != blank %}
+            <a class="treasure-cart__button treasure-cart__button--primary" href="{{ section.settings.primary_link }}">{{ section.settings.primary_label }}</a>
+          {% endif %}
+          {% if section.settings.secondary_label != blank and section.settings.secondary_link != blank %}
+            <a class="treasure-cart__button treasure-cart__button--secondary" href="{{ section.settings.secondary_link }}">{{ section.settings.secondary_label }}</a>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <form class="treasure-cart__form" action="{{ routes.cart_url }}" method="post" novalidate>
+        <div class="treasure-cart__items" aria-label="{{ section.settings.items_label }}">
+          {% for item in cart.items %}
+            {%- liquid
+              assign artwork_preview = blank
+              assign artwork_upload = blank
+              assign artwork_alt = section.settings.custom_artwork_alt
+
+              for property in item.properties
+                case property.first
+                  when '_Artwork preview'
+                    if property.last != blank
+                      assign artwork_preview = property.last
+                    endif
+                  when '_Preview image'
+                    if property.last != blank and artwork_preview == blank
+                      assign artwork_preview = property.last
+                    endif
+                  when '_preview'
+                    if property.last != blank and artwork_preview == blank
+                      assign artwork_preview = property.last
+                    endif
+                  when 'Custom artwork'
+                    if property.last != blank
+                      assign artwork_upload = property.last
+                      assign artwork_alt = section.settings.uploaded_artwork_alt
+                    endif
+                  when 'Selected artwork'
+                    if property.last != blank
+                      assign artwork_alt = property.last
+                    endif
+                endcase
+              endfor
+            -%}
+
+            <article class="treasure-cart-item">
+              <a
+                class="treasure-cart-item__media{% if artwork_preview != blank or artwork_upload != blank %} treasure-cart-item__media--has-artwork{% endif %}"
+                href="{{ item.url }}"
+                aria-label="{{ item.product.title | escape }}"
+              >
+                {%- comment -%} Always show variant image as base layer {%- endcomment -%}
+                {%- if item.image -%}
+                  {{ item.image | image_url: width: 360 | image_tag:
+                    widths: '160, 240, 360',
+                    sizes: '(max-width: 767px) 96px, 128px',
+                    loading: 'lazy',
+                    class: 'treasure-cart-item__base-img',
+                    alt: item.image.alt | escape
+                  }}
+                {%- else -%}
+                  <span class="treasure-cart-item__base-img" aria-hidden="true">{{ section.settings.empty_icon }}</span>
+                {%- endif -%}
+
+                {%- comment -%} Overlay the artwork on top of the case {%- endcomment -%}
+                {%- if artwork_preview != blank -%}
+                  <img
+                    class="treasure-cart-item__artwork-overlay"
+                    src="{{ artwork_preview }}"
+                    alt="{{ artwork_alt | escape }}"
+                    width="360"
+                    height="360"
+                    loading="lazy"
+                  >
+                {%- elsif artwork_upload != blank -%}
+                  <img
+                    class="treasure-cart-item__artwork-overlay"
+                    src="{{ artwork_upload }}"
+                    alt="{{ artwork_alt | escape }}"
+                    width="360"
+                    height="360"
+                    loading="lazy"
+                  >
+                {%- endif -%}
+              </a>
+
+              <div class="treasure-cart-item__details">
+                <a class="treasure-cart-item__title" href="{{ item.url }}">{{ item.product.title }}</a>
+                {% if item.variant.title != 'Default Title' %}
+                  <p class="treasure-cart-item__variant">{{ item.variant.title }}</p>
+                {% endif %}
+                {% liquid
+                  assign has_visible_properties = false
+                  for property in item.properties
+                    assign property_first_char = property.first | slice: 0
+                    if property.last != blank and property_first_char != '_'
+                      assign has_visible_properties = true
+                      break
+                    endif
+                  endfor
+                %}
+                {% if has_visible_properties %}
+                  <p class="treasure-cart-item__properties-title">{{ section.settings.customization_heading }}</p>
+                  <dl class="treasure-cart-item__properties">
+                    {% for property in item.properties %}
+                      {% assign property_first_char = property.first | slice: 0 %}
+                      {% if property.last != blank and property_first_char != '_' %}
+                        <div>
+                          <dt>{{ property.first }}:</dt>
+                          <dd>
+                            {% if property.last contains '/uploads/' %}
+                              <a href="{{ property.last }}" target="_blank" rel="noopener noreferrer">
+                                {{ section.settings.uploaded_artwork_label }}
+                              </a>
+                            {% else %}
+                              {{ property.last }}
+                            {% endif %}
+                          </dd>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </dl>
+                {% endif %}
+                <a class="treasure-cart-item__remove" href="{{ routes.cart_change_url }}?line={{ forloop.index }}&quantity=0">{{ section.settings.remove_label }}</a>
+              </div>
+
+              <div class="treasure-cart-item__quantity">
+                <label for="CartQuantity-{{ section.id }}-{{ forloop.index }}">{{ section.settings.quantity_label }}</label>
+                <div class="treasure-cart-item__stepper" data-cart-quantity>
+                  <button
+                    type="button"
+                    data-cart-quantity-minus
+                    aria-label="{{ section.settings.decrease_quantity_label }} {{ item.product.title | escape }}"
+                    {% if item.quantity <= 1 %}disabled{% endif %}
+                  >&minus;</button>
+                  <input
+                    id="CartQuantity-{{ section.id }}-{{ forloop.index }}"
+                    type="number"
+                    name="updates[]"
+                    value="{{ item.quantity }}"
+                    min="1"
+                    inputmode="numeric"
+                    data-cart-quantity-input
+                    aria-label="{{ section.settings.quantity_label }} for {{ item.product.title | escape }}"
+                  >
+                  <button
+                    type="button"
+                    data-cart-quantity-plus
+                    aria-label="{{ section.settings.increase_quantity_label }} {{ item.product.title | escape }}"
+                  >+</button>
+                </div>
+              </div>
+
+              <div class="treasure-cart-item__price">
+                {% if item.original_line_price != item.final_line_price %}
+                  <s>{{ item.original_line_price | money }}</s>
+                {% endif %}
+                <span>{{ item.final_line_price | money }}</span>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+
+        <aside class="treasure-cart__summary" aria-label="{{ section.settings.summary_label }}">
+          <h2>{{ section.settings.summary_heading }}</h2>
+          {% if section.settings.show_note %}
+            <div class="treasure-cart__note">
+              <label for="CartNote-{{ section.id }}">{{ section.settings.note_label }}</label>
+              <textarea id="CartNote-{{ section.id }}" name="note" rows="4">{{ cart.note }}</textarea>
+            </div>
+          {% endif %}
+          <div class="treasure-cart__total">
+            <span>{{ section.settings.subtotal_label }}</span>
+            <strong>{{ cart.total_price | money_with_currency }}</strong>
+          </div>
+          {% if section.settings.tax_text != blank %}
+            <p class="treasure-cart__tax">{{ section.settings.tax_text }}</p>
+          {% endif %}
+          <button class="treasure-cart__button treasure-cart__button--primary" type="submit" name="checkout">{{ section.settings.checkout_label }}</button>
+          <button class="treasure-cart__update" type="submit">{{ section.settings.update_label }}</button>
+          {% if section.settings.continue_label != blank and section.settings.continue_link != blank %}
+            <a class="treasure-cart__continue" href="{{ section.settings.continue_link }}">{{ section.settings.continue_label }}</a>
+          {% endif %}
+        </aside>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .treasure-cart {
+    color: var(--tc-text);
+    background: var(--tc-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .treasure-cart__inner {
+    margin-inline: auto;
+  }
+
+  .treasure-cart__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .treasure-cart__inner--wide {
+    width: min(1728px, calc(100vw - 96px));
+  }
+
+  .treasure-cart__header {
+    margin-bottom: 58px;
+  }
+
+  .treasure-cart__eyebrow {
+    margin: 0 0 24px;
+    color: var(--tc-muted);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+
+  .treasure-cart h1 {
+    margin: 0;
+    color: var(--tc-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--tc-heading-mobile), 5vw, var(--tc-heading-desktop));
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .treasure-cart__empty {
+    min-height: var(--tc-empty-min);
+    padding: clamp(38px, 7vw, 90px) 24px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    text-align: center;
+    background: var(--tc-panel);
+    border: 1px solid var(--tc-border);
+  }
+
+  .treasure-cart__icon {
+    min-width: 46px;
+    min-height: 46px;
+    margin-bottom: 22px;
+    display: inline-grid;
+    place-items: center;
+    color: var(--tc-accent);
+    border: 2px solid currentColor;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .1em;
+  }
+
+  .treasure-cart__empty h2 {
+    margin: 0;
+    color: var(--tc-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(30px, 2.8vw, 42px);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  .treasure-cart__empty-text {
+    margin-top: 20px;
+    color: var(--tc-muted);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .treasure-cart__empty-text p {
+    margin: 0;
+  }
+
+  .treasure-cart__actions {
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .treasure-cart__button,
+  .treasure-cart__update,
+  .treasure-cart__continue {
+    min-height: 50px;
+    padding: 0 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid currentColor;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease, border-color .2s ease;
+  }
+
+  .treasure-cart__button--primary {
+    color: var(--tc-primary-text);
+    background: var(--tc-primary-bg);
+    border-color: var(--tc-primary-bg);
+  }
+
+  .treasure-cart__button--secondary {
+    color: var(--tc-secondary-text);
+    background: var(--tc-secondary-bg);
+    border-color: var(--tc-border);
+  }
+
+  .treasure-cart__button:hover,
+  .treasure-cart__update:hover,
+  .treasure-cart__continue:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+  }
+
+  .treasure-cart__button:focus-visible,
+  .treasure-cart__update:focus-visible,
+  .treasure-cart__continue:focus-visible,
+  .treasure-cart-item a:focus-visible,
+  .treasure-cart input:focus-visible,
+  .treasure-cart textarea:focus-visible {
+    outline: 2px solid var(--tc-accent);
+    outline-offset: 3px;
+  }
+
+  .treasure-cart__form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .treasure-cart__items,
+  .treasure-cart__summary {
+    background: var(--tc-panel);
+    border: 1px solid var(--tc-border);
+  }
+
+  .treasure-cart-item {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr) 108px 136px;
+    gap: 24px;
+    align-items: center;
+    border-bottom: 1px solid var(--tc-border);
+  }
+
+  .treasure-cart-item:last-child {
+    border-bottom: 0;
+  }
+
+  .treasure-cart-item__media {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: var(--tc-accent);
+    background: #f1e7dd;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+
+  .treasure-cart-item__base-img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    z-index: 2;
+  }
+
+  .treasure-cart-item__media--has-artwork {
+    background: transparent;
+  }
+
+  .treasure-cart-item__artwork-overlay {
+    position: absolute;
+    top: 3%;
+    left: 22%;
+    width: 56%;
+    height: 90%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 14px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .treasure-cart-item__title {
+    color: var(--tc-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 24px;
+    line-height: 1.15;
+    text-decoration: none;
+  }
+
+  .treasure-cart-item__variant,
+  .treasure-cart-item__remove,
+  .treasure-cart-item__properties,
+  .treasure-cart__tax,
+  .treasure-cart__continue {
+    color: var(--tc-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .treasure-cart-item__variant {
+    margin: 8px 0 0;
+  }
+
+  .treasure-cart-item__properties {
+    margin: 6px 0 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .treasure-cart-item__properties-title {
+    margin: 14px 0 0;
+    color: var(--tc-text);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .treasure-cart-item__properties div {
+    display: grid;
+    grid-template-columns: minmax(118px, auto) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .treasure-cart-item__properties dt,
+  .treasure-cart-item__properties dd {
+    margin: 0;
+  }
+
+  .treasure-cart-item__properties dt {
+    color: var(--tc-text);
+    font-weight: 700;
+  }
+
+  .treasure-cart-item__properties a {
+    color: var(--tc-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .treasure-cart-item__remove {
+    margin-top: 16px;
+    display: inline-flex;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .treasure-cart-item__quantity label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--tc-muted);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .treasure-cart-item__stepper {
+    width: 108px;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    border: 1px solid var(--tc-border);
+    background: var(--tc-bg);
+  }
+
+  .treasure-cart-item__stepper button,
+  .treasure-cart-item__quantity input {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0;
+    color: var(--tc-text);
+    background: transparent;
+    border: 0;
+    text-align: center;
+    font: inherit;
+  }
+
+  .treasure-cart-item__stepper button {
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  .treasure-cart-item__stepper button:disabled {
+    color: var(--tc-muted);
+    cursor: not-allowed;
+    opacity: .45;
+  }
+
+  .treasure-cart-item__quantity input {
+    width: 100%;
+    border-inline: 1px solid var(--tc-border);
+    appearance: textfield;
+  }
+
+  .treasure-cart-item__quantity input::-webkit-inner-spin-button,
+  .treasure-cart-item__quantity input::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+
+  .treasure-cart-item__price {
+    display: grid;
+    gap: 4px;
+    justify-items: end;
+    color: var(--tc-text);
+    font-weight: 800;
+  }
+
+  .treasure-cart-item__price s {
+    color: var(--tc-muted);
+    font-weight: 500;
+  }
+
+  .treasure-cart__summary {
+    position: sticky;
+    top: 24px;
+    padding: 28px;
+  }
+
+  .treasure-cart__summary h2 {
+    margin: 0 0 24px;
+    color: var(--tc-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 32px;
+    font-weight: 500;
+  }
+
+  .treasure-cart__note {
+    margin-bottom: 24px;
+  }
+
+  .treasure-cart__note label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--tc-muted);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .treasure-cart__note textarea {
+    width: 100%;
+    min-height: 106px;
+    padding: 14px;
+    color: var(--tc-text);
+    background: var(--tc-bg);
+    border: 1px solid var(--tc-border);
+    font: inherit;
+  }
+
+  .treasure-cart__total {
+    padding-top: 22px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--tc-border);
+    color: var(--tc-text);
+    font-size: 15px;
+  }
+
+  .treasure-cart__total strong {
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .treasure-cart__tax {
+    margin: 14px 0 24px;
+  }
+
+  .treasure-cart__summary .treasure-cart__button {
+    width: 100%;
+  }
+
+  .treasure-cart__update,
+  .treasure-cart__continue {
+    width: 100%;
+    margin-top: 12px;
+    color: var(--tc-secondary-text);
+    background: var(--tc-secondary-bg);
+    border-color: var(--tc-border);
+  }
+
+  .treasure-cart__continue {
+    background: transparent;
+  }
+
+  @media (max-width: 1080px) {
+    .treasure-cart__form {
+      grid-template-columns: 1fr;
+    }
+
+    .treasure-cart__summary {
+      position: static;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .treasure-cart__inner--page,
+    .treasure-cart__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .treasure-cart__header {
+      margin-bottom: 36px;
+    }
+
+    .treasure-cart__empty {
+      min-height: 380px;
+    }
+
+    .treasure-cart__actions {
+      display: grid;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .treasure-cart__button,
+    .treasure-cart__update,
+    .treasure-cart__continue {
+      width: 100%;
+    }
+
+    .treasure-cart-item {
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .treasure-cart-item__quantity,
+    .treasure-cart-item__price {
+      grid-column: 2;
+      justify-items: start;
+    }
+
+    .treasure-cart-item__title {
+      font-size: 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .treasure-cart__button,
+    .treasure-cart__update,
+    .treasure-cart__continue {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  function initTreasureCart(container) {
+    const scope = container || document;
+    scope.querySelectorAll('[data-cart-quantity]').forEach((stepper) => {
+      if (stepper.dataset.cartQuantityInit) return;
+      stepper.dataset.cartQuantityInit = 'true';
+      const input = stepper.querySelector('[data-cart-quantity-input]');
+      const minus = stepper.querySelector('[data-cart-quantity-minus]');
+      const plus = stepper.querySelector('[data-cart-quantity-plus]');
+      if (!input || !minus || !plus) return;
+
+      const updateButtons = () => {
+        const minimum = Number(input.min || 1);
+        minus.disabled = Number(input.value || minimum) <= minimum;
+      };
+
+      const changeQuantity = (delta) => {
+        const minimum = Number(input.min || 1);
+        const current = Number(input.value || minimum);
+        const next = Math.max(minimum, current + delta);
+        if (next === current) return;
+        input.value = next;
+        updateButtons();
+        if (input.form) input.form.requestSubmit();
+      };
+
+      minus.addEventListener('click', () => changeQuantity(-1));
+      plus.addEventListener('click', () => changeQuantity(1));
+      input.addEventListener('change', updateButtons);
+      updateButtons();
+    });
+  }
+
+  initTreasureCart();
+  document.addEventListener('shopify:section:load', (event) => initTreasureCart(event.target));
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Treasure Cart",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Your treasure bag" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "The bag is waiting." },
+    { "type": "text", "id": "empty_icon", "label": "Empty icon text", "default": "BAG" },
+    { "type": "inline_richtext", "id": "empty_heading", "label": "Empty heading", "default": "No treasures-yet." },
+    { "type": "richtext", "id": "empty_text", "label": "Empty text", "default": "<p>Start with a mystery pull or browse the newest finds.</p>" },
+    { "type": "text", "id": "primary_label", "label": "Primary button label", "default": "Browse the district" },
+    { "type": "url", "id": "primary_link", "label": "Primary button link" },
+    { "type": "text", "id": "secondary_label", "label": "Secondary button label", "default": "Try a mystery capsule" },
+    { "type": "url", "id": "secondary_link", "label": "Secondary button link" },
+    { "type": "header", "content": "Filled cart" },
+    { "type": "text", "id": "items_label", "label": "Items label", "default": "Cart items" },
+    { "type": "text", "id": "summary_label", "label": "Summary label", "default": "Cart summary" },
+    { "type": "text", "id": "summary_heading", "label": "Summary heading", "default": "Order summary" },
+    { "type": "text", "id": "quantity_label", "label": "Quantity label", "default": "Quantity" },
+    { "type": "text", "id": "decrease_quantity_label", "label": "Decrease quantity label", "default": "Decrease quantity for" },
+    { "type": "text", "id": "increase_quantity_label", "label": "Increase quantity label", "default": "Increase quantity for" },
+    { "type": "text", "id": "remove_label", "label": "Remove label", "default": "Remove" },
+    { "type": "text", "id": "customization_heading", "label": "Customization heading", "default": "Customization details" },
+    { "type": "text", "id": "uploaded_artwork_label", "label": "Uploaded artwork link label", "default": "View uploaded artwork" },
+    { "type": "text", "id": "custom_artwork_alt", "label": "Preset artwork image alt text", "default": "Selected case artwork" },
+    { "type": "text", "id": "uploaded_artwork_alt", "label": "Uploaded artwork image alt text", "default": "Uploaded case artwork" },
+    { "type": "text", "id": "subtotal_label", "label": "Subtotal label", "default": "Subtotal" },
+    { "type": "text", "id": "tax_text", "label": "Tax and shipping text", "default": "Taxes, discounts, and shipping calculated at checkout." },
+    { "type": "text", "id": "checkout_label", "label": "Checkout label", "default": "Checkout" },
+    { "type": "text", "id": "update_label", "label": "Update label", "default": "Update bag" },
+    { "type": "text", "id": "continue_label", "label": "Continue shopping label", "default": "Continue the hunt" },
+    { "type": "url", "id": "continue_link", "label": "Continue shopping link" },
+    { "type": "checkbox", "id": "show_note", "label": "Show order note", "default": true },
+    { "type": "text", "id": "note_label", "label": "Note label", "default": "Order note" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "wide", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 54, "max": 104, "step": 2, "unit": "px", "default": 78 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 38, "max": 62, "step": 2, "unit": "px", "default": 46 },
+    { "type": "range", "id": "empty_panel_min_height", "label": "Empty panel minimum height", "min": 320, "max": 560, "step": 20, "unit": "px", "default": 400 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FCF8F2" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#FCF8F2" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#2D1723" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#786A70" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C83E76" },
+    { "type": "color", "id": "border_color", "label": "Border", "default": "#DDD1C7" },
+    { "type": "color", "id": "primary_background", "label": "Primary background", "default": "#C83E76" },
+    { "type": "color", "id": "primary_text", "label": "Primary text", "default": "#FFFFFF" },
+    { "type": "color", "id": "secondary_background", "label": "Secondary background", "default": "#FCF8F2" },
+    { "type": "color", "id": "secondary_text", "label": "Secondary text", "default": "#2D1723" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 180, "step": 4, "unit": "px", "default": 116 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 180, "step": 4, "unit": "px", "default": 124 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 36, "max": 100, "step": 2, "unit": "px", "default": 62 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 36, "max": 110, "step": 2, "unit": "px", "default": 70 }
+  ],
+  "presets": [
+    { "name": "Treasure Cart" }
+  ]
+}
+{% endschema %}

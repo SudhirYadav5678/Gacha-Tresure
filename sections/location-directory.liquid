@@ -1,0 +1,397 @@
+{% style %}
+  #shopify-section-{{ section.id }} .location-directory {
+    --ld-bg: {{ section.settings.background }};
+    --ld-card-bg: {{ section.settings.card_background }};
+    --ld-text: {{ section.settings.text_color }};
+    --ld-muted: {{ section.settings.muted_text_color }};
+    --ld-accent: {{ section.settings.accent_color }};
+    --ld-border: {{ section.settings.border_color }};
+    --ld-badge-bg: {{ section.settings.badge_background }};
+    --ld-badge-text: {{ section.settings.badge_text_color }};
+    --ld-gap: {{ section.settings.card_gap }}px;
+    --ld-card-pad: {{ section.settings.card_padding }}px;
+    --ld-radius: {{ section.settings.card_radius }}px;
+    --ld-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --ld-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .location-directory {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="location-directory" id="locations">
+  <div class="location-directory__inner location-directory__inner--{{ section.settings.content_width }}">
+    <div class="location-directory__intro">
+      <div>
+        {% if section.settings.eyebrow != blank %}
+          <p class="location-directory__eyebrow">{{ section.settings.eyebrow }}</p>
+        {% endif %}
+        {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+          <h2>
+            {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+            {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+          </h2>
+        {% endif %}
+      </div>
+      {% if section.settings.body != blank %}
+        <div class="location-directory__body">{{ section.settings.body }}</div>
+      {% endif %}
+    </div>
+
+    {% if section.blocks.size > 0 %}
+      <div class="location-directory__grid location-directory__grid--{{ section.settings.desktop_columns }}">
+        {% for block in section.blocks %}
+          <article class="location-card{% if block.settings.highlight %} location-card--highlight{% endif %}" {{ block.shopify_attributes }}>
+            {% if block.settings.image != blank %}
+              <div class="location-card__image">
+                {{ block.settings.image | image_url: width: 900 | image_tag: widths: '360, 540, 720, 900', sizes: '(min-width: 990px) 50vw, 100vw', loading: 'lazy', alt: block.settings.title }}
+              </div>
+            {% endif %}
+
+            {% if block.settings.badge != blank %}
+              <p class="location-card__badge">{{ block.settings.badge }}</p>
+            {% endif %}
+
+            {% if block.settings.title != blank %}
+              <h3>{{ block.settings.title }}</h3>
+            {% endif %}
+
+            <div class="location-card__address">
+              {% if block.settings.subtitle != blank %}<p>{{ block.settings.subtitle }}</p>{% endif %}
+              {% if block.settings.address_line_1 != blank %}<p>{{ block.settings.address_line_1 }}</p>{% endif %}
+              {% if block.settings.address_line_2 != blank %}<p>{{ block.settings.address_line_2 }}</p>{% endif %}
+              {% if block.settings.city_line != blank %}<p>{{ block.settings.city_line }}</p>{% endif %}
+            </div>
+
+            <div class="location-card__meta">
+              <div>
+                <span>{{ section.settings.hours_label }}</span>
+                <div>{{ block.settings.hours }}</div>
+              </div>
+              <div>
+                <span>{{ section.settings.find_label }}</span>
+                <div>{{ block.settings.find_here }}</div>
+              </div>
+            </div>
+
+            <div class="location-card__footer">
+              {% if block.settings.directions_label != blank and block.settings.directions_url != blank %}
+                <a href="{{ block.settings.directions_url }}" target="_blank" rel="noopener">{{ block.settings.directions_label }}</a>
+              {% endif %}
+              {% if block.settings.secondary_label != blank and block.settings.secondary_url != blank %}
+                <a href="{{ block.settings.secondary_url }}">{{ block.settings.secondary_label }}</a>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .location-directory {
+    color: var(--ld-text);
+    background: var(--ld-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .location-directory__inner {
+    margin-inline: auto;
+  }
+
+  .location-directory__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .location-directory__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .location-directory__intro {
+    display: grid;
+    grid-template-columns: minmax(280px, .9fr) minmax(280px, .8fr);
+    gap: clamp(32px, 8vw, 140px);
+    align-items: end;
+    margin-bottom: 58px;
+  }
+
+  .location-directory__eyebrow {
+    margin: 0 0 22px;
+    color: var(--ld-muted);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .location-directory h2 {
+    margin: 0;
+    color: var(--ld-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--ld-heading-mobile), 5.2vw, var(--ld-heading-desktop));
+    font-weight: 500;
+    line-height: 1.02;
+  }
+
+  .location-directory h2 span,
+  .location-directory h2 em {
+    display: block;
+  }
+
+  .location-directory h2 em {
+    color: var(--ld-accent);
+    font-style: italic;
+  }
+
+  .location-directory__body {
+    max-width: 620px;
+    color: var(--ld-muted);
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .location-directory__body p,
+  .location-card__address p,
+  .location-card__meta p {
+    margin: 0;
+  }
+
+  .location-directory__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ld-gap);
+  }
+
+  .location-directory__grid--1 {
+    grid-template-columns: 1fr;
+  }
+
+  .location-card {
+    min-height: 430px;
+    padding: var(--ld-card-pad);
+    display: flex;
+    flex-direction: column;
+    color: var(--ld-text);
+    background: var(--ld-card-bg);
+    border: 1px solid var(--ld-border);
+    border-radius: var(--ld-radius);
+    transition: border-color .2s ease, transform .2s ease;
+  }
+
+  .location-card--highlight {
+    background: color-mix(in srgb, var(--ld-card-bg) 84%, var(--ld-accent));
+  }
+
+  .location-card__image {
+    margin: calc(var(--ld-card-pad) * -1) calc(var(--ld-card-pad) * -1) 30px;
+    aspect-ratio: 16 / 8;
+    overflow: hidden;
+    border-bottom: 1px solid var(--ld-border);
+  }
+
+  .location-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .location-card__badge {
+    width: fit-content;
+    margin: 0 0 26px;
+    padding: 8px 12px;
+    color: var(--ld-badge-text);
+    background: var(--ld-badge-bg);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .location-card h3 {
+    max-width: 520px;
+    margin: 0;
+    color: var(--ld-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(32px, 3.2vw, 52px);
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .location-card__address {
+    margin-top: 24px;
+    color: var(--ld-muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .location-card__meta {
+    margin-top: auto;
+    padding-top: 42px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+    border-top: 1px solid var(--ld-border);
+  }
+
+  .location-card__meta span {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--ld-muted);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .location-card__meta div div {
+    color: var(--ld-text);
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.45;
+  }
+
+  .location-card__footer {
+    min-height: 54px;
+    margin-top: 24px;
+    padding-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    border-top: 1px solid var(--ld-border);
+  }
+
+  .location-card__footer a {
+    color: var(--ld-text);
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  .location-card__footer a::after {
+    content: " ->";
+    color: var(--ld-accent);
+  }
+
+  .location-card__footer a:focus-visible {
+    outline: 2px solid var(--ld-accent);
+    outline-offset: 4px;
+  }
+
+  .location-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--ld-border) 55%, var(--ld-accent));
+  }
+
+  @media (max-width: 900px) {
+    .location-directory__intro,
+    .location-directory__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .location-directory__inner--page,
+    .location-directory__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .location-directory__intro {
+      margin-bottom: 36px;
+    }
+
+    .location-card {
+      min-height: 0;
+      padding: 28px 22px;
+    }
+
+    .location-card__meta {
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding-top: 30px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .location-card {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Location Directory",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Choose your stop" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Two locations." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "One treasure hunt." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>The Fantastic Indoor Swap Meet carries the full Gacha Treasures experience. Our Fremont Street location opens soon with a focused Gacha District collection.</p>" },
+    { "type": "text", "id": "hours_label", "label": "Hours label", "default": "Hours" },
+    { "type": "text", "id": "find_label", "label": "Find label", "default": "Find here" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_columns", "label": "Desktop columns", "default": "2", "options": [
+      { "value": "1", "label": "1" },
+      { "value": "2", "label": "2" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 48, "max": 92, "step": 2, "unit": "px", "default": 74 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 58, "step": 2, "unit": "px", "default": 42 },
+    { "type": "range", "id": "card_gap", "label": "Card gap", "min": 12, "max": 40, "step": 4, "unit": "px", "default": 20 },
+    { "type": "range", "id": "card_padding", "label": "Card padding", "min": 28, "max": 56, "step": 4, "unit": "px", "default": 44 },
+    { "type": "range", "id": "card_radius", "label": "Card radius", "min": 0, "max": 18, "step": 2, "unit": "px", "default": 0 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#27091E" },
+    { "type": "color", "id": "card_background", "label": "Card background", "default": "#330B27" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#FCF8F2" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#C6B2BD" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#DB87A5" },
+    { "type": "color", "id": "border_color", "label": "Border", "default": "#68475B" },
+    { "type": "color", "id": "badge_background", "label": "Badge background", "default": "#C83E76" },
+    { "type": "color", "id": "badge_text_color", "label": "Badge text", "default": "#FFFFFF" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 180, "step": 4, "unit": "px", "default": 124 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 180, "step": 4, "unit": "px", "default": 128 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 36, "max": 100, "step": 2, "unit": "px", "default": 64 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 36, "max": 110, "step": 2, "unit": "px", "default": 70 }
+  ],
+  "blocks": [
+    {
+      "type": "location",
+      "name": "Location",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Location image" },
+        { "type": "text", "id": "badge", "label": "Badge", "default": "Open now" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Fantastic Indoor Swap Meet" },
+        { "type": "text", "id": "subtitle", "label": "Subtitle" },
+        { "type": "text", "id": "address_line_1", "label": "Address line 1", "default": "1717 S Decatur Blvd" },
+        { "type": "text", "id": "address_line_2", "label": "Address line 2" },
+        { "type": "text", "id": "city_line", "label": "City/state/postcode", "default": "Las Vegas, NV 89102" },
+        { "type": "richtext", "id": "hours", "label": "Hours", "default": "<p>Friday-Sunday<br>10:00 AM-6:00 PM</p>" },
+        { "type": "richtext", "id": "find_here", "label": "Find here", "default": "<p>Gacha + Armory selections<br>Custom creations</p>" },
+        { "type": "text", "id": "directions_label", "label": "Directions label", "default": "Get Swap Meet directions" },
+        { "type": "url", "id": "directions_url", "label": "Directions URL" },
+        { "type": "text", "id": "secondary_label", "label": "Secondary label" },
+        { "type": "url", "id": "secondary_url", "label": "Secondary URL" },
+        { "type": "checkbox", "id": "highlight", "label": "Highlight", "default": false }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Location Directory",
+      "blocks": [
+        { "type": "location" },
+        { "type": "location", "settings": { "badge": "Opening September", "title": "Fremont Street Experience", "subtitle": "Downtown Las Vegas", "address_line_1": "Exact booth details will be added once finalized.", "city_line": "", "hours": "<p>Seven days a week<br>11:00 AM-11:00 PM</p>", "find_here": "<p>Gacha District products<br>No Armory inventory</p>", "directions_label": "Explore the Fremont area" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

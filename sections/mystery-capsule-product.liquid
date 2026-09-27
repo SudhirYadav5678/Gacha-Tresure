@@ -1,0 +1,1313 @@
+{% liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign first_media = product.featured_media | default: product.media.first
+  assign form_id = 'mystery-product-form-' | append: section.id | append: '-' | append: product.id
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .mystery-product {
+    --mp-bg: {{ section.settings.background }};
+    --mp-panel: {{ section.settings.panel_background }};
+    --mp-text: {{ section.settings.text_color }};
+    --mp-muted: {{ section.settings.muted_text_color }};
+    --mp-accent: {{ section.settings.accent_color }};
+    --mp-accent-soft: {{ section.settings.accent_soft_color }};
+    --mp-border: {{ section.settings.border_color }};
+    --mp-media-bg: {{ section.settings.media_background }};
+    --mp-media-width: {{ section.settings.media_width }}%;
+    --mp-gap: {{ section.settings.column_gap }}px;
+    --mp-radius: {{ section.settings.image_radius }}px;
+    --mp-thumb-gap: {{ section.settings.thumbnail_gap }}px;
+    --mp-title-desktop: {{ section.settings.title_size_desktop }}px;
+    --mp-title-mobile: {{ section.settings.title_size_mobile }}px;
+    --mp-body-size: {{ section.settings.body_size }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .mystery-product {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="mystery-product" data-mystery-product>
+  <div class="mystery-product__inner mystery-product__inner--{{ section.settings.section_width }}">
+    <div class="mystery-product__media-column">
+      <div class="mystery-product__gallery" data-mystery-gallery>
+        {% if section.settings.show_media_counter and product.media.size > 0 %}
+          <p class="mystery-product__media-count" data-mystery-counter>
+            {{ section.settings.media_counter_label }} 1 {{ section.settings.media_counter_of_label }} {{ product.media.size }}
+          </p>
+        {% endif %}
+
+        <div class="mystery-product__media-stage mystery-product__media-stage--{{ section.settings.image_ratio }}" data-mystery-stage>
+          {% if product.media.size > 0 %}
+            {% for media in product.media %}
+              <div class="mystery-product__media-item{% if media.id == first_media.id %} is-active{% endif %}" data-media-id="{{ media.id }}" data-media-index="{{ forloop.index }}">
+                {% case media.media_type %}
+                  {% when 'image' %}
+                    {% liquid
+                      assign media_loading = 'lazy'
+                      if forloop.first
+                        assign media_loading = 'eager'
+                      endif
+                    %}
+                    {{ media.preview_image | image_url: width: 1600 | image_tag: widths: '540, 720, 960, 1200, 1600', sizes: '(max-width: 900px) 100vw, 54vw', loading: media_loading, class: 'mystery-product__image' }}
+                  {% when 'video' %}
+                    {{ media | media_tag: image_size: '1200x', autoplay: section.settings.video_autoplay, loop: true, controls: true, muted: section.settings.video_autoplay, class: 'mystery-product__video' }}
+                  {% when 'external_video' %}
+                    {{ media | external_video_tag: class: 'mystery-product__video' }}
+                  {% when 'model' %}
+                    {{ media | media_tag: image_size: '1200x', toggleable: true, class: 'mystery-product__model' }}
+                  {% else %}
+                    {{ media | media_tag: class: 'mystery-product__video' }}
+                {% endcase %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="mystery-product__placeholder">
+              {{ 'product-1' | placeholder_svg_tag }}
+            </div>
+          {% endif %}
+        </div>
+
+        {% if section.settings.show_thumbnails and product.media.size > 1 %}
+          <div class="mystery-product__thumbs" aria-label="Product media thumbnails">
+            {% for media in product.media %}
+              <button class="mystery-product__thumb{% if media.id == first_media.id %} is-active{% endif %}" type="button" data-media-target="{{ media.id }}" aria-label="Show media {{ forloop.index }}">
+                {{ media.preview_image | image_url: width: 240 | image_tag: widths: '120, 180, 240', sizes: '120px', loading: 'lazy', class: 'mystery-product__thumb-image' }}
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mystery-product__info-column{% if section.settings.sticky_info %} mystery-product__info-column--sticky{% endif %}" style="--mp-sticky-top: {{ section.settings.sticky_top_offset }}px;">
+      {% form 'product', product, id: form_id, class: 'mystery-product__form', novalidate: 'novalidate', data-product-form: '' %}
+        <input type="hidden" name="id" value="{{ current_variant.id }}" data-mystery-variant-id>
+
+        {% for block in section.blocks %}
+          {% case block.type %}
+            {% when 'eyebrow' %}
+              {% if block.settings.text != blank %}
+                <p class="mystery-product__eyebrow{% if block.settings.uppercase %} mystery-product__eyebrow--uppercase{% endif %}" {{ block.shopify_attributes }}>{{ block.settings.text }}</p>
+              {% endif %}
+
+            {% when 'title' %}
+              <div class="mystery-product__title-block" {{ block.shopify_attributes }}>
+                {% liquid
+                  assign display_title = product.title
+                  if block.settings.custom_title != blank
+                    assign display_title = block.settings.custom_title
+                  endif
+                %}
+                <h1 class="mystery-product__title">
+                  {% if block.settings.accent_phrase != blank and display_title contains block.settings.accent_phrase %}
+                    {% assign title_without_accent = display_title | remove: block.settings.accent_phrase | strip %}
+                    {% if title_without_accent != blank %}
+                      <span>{{ title_without_accent }}</span>
+                    {% endif %}
+                    <em>{{ block.settings.accent_phrase }}</em>
+                  {% else %}
+                    <span>{{ display_title }}</span>
+                    {% if block.settings.accent_phrase != blank %}
+                      <em>{{ block.settings.accent_phrase }}</em>
+                    {% endif %}
+                  {% endif %}
+                </h1>
+              </div>
+
+            {% when 'meta' %}
+              {% if block.settings.text != blank %}
+                <p class="mystery-product__meta" {{ block.shopify_attributes }}>
+                  {% if block.settings.accent_text != blank %}
+                    <span>{{ block.settings.accent_text }}</span>
+                    {% if block.settings.separator != blank %}<b aria-hidden="true">{{ block.settings.separator }}</b>{% endif %}
+                  {% endif %}
+                  {{ block.settings.text }}
+                </p>
+              {% endif %}
+
+            {% when 'description' %}
+              <div class="mystery-product__description" {{ block.shopify_attributes }}>
+                {% if block.settings.custom_description != blank %}
+                  {{ block.settings.custom_description }}
+                {% elsif product.metafields.custom.short_description != blank %}
+                  {{ product.metafields.custom.short_description | metafield_tag }}
+                {% else %}
+                  {{ product.description | strip_html | truncatewords: block.settings.truncate_words }}
+                {% endif %}
+              </div>
+
+            {% when 'variant_picker' %}
+              {% unless product.has_only_default_variant %}
+                <div class="mystery-product__variant-picker" {{ block.shopify_attributes }}>
+                  {% for option in product.options_with_values %}
+                    {% liquid
+                      assign selected_value = option.selected_value
+                      if selected_value == blank
+                        case option.position
+                          when 1
+                            assign selected_value = current_variant.option1
+                          when 2
+                            assign selected_value = current_variant.option2
+                          when 3
+                            assign selected_value = current_variant.option3
+                        endcase
+                      endif
+                    %}
+                    <fieldset class="mystery-option-group" data-option-position="{{ option.position }}">
+                      <legend>
+                        <span>{{ block.settings.label_prefix | default: option.name }}</span>
+                        {% if block.settings.helper_text != blank %}
+                          <small>{{ block.settings.helper_text }}</small>
+                        {% endif %}
+                      </legend>
+                      <div class="mystery-option-group__grid mystery-option-group__grid--{{ block.settings.desktop_columns }}">
+                        {% for value in option.values %}
+                          {% liquid
+                            assign value_available = false
+                            assign value_price = blank
+                            for variant in product.variants
+                              case option.position
+                                when 1
+                                  assign variant_value = variant.option1
+                                when 2
+                                  assign variant_value = variant.option2
+                                when 3
+                                  assign variant_value = variant.option3
+                              endcase
+                              if variant_value == value
+                                if value_price == blank
+                                  assign value_price = variant.price | money
+                                endif
+                                if variant.available
+                                  assign value_available = true
+                                endif
+                              endif
+                            endfor
+                          %}
+                          <label class="mystery-choice{% if value == selected_value %} is-selected{% endif %}{% unless value_available %} is-disabled{% endunless %}">
+                            <input type="radio" name="mystery-option-{{ section.id }}-{{ option.position }}" value="{{ value | escape }}" data-option-value="{{ value | escape }}" {% if value == selected_value %}checked{% endif %} {% unless value_available %}disabled{% endunless %}>
+                            <span class="mystery-choice__check" aria-hidden="true">&#10003;</span>
+                            <span class="mystery-choice__label">{{ value }}</span>
+                            {% if block.settings.show_option_price and value_price != blank %}
+                              <span class="mystery-choice__price">{{ value_price }}</span>
+                            {% endif %}
+                          </label>
+                        {% endfor %}
+                      </div>
+                    </fieldset>
+                  {% endfor %}
+                </div>
+              {% endunless %}
+
+            {% when 'preference_picker' %}
+              {% assign preference_rows = block.settings.choices | newline_to_br | split: '<br />' %}
+              {% if preference_rows.size > 0 %}
+                <fieldset class="mystery-preferences" {{ block.shopify_attributes }}>
+                  <legend>
+                    <span>{{ block.settings.heading }}</span>
+                    {% if block.settings.microcopy != blank %}
+                      <small>{{ block.settings.microcopy }}</small>
+                    {% endif %}
+                  </legend>
+                  <div class="mystery-preferences__grid">
+                    {% for row in preference_rows %}
+                      {% assign row_parts = row | strip | split: '|' %}
+                      {% assign pref_title = row_parts[0] | strip %}
+                      {% assign pref_text = row_parts[1] | strip %}
+                      {% if pref_title != blank %}
+                        <label class="mystery-preference{% if forloop.first %} mystery-preference--featured{% endif %}">
+                          <input type="radio" name="properties[Surprise preference]" value="{{ pref_title | escape }}" {% if forloop.first %}checked{% endif %}>
+                          <span class="mystery-choice__check" aria-hidden="true">&#10003;</span>
+                          <strong>{{ pref_title }}</strong>
+                          {% if pref_text != blank %}
+                            <small>{{ pref_text }}</small>
+                          {% endif %}
+                        </label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </fieldset>
+              {% endif %}
+
+            {% when 'recipient_age' %}
+              <div class="mystery-config-row" {{ block.shopify_attributes }}>
+                {% if block.settings.show_recipient %}
+                  {% assign recipient_options = block.settings.recipient_choices | split: ',' %}
+                  <fieldset class="mystery-recipient">
+                    <legend>{{ block.settings.recipient_label }}</legend>
+                    <div class="mystery-recipient__choices">
+                      {% for option_text in recipient_options %}
+                        {% assign cleaned_option = option_text | strip %}
+                        {% if cleaned_option != blank %}
+                          <label>
+                            <input type="radio" name="properties[Recipient preference]" value="{{ cleaned_option | escape }}" {% if forloop.first %}checked{% endif %}>
+                            <span>{{ cleaned_option }}</span>
+                          </label>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </fieldset>
+                {% endif %}
+                {% if block.settings.show_age %}
+                  {% assign age_options = block.settings.age_choices | split: ',' %}
+                  <div class="mystery-age">
+                    <label for="MysteryAge-{{ section.id }}">{{ block.settings.age_label }}</label>
+                    <select id="MysteryAge-{{ section.id }}" name="properties[Age range]">
+                      {% for option_text in age_options %}
+                        {% assign cleaned_option = option_text | strip %}
+                        {% if cleaned_option != blank %}
+                          <option value="{{ cleaned_option | escape }}">{{ cleaned_option }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% endif %}
+              </div>
+
+            {% when 'notice' %}
+              {% if block.settings.text != blank %}
+                <div class="mystery-notice" {{ block.shopify_attributes }}>
+                  <span aria-hidden="true">{{ block.settings.icon }}</span>
+                  <div>{{ block.settings.text }}</div>
+                </div>
+              {% endif %}
+
+            {% when 'price' %}
+              <div class="mystery-product__price-row" {{ block.shopify_attributes }}>
+                <p class="mystery-product__price" data-mystery-price>
+                  {% if current_variant.compare_at_price > current_variant.price %}
+                    <s>{{ current_variant.compare_at_price | money }}</s>
+                  {% endif %}
+                  <span>{{ current_variant.price | money }}</span>
+                </p>
+                {% if block.settings.note != blank %}
+                  <p class="mystery-product__price-note">{{ block.settings.note }}</p>
+                {% endif %}
+              </div>
+
+            {% when 'buy_buttons' %}
+              <div class="mystery-product__buy-row" {{ block.shopify_attributes }}>
+                {% if block.settings.show_quantity %}
+                  <quantity-input class="mystery-quantity">
+                    <button type="button" name="minus" aria-label="Decrease quantity">-</button>
+                    <label class="mystery-product__sr" for="MysteryQuantity-{{ section.id }}">Quantity</label>
+                    <input id="MysteryQuantity-{{ section.id }}" type="number" name="quantity" value="1" min="1" inputmode="numeric">
+                    <button type="button" name="plus" aria-label="Increase quantity">+</button>
+                  </quantity-input>
+                {% else %}
+                  <input type="hidden" name="quantity" value="1">
+                {% endif %}
+                <button class="mystery-product__submit" type="submit" name="add" data-mystery-submit {% unless current_variant.available %}disabled{% endunless %}>
+                  <span data-mystery-submit-text data-available="{{ block.settings.button_label | escape }}">
+                    {% if current_variant.available %}
+                      {{ block.settings.button_label }}
+                    {% else %}
+                      {{ block.settings.sold_out_label }}
+                    {% endif %}
+                  </span>
+                </button>
+              </div>
+              {% if block.settings.show_dynamic_checkout %}
+                <div class="mystery-product__checkout">
+                  {{ form | payment_button }}
+                </div>
+              {% endif %}
+
+            {% when 'trust_benefits' %}
+              <div class="mystery-benefits" {{ block.shopify_attributes }}>
+                <div>
+                  <span aria-hidden="true">{{ block.settings.first_icon }}</span>
+                  <strong>{{ block.settings.first_title }}</strong>
+                  <small>{{ block.settings.first_text }}</small>
+                </div>
+                <div>
+                  <span aria-hidden="true">{{ block.settings.second_icon }}</span>
+                  <strong>{{ block.settings.second_title }}</strong>
+                  <small>{{ block.settings.second_text }}</small>
+                </div>
+              </div>
+
+            {% when 'accordion' %}
+              <details class="mystery-accordion" {% if block.settings.open_by_default %}open{% endif %} {{ block.shopify_attributes }}>
+                <summary>{{ block.settings.heading }} <span aria-hidden="true">+</span></summary>
+                <div class="mystery-accordion__content">{{ block.settings.content }}</div>
+              </details>
+
+            {% when 'custom_liquid' %}
+              <div class="mystery-product__custom" {{ block.shopify_attributes }}>
+                {{ block.settings.custom_liquid }}
+              </div>
+
+            {% when '@app' %}
+              {% render block %}
+          {% endcase %}
+        {% endfor %}
+      {% endform %}
+
+      <script type="application/json" data-mystery-variants>
+        [
+          {% for variant in product.variants %}
+            {
+              "id": {{ variant.id | json }},
+              "available": {{ variant.available | json }},
+              "options": {{ variant.options | json }},
+              "price": {{ variant.price | money | json }},
+              "compareAtPrice": {% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | json }}{% else %}null{% endif %},
+              "featuredMediaId": {% if variant.featured_media != blank %}{{ variant.featured_media.id | json }}{% else %}null{% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      </script>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .mystery-product {
+    color: var(--mp-text);
+    background: var(--mp-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .mystery-product__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, var(--mp-media-width)) minmax(0, calc(100% - var(--mp-media-width)));
+    gap: var(--mp-gap);
+    align-items: start;
+  }
+
+  .mystery-product__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .mystery-product__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .mystery-product__gallery {
+    position: relative;
+  }
+
+  .mystery-product__media-count {
+    position: absolute;
+    z-index: 2;
+    top: 18px;
+    left: 18px;
+    margin: 0;
+    padding: 13px 18px;
+    color: var(--mp-text);
+    background: var(--mp-panel);
+    border: 1px solid var(--mp-border);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .mystery-product__media-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--mp-radius);
+    background: var(--mp-media-bg);
+  }
+
+  .mystery-product__media-stage--square {
+    aspect-ratio: 1;
+  }
+
+  .mystery-product__media-stage--portrait {
+    aspect-ratio: 4 / 5;
+  }
+
+  .mystery-product__media-stage--natural {
+    min-height: 520px;
+  }
+
+  .mystery-product__media-item {
+    display: none;
+    width: 100%;
+    height: 100%;
+  }
+
+  .mystery-product__media-item.is-active {
+    display: block;
+  }
+
+  .mystery-product__image,
+  .mystery-product__video,
+  .mystery-product__model,
+  .mystery-product__placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    object-fit: cover;
+  }
+
+  .mystery-product__placeholder {
+    min-height: 520px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #f6eadc, #dfcbb8);
+  }
+
+  .mystery-product__placeholder svg {
+    width: min(320px, 52%);
+    opacity: .42;
+  }
+
+  .mystery-product__thumbs {
+    margin-top: 18px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(120px, 1fr);
+    gap: var(--mp-thumb-gap);
+    overflow-x: auto;
+  }
+
+  .mystery-product__thumb {
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: var(--mp-media-bg);
+    cursor: pointer;
+  }
+
+  .mystery-product__thumb.is-active {
+    border-color: var(--mp-accent);
+  }
+
+  .mystery-product__thumb-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mystery-product__info-column {
+    min-width: 0;
+  }
+
+  .mystery-product__info-column--sticky {
+    position: sticky;
+    top: var(--mp-sticky-top);
+  }
+
+  .mystery-product__form {
+    display: grid;
+    gap: 26px;
+  }
+
+  .mystery-product__eyebrow {
+    margin: 0 0 -4px;
+    color: var(--mp-accent);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .16em;
+  }
+
+  .mystery-product__eyebrow--uppercase {
+    text-transform: uppercase;
+  }
+
+  .mystery-product__title {
+    margin: 0;
+    color: var(--mp-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--mp-title-mobile), 5vw, var(--mp-title-desktop));
+    font-weight: 500;
+    line-height: .95;
+  }
+
+  .mystery-product__title span,
+  .mystery-product__title em {
+    display: block;
+  }
+
+  .mystery-product__title em {
+    color: var(--mp-accent-soft);
+    font-style: italic;
+  }
+
+  .mystery-product__meta {
+    margin: -12px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    color: var(--mp-muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .mystery-product__meta span {
+    color: var(--mp-accent);
+  }
+
+  .mystery-product__meta b {
+    font-weight: 600;
+  }
+
+  .mystery-product__description {
+    max-width: 720px;
+    color: var(--mp-muted);
+    font-size: var(--mp-body-size);
+    line-height: 1.75;
+  }
+
+  .mystery-product__description p {
+    margin: 0;
+  }
+
+  .mystery-option-group,
+  .mystery-preferences,
+  .mystery-recipient {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .mystery-option-group legend,
+  .mystery-preferences legend,
+  .mystery-recipient legend,
+  .mystery-age label {
+    width: 100%;
+    margin: 0 0 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--mp-text);
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .mystery-option-group legend small,
+  .mystery-preferences legend small {
+    color: var(--mp-muted);
+    font-weight: 600;
+  }
+
+  .mystery-option-group__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .mystery-option-group__grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mystery-option-group__grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mystery-choice,
+  .mystery-preference {
+    position: relative;
+    min-height: 78px;
+    padding: 18px 16px;
+    display: grid;
+    align-content: center;
+    gap: 6px;
+    color: var(--mp-text);
+    background: rgba(255,255,255,.36);
+    border: 1px solid var(--mp-border);
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, transform .2s ease;
+  }
+
+  .mystery-choice input,
+  .mystery-preference input,
+  .mystery-recipient input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .mystery-choice:hover,
+  .mystery-preference:hover {
+    transform: translateY(-1px);
+  }
+
+  .mystery-choice.is-selected,
+  .mystery-choice:has(input:checked),
+  .mystery-preference:has(input:checked) {
+    background: rgba(199,63,118,.07);
+    border-color: var(--mp-accent);
+  }
+
+  .mystery-choice.is-disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .mystery-choice__check {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: var(--mp-accent);
+    font-size: 13px;
+    opacity: 0;
+  }
+
+  .mystery-choice:has(input:checked) .mystery-choice__check,
+  .mystery-preference:has(input:checked) .mystery-choice__check,
+  .mystery-choice.is-selected .mystery-choice__check {
+    opacity: 1;
+  }
+
+  .mystery-choice__label {
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mystery-choice__price,
+  .mystery-preference small {
+    color: var(--mp-muted);
+    font-size: 11px;
+    font-weight: 650;
+  }
+
+  .mystery-preferences {
+    padding: 22px;
+    background: rgba(255,255,255,.28);
+    border: 1px solid var(--mp-border);
+  }
+
+  .mystery-preferences__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .mystery-preference {
+    min-height: 74px;
+  }
+
+  .mystery-preference--featured {
+    grid-column: 1 / -1;
+  }
+
+  .mystery-preference strong {
+    font-size: 13px;
+  }
+
+  .mystery-config-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, .35fr);
+    gap: 18px;
+    align-items: end;
+  }
+
+  .mystery-recipient__choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mystery-recipient label {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 13px;
+    border: 1px solid var(--mp-border);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .mystery-recipient label:has(input:checked) {
+    color: #fff;
+    background: var(--mp-accent);
+    border-color: var(--mp-accent);
+  }
+
+  .mystery-age select {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 12px;
+    color: var(--mp-text);
+    background: rgba(255,255,255,.34);
+    border: 1px solid var(--mp-border);
+  }
+
+  .mystery-notice {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 14px 16px;
+    color: var(--mp-muted);
+    background: rgba(199,63,118,.07);
+    border-left: 3px solid var(--mp-accent);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .mystery-notice p {
+    margin: 0;
+  }
+
+  .mystery-product__price-row {
+    margin-top: 12px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .mystery-product__price {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    color: var(--mp-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(30px, 2.8vw, 40px);
+    line-height: 1;
+  }
+
+  .mystery-product__price s {
+    color: var(--mp-muted);
+    font-size: .62em;
+  }
+
+  .mystery-product__price-note {
+    margin: 0;
+    color: var(--mp-muted);
+    font-size: 11px;
+    font-weight: 750;
+    text-align: right;
+  }
+
+  .mystery-product__buy-row {
+    display: grid;
+    grid-template-columns: minmax(118px, .18fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .mystery-quantity {
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    border: 1px solid var(--mp-border);
+    background: rgba(255,255,255,.34);
+  }
+
+  .mystery-quantity button,
+  .mystery-quantity input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    color: var(--mp-text);
+    background: transparent;
+    text-align: center;
+    font: inherit;
+    font-weight: 800;
+  }
+
+  .mystery-quantity button {
+    cursor: pointer;
+  }
+
+  .mystery-product__submit {
+    min-height: 56px;
+    padding: 0 24px;
+    color: #fff;
+    background: var(--mp-accent);
+    border: 1px solid var(--mp-accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: transform .2s ease, filter .2s ease;
+  }
+
+  .mystery-product__submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+  }
+
+  .mystery-product__submit:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .mystery-product__checkout {
+    margin-top: -14px;
+  }
+
+  .mystery-benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--mp-border);
+  }
+
+  .mystery-benefits div {
+    min-width: 0;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 3px;
+  }
+
+  .mystery-benefits div + div {
+    border-left: 1px solid var(--mp-border);
+  }
+
+  .mystery-benefits span {
+    color: var(--mp-accent);
+    grid-row: span 2;
+  }
+
+  .mystery-benefits strong {
+    font-size: 13px;
+  }
+
+  .mystery-benefits small {
+    color: var(--mp-muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .mystery-accordion {
+    border-top: 1px solid var(--mp-border);
+  }
+
+  .mystery-accordion:last-child {
+    border-bottom: 1px solid var(--mp-border);
+  }
+
+  .mystery-accordion summary {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--mp-text);
+    font-size: 14px;
+    font-weight: 850;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .mystery-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mystery-accordion[open] summary span {
+    transform: rotate(45deg);
+  }
+
+  .mystery-accordion__content {
+    padding-bottom: 22px;
+    color: var(--mp-muted);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .mystery-accordion__content p {
+    margin: 0;
+  }
+
+  .mystery-product__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  .mystery-product button:focus-visible,
+  .mystery-product input:focus-visible,
+  .mystery-product select:focus-visible,
+  .mystery-product summary:focus-visible {
+    outline: 2px solid var(--mp-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 980px) {
+    .mystery-product__inner {
+      grid-template-columns: 1fr;
+    }
+
+    .mystery-product__info-column--sticky {
+      position: static;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .mystery-product__inner--page,
+    .mystery-product__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .mystery-product__media-stage {
+      aspect-ratio: 1;
+    }
+
+    .mystery-product__media-stage--natural {
+      min-height: auto;
+    }
+
+    .mystery-product__thumbs {
+      grid-auto-columns: 42%;
+      scroll-snap-type: x mandatory;
+    }
+
+    .mystery-product__thumb {
+      scroll-snap-align: start;
+    }
+
+    .mystery-option-group__grid,
+    .mystery-option-group__grid--2,
+    .mystery-option-group__grid--3,
+    .mystery-preferences__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mystery-config-row,
+    .mystery-product__price-row {
+      grid-template-columns: 1fr;
+    }
+
+    .mystery-product__buy-row,
+    .mystery-benefits {
+      grid-template-columns: 1fr;
+    }
+
+    .mystery-benefits div + div {
+      border-left: 0;
+      border-top: 1px solid var(--mp-border);
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mystery-preferences__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mystery-choice,
+    .mystery-preference,
+    .mystery-product__submit {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  class MysteryProductSection {
+    constructor(root) {
+      this.root = root;
+      this.form = root.querySelector('[data-product-form]');
+      this.variantInput = root.querySelector('[data-mystery-variant-id]');
+      this.price = root.querySelector('[data-mystery-price]');
+      this.submit = root.querySelector('[data-mystery-submit]');
+      this.submitText = root.querySelector('[data-mystery-submit-text]');
+      this.variants = this.readVariants();
+      this.bindGallery();
+      this.bindVariantPicker();
+      this.bindQuantity();
+    }
+
+    readVariants() {
+      const script = this.root.querySelector('[data-mystery-variants]');
+      if (!script) return [];
+      try {
+        return JSON.parse(script.textContent);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    bindGallery() {
+      const thumbs = this.root.querySelectorAll('[data-media-target]');
+      thumbs.forEach((thumb) => {
+        thumb.addEventListener('click', () => this.showMedia(thumb.dataset.mediaTarget));
+      });
+    }
+
+    showMedia(mediaId) {
+      this.root.querySelectorAll('[data-media-id]').forEach((item) => {
+        item.classList.toggle('is-active', item.dataset.mediaId === String(mediaId));
+      });
+      this.root.querySelectorAll('[data-media-target]').forEach((thumb) => {
+        thumb.classList.toggle('is-active', thumb.dataset.mediaTarget === String(mediaId));
+      });
+      const active = this.root.querySelector(`[data-media-id="${mediaId}"]`);
+      const counter = this.root.querySelector('[data-mystery-counter]');
+      if (active && counter) {
+        counter.textContent = counter.textContent.replace(/\d+\s+(?=\S+\s+\d+$)/, `${active.dataset.mediaIndex} `);
+      }
+    }
+
+    bindVariantPicker() {
+      this.root.querySelectorAll('[data-option-value]').forEach((input) => {
+        input.addEventListener('change', () => this.updateVariant());
+      });
+      this.updateVariant();
+    }
+
+    selectedOptions() {
+      return Array.from(this.root.querySelectorAll('[data-option-position]')).map((group) => {
+        const checked = group.querySelector('[data-option-value]:checked');
+        return checked ? checked.value : null;
+      }).filter(Boolean);
+    }
+
+    updateVariant() {
+      const selected = this.selectedOptions();
+      const variant = this.variants.find((candidate) => {
+        return candidate.options.every((value, index) => value === selected[index]);
+      }) || this.variants[0];
+      this.root.querySelectorAll('.mystery-choice').forEach((label) => {
+        const input = label.querySelector('[data-option-value]');
+        label.classList.toggle('is-selected', Boolean(input && input.checked));
+      });
+      if (!variant) return;
+      if (this.variantInput) this.variantInput.value = variant.id;
+      if (this.price) {
+        this.price.innerHTML = variant.compareAtPrice ? `<s>${variant.compareAtPrice}</s><span>${variant.price}</span>` : `<span>${variant.price}</span>`;
+      }
+      if (this.submit) {
+        this.submit.disabled = !variant.available;
+      }
+      if (this.submitText) {
+        this.submitText.textContent = variant.available ? this.submitText.dataset.available || this.submitText.textContent : 'Sold out';
+      }
+      if (variant.featuredMediaId) {
+        this.showMedia(variant.featuredMediaId);
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('variant', variant.id);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    bindQuantity() {
+      this.root.querySelectorAll('.mystery-quantity').forEach((quantity) => {
+        const input = quantity.querySelector('input');
+        const minus = quantity.querySelector('[name="minus"]');
+        const plus = quantity.querySelector('[name="plus"]');
+        if (!input || !minus || !plus) return;
+        minus.addEventListener('click', () => {
+          input.value = Math.max(Number(input.min || 1), Number(input.value || 1) - 1);
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        plus.addEventListener('click', () => {
+          input.value = Number(input.value || 1) + 1;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+    }
+  }
+
+  function initMysteryProducts(container = document) {
+    container.querySelectorAll('[data-mystery-product]').forEach((root) => {
+      if (root.dataset.mysteryInitialized) return;
+      root.dataset.mysteryInitialized = 'true';
+      new MysteryProductSection(root);
+    });
+  }
+
+  initMysteryProducts();
+  document.addEventListener('shopify:section:load', (event) => initMysteryProducts(event.target));
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Mystery capsule product",
+  "settings": [
+    { "type": "select", "id": "section_width", "label": "Section width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "range", "id": "media_width", "label": "Desktop media width", "min": 45, "max": 60, "step": 1, "unit": "%", "default": 53 },
+    { "type": "range", "id": "column_gap", "label": "Column gap", "min": 28, "max": 96, "step": 4, "unit": "px", "default": 72 },
+    { "type": "checkbox", "id": "sticky_info", "label": "Sticky product information on desktop", "default": true },
+    { "type": "range", "id": "sticky_top_offset", "label": "Sticky top offset", "min": 64, "max": 180, "step": 4, "unit": "px", "default": 96 },
+    { "type": "select", "id": "image_ratio", "label": "Media ratio", "default": "natural", "options": [
+      { "value": "natural", "label": "Natural" },
+      { "value": "square", "label": "Square" },
+      { "value": "portrait", "label": "Portrait" }
+    ] },
+    { "type": "checkbox", "id": "show_media_counter", "label": "Show media counter", "default": true },
+    { "type": "text", "id": "media_counter_label", "label": "Counter label", "default": "Product view" },
+    { "type": "text", "id": "media_counter_of_label", "label": "Counter of label", "default": "of" },
+    { "type": "checkbox", "id": "show_thumbnails", "label": "Show thumbnails", "default": true },
+    { "type": "range", "id": "thumbnail_gap", "label": "Thumbnail gap", "min": 6, "max": 24, "step": 2, "unit": "px", "default": 10 },
+    { "type": "checkbox", "id": "video_autoplay", "label": "Autoplay videos muted", "default": false },
+    { "type": "range", "id": "image_radius", "label": "Image radius", "min": 0, "max": 12, "step": 1, "unit": "px", "default": 0 },
+    { "type": "range", "id": "title_size_desktop", "label": "Title size desktop", "min": 56, "max": 104, "step": 2, "unit": "px", "default": 82 },
+    { "type": "range", "id": "title_size_mobile", "label": "Title size mobile", "min": 40, "max": 64, "step": 2, "unit": "px", "default": 48 },
+    { "type": "range", "id": "body_size", "label": "Body size", "min": 13, "max": 18, "step": 1, "unit": "px", "default": 15 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F8F2E9" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#FCF8F1" },
+    { "type": "color", "id": "media_background", "label": "Media background", "default": "#EAE0D4" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#74676D" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#C73F76" },
+    { "type": "color", "id": "accent_soft_color", "label": "Soft accent", "default": "#E79BB9" },
+    { "type": "color", "id": "border_color", "label": "Border color", "default": "#D9CEC3" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 24, "max": 120, "step": 4, "unit": "px", "default": 36 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 160, "step": 4, "unit": "px", "default": 112 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 18, "max": 80, "step": 2, "unit": "px", "default": 22 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 42, "max": 110, "step": 2, "unit": "px", "default": 64 }
+  ],
+  "blocks": [
+    {
+      "type": "eyebrow",
+      "name": "Eyebrow",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Text", "default": "The signature Gacha Treasures experience" },
+        { "type": "checkbox", "id": "uppercase", "label": "Uppercase", "default": true }
+      ]
+    },
+    {
+      "type": "title",
+      "name": "Product title",
+      "settings": [
+        { "type": "text", "id": "custom_title", "label": "Custom display title" },
+        { "type": "text", "id": "accent_phrase", "label": "Accent phrase", "default": "Capsule" }
+      ]
+    },
+    {
+      "type": "meta",
+      "name": "Short meta",
+      "settings": [
+        { "type": "text", "id": "accent_text", "label": "Accent text", "default": "Four sizes" },
+        { "type": "text", "id": "separator", "label": "Separator", "default": "-" },
+        { "type": "text", "id": "text", "label": "Text", "default": "one sealed surprise" }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Description",
+      "settings": [
+        { "type": "richtext", "id": "custom_description", "label": "Custom description", "default": "<p>The arcade thrill, shipped. Choose your capsule size and we will hand-pick a sealed surprise from available machine stock.</p>" },
+        { "type": "range", "id": "truncate_words", "label": "Fallback description words", "min": 18, "max": 80, "step": 2, "default": 34 }
+      ]
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variant picker",
+      "settings": [
+        { "type": "text", "id": "label_prefix", "label": "Label", "default": "Choose your capsule" },
+        { "type": "text", "id": "helper_text", "label": "Helper text", "default": "Classic capsule collectible" },
+        { "type": "checkbox", "id": "show_option_price", "label": "Show price in options", "default": true },
+        { "type": "select", "id": "desktop_columns", "label": "Desktop columns", "default": "4", "options": [
+          { "value": "2", "label": "2" },
+          { "value": "3", "label": "3" },
+          { "value": "4", "label": "4" }
+        ] }
+      ]
+    },
+    {
+      "type": "preference_picker",
+      "name": "Mystery preference",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Guide the surprise" },
+        { "type": "text", "id": "microcopy", "label": "Microcopy", "default": "We will match your preferences when available. The exact capsule stays a mystery." },
+        { "type": "textarea", "id": "choices", "label": "Choices", "default": "Surprise Me|Leave the whole pull to us\nCute and Kawaii|Sweet, soft, and irresistibly tiny\nAnime and Manga|Character-led worlds and iconic styles\nGaming Characters|Heroes and favorites from game worlds\nHeroes and Action|Bold characters and high-energy pulls\nCreatures and Monsters|Tiny beasts, fantasy friends, and oddities" }
+      ]
+    },
+    {
+      "type": "recipient_age",
+      "name": "Recipient and age",
+      "settings": [
+        { "type": "checkbox", "id": "show_recipient", "label": "Show recipient", "default": true },
+        { "type": "text", "id": "recipient_label", "label": "Recipient label", "default": "Who is it for? Optional" },
+        { "type": "text", "id": "recipient_choices", "label": "Recipient choices", "default": "No preference, For a girl, For a boy, For anyone" },
+        { "type": "checkbox", "id": "show_age", "label": "Show age range", "default": true },
+        { "type": "text", "id": "age_label", "label": "Age label", "default": "Age range" },
+        { "type": "text", "id": "age_choices", "label": "Age choices", "default": "10-13, 14-17, 18+, Any age" }
+      ]
+    },
+    {
+      "type": "notice",
+      "name": "Preference notice",
+      "settings": [
+        { "type": "text", "id": "icon", "label": "Icon", "default": "*" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>We will do our best to match the age, theme, and recipient guidance from available machine stock. Each pull remains a mystery.</p>" }
+      ]
+    },
+    {
+      "type": "price",
+      "name": "Price",
+      "settings": [
+        { "type": "text", "id": "note", "label": "Price note", "default": "One random collectible inside" }
+      ]
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Buy buttons",
+      "settings": [
+        { "type": "checkbox", "id": "show_quantity", "label": "Show quantity", "default": true },
+        { "type": "text", "id": "button_label", "label": "Button label", "default": "Add mystery to bag" },
+        { "type": "text", "id": "sold_out_label", "label": "Sold out label", "default": "Sold out" },
+        { "type": "checkbox", "id": "show_dynamic_checkout", "label": "Show dynamic checkout", "default": false }
+      ]
+    },
+    {
+      "type": "trust_benefits",
+      "name": "Trust benefits",
+      "settings": [
+        { "type": "text", "id": "first_icon", "label": "First icon", "default": "o" },
+        { "type": "text", "id": "first_title", "label": "First title", "default": "One shared stock pool" },
+        { "type": "text", "id": "first_text", "label": "First text", "default": "Online plus Las Vegas stock stay connected." },
+        { "type": "text", "id": "second_icon", "label": "Second icon", "default": "[]" },
+        { "type": "text", "id": "second_title", "label": "Second title", "default": "Packed in Las Vegas" },
+        { "type": "text", "id": "second_text", "label": "Second text", "default": "Ready for giving or gacha play." }
+      ]
+    },
+    {
+      "type": "accordion",
+      "name": "Accordion",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Heading", "default": "What could be inside?" },
+        { "type": "richtext", "id": "content", "label": "Content", "default": "<p>Mini figures, charms, useful oddities, tiny display pieces, and original capsule collectibles. The exact design is always a surprise.</p>" },
+        { "type": "checkbox", "id": "open_by_default", "label": "Open by default", "default": false }
+      ]
+    },
+    {
+      "type": "custom_liquid",
+      "name": "Custom liquid",
+      "settings": [
+        { "type": "liquid", "id": "custom_liquid", "label": "Custom liquid" }
+      ]
+    },
+    { "type": "@app" }
+  ],
+  "presets": [
+    {
+      "name": "Mystery capsule product",
+      "blocks": [
+        { "type": "eyebrow" },
+        { "type": "title" },
+        { "type": "meta" },
+        { "type": "description" },
+        { "type": "variant_picker" },
+        { "type": "preference_picker" },
+        { "type": "recipient_age" },
+        { "type": "notice" },
+        { "type": "price" },
+        { "type": "buy_buttons" },
+        { "type": "trust_benefits" },
+        { "type": "accordion" },
+        { "type": "accordion", "settings": { "heading": "How inventory works", "content": "<p>Your preferences guide the pull, but availability changes as capsules sell in-store and online.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

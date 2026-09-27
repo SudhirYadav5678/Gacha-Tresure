@@ -1,0 +1,238 @@
+{% liquid
+  assign image = section.settings.image
+  assign mobile_image = section.settings.mobile_image | default: image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .story-split {
+    --story-bg: {{ section.settings.background }};
+    --story-panel: {{ section.settings.panel_background }};
+    --story-text: {{ section.settings.text_color }};
+    --story-accent: {{ section.settings.accent_color }};
+    --story-image-width: {{ section.settings.image_width }}%;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--story-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--light {
+    color: #170913;
+    background: #fff9f2;
+    border-color: #fff9f2;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="story-split">
+  <div class="story-split__frame">
+    <div class="story-split__image">
+      {% if image != blank %}
+        <picture>
+          {% if mobile_image != blank %}
+            <source media="(max-width: 767px)" srcset="{{ mobile_image | image_url: width: 900 }}">
+          {% endif %}
+          {{ image | image_url: width: 1600 | image_tag: widths: '700, 1000, 1300, 1600', sizes: '(max-width: 767px) 100vw, 55vw', loading: 'lazy', class: 'story-split__photo' }}
+        </picture>
+      {% else %}
+        <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+      {% endif %}
+    </div>
+    <div class="story-split__content">
+      {% if section.settings.eyebrow != blank %}
+        <p class="story-split__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>
+        {{ section.settings.heading }}
+        {% if section.settings.accent_heading != blank %}
+          <em>{{ section.settings.accent_heading }}</em>
+        {% endif %}
+      </h2>
+      {% if section.settings.body != blank %}
+        <div class="story-split__body">{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.blocks.size > 0 %}
+        <div class="story-split__stats">
+          {% for block in section.blocks %}
+            <div class="story-split__stat" {{ block.shopify_attributes }}>
+              <strong>{{ block.settings.value }}</strong>
+              <span>{{ block.settings.label }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="lux-button lux-button--light" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .story-split {
+    color: var(--story-text);
+    background: var(--story-bg);
+  }
+  .story-split__frame {
+    display: grid;
+    grid-template-columns: minmax(0, var(--story-image-width)) minmax(0, calc(100% - var(--story-image-width)));
+    min-height: 720px;
+  }
+  .story-split__image {
+    min-height: inherit;
+    overflow: hidden;
+    background: var(--lux-wine);
+  }
+  .story-split__photo,
+  .story-split__image picture,
+  .story-split__image .lux-placeholder {
+    width: 100%;
+    height: 100%;
+  }
+  .story-split__photo { object-fit: cover; }
+  .story-split__content {
+    min-height: inherit;
+    padding: clamp(48px, 8vw, 112px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--story-panel);
+  }
+  .story-split__eyebrow {
+    margin: 0 0 14px;
+    color: var(--story-accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .story-split h2 {
+    max-width: 680px;
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(44px, 5vw, 78px);
+    font-weight: 500;
+    line-height: .98;
+  }
+  .story-split h2 em {
+    display: block;
+    color: var(--story-accent);
+    font-style: italic;
+  }
+  .story-split__body {
+    max-width: 560px;
+    margin-top: 24px;
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: .76;
+  }
+  .story-split__body p { margin: 0; }
+  .story-split__stats {
+    width: min(100%, 620px);
+    margin-block: 36px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-block: 1px solid rgba(255,255,255,.16);
+  }
+  .story-split__stat {
+    padding: 18px 12px;
+    border-right: 1px solid rgba(255,255,255,.16);
+  }
+  .story-split__stat:last-child { border-right: 0; }
+  .story-split__stat strong {
+    display: block;
+    font-family: var(--font-heading-family);
+    font-size: 30px;
+    font-weight: 500;
+  }
+  .story-split__stat span {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+  @media (max-width: 900px) {
+    .story-split__frame { grid-template-columns: 1fr; }
+    .story-split__image { min-height: 430px; }
+    .story-split__content { min-height: auto; }
+  }
+  @media (max-width: 560px) {
+    .story-split__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .story-split__stat:nth-child(2n) { border-right: 0; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Story split",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Mystery stays intact" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "You guide the surprise." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "The reveal stays magical." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Choose a capsule, a case, or a keepsake. We keep the experience cinematic from first tap to final reveal.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Start your mystery" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#170913" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#2A071D" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#FFF9F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#F0AFCA" },
+    { "type": "range", "id": "image_width", "label": "Desktop image width", "min": 40, "max": 65, "step": 5, "unit": "%", "default": 55 },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Statistic",
+      "limit": 4,
+      "settings": [
+        { "type": "text", "id": "value", "label": "Value", "default": "60+" },
+        { "type": "text", "id": "label", "label": "Label", "default": "finds" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Story split" }
+  ]
+}
+{% endschema %}

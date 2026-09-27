@@ -1,0 +1,2914 @@
+{%- comment -%}
+  Filename: product-feature-details.liquid
+  Description: Responsive product section with gallery, thumbnails,
+  fullscreen image modal, zoom controls, product content blocks.
+{%- endcomment -%}
+
+{%- assign target_product = section.settings.product | default: product -%}
+{%- assign gallery_blocks = section.blocks | where: 'type', 'gallery_image' -%}
+
+{%- liquid
+  assign initial_full_image = blank
+
+  if gallery_blocks.size > 0
+    assign initial_full_image = gallery_blocks.first.settings.image
+  elsif target_product != blank and target_product.media.size > 0
+    assign initial_full_image = target_product.featured_media
+  endif
+-%}
+
+
+{%- style -%}
+
+  /* =========================================================
+     SECTION
+  ========================================================= */
+
+  #shopify-section-{{ section.id }} {
+    width: 100%;
+    background-color: {{ section.settings.bg_color }};
+    display: block;
+  }
+
+  .section-{{ section.id }} {
+    width: 100%;
+    color: {{ section.settings.text_color }};
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .section-{{ section.id }} {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+
+  /* =========================================================
+     CONTAINER
+  ========================================================= */
+
+  .section-{{ section.id }} .product-container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .section-{{ section.id }} .product-container--boxed {
+    max-width: {{ section.settings.container_max_width }}px;
+  }
+
+  .section-{{ section.id }} .product-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .section-{{ section.id }} .product-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+    }
+  }
+
+
+  /* =========================================================
+     PRODUCT GALLERY
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .section-{{ section.id }} .product-gallery__main {
+    position: relative;
+    width: 100%;
+    background-color: #f4f4f4;
+    overflow: hidden;
+    aspect-ratio: {{ section.settings.image_aspect_ratio }};
+  }
+
+  .section-{{ section.id }} .product-gallery__main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.3s ease;
+  }
+
+
+  /* =========================================================
+     VIEW FULL IMAGE BUTTON
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery__view-btn {
+    position: absolute;
+    z-index: 3;
+    right: 16px;
+    bottom: 16px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 38px;
+    padding: 8px 14px;
+
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+
+    color: #000000;
+
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+
+    cursor: pointer;
+
+    border-radius: 2px;
+
+    box-shadow:
+      0 3px 12px rgba(0, 0, 0, 0.08);
+
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .section-{{ section.id }} .product-gallery__view-btn:hover {
+    background: #fafafa;
+
+    transform:
+      translateY(-1px);
+
+    box-shadow:
+      0 5px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .section-{{ section.id }} .product-gallery__view-btn:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 3px;
+  }
+
+  .section-{{ section.id }} .product-gallery__view-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+
+  /* =========================================================
+     GALLERY CONTROLS
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 8px 0;
+
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .section-{{ section.id }} .product-gallery__controls button {
+    width: 28px;
+    height: 28px;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+
+    color: inherit;
+
+    cursor: pointer;
+
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .section-{{ section.id }} .product-gallery__controls button:hover {
+    border-color: rgba(0, 0, 0, 0.8);
+    color: #000;
+  }
+
+  .section-{{ section.id }} .product-gallery__controls svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .section-{{ section.id }} .gallery-status {
+    flex: 1;
+    padding: 0 14px;
+    text-align: center;
+  }
+
+  .section-{{ section.id }} .gallery-caption {
+    margin-left: 4px;
+  }
+
+
+  /* =========================================================
+     THUMBNAILS
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery__thumbnails {
+    display: flex;
+
+    gap: 8px;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    padding-bottom: 4px;
+  }
+
+  .section-{{ section.id }} .product-gallery__thumbnails::-webkit-scrollbar {
+    display: none;
+  }
+
+  .section-{{ section.id }} .product-gallery__thumb {
+    flex:
+      0 0
+      calc(12.5% - 7px);
+
+    min-width: 48px;
+
+    aspect-ratio: 1;
+
+    cursor: pointer;
+
+    border: 2px solid transparent;
+
+    transition:
+      border-color 0.2s ease;
+
+    background-color: #f4f4f4;
+  }
+
+  .section-{{ section.id }} .product-gallery__thumb.is-active {
+    border-color: #000;
+  }
+
+  .section-{{ section.id }} .product-gallery__thumb img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+  }
+
+
+  /* =========================================================
+     FULLSCREEN IMAGE MODAL
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery-modal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 999999;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal.is-open {
+    display: flex;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal[hidden] {
+    display: none !important;
+  }
+
+
+  /* Modal backdrop */
+
+  .section-{{ section.id }} .product-gallery-modal__backdrop {
+    position: absolute;
+    inset: 0;
+
+    background:
+      rgba(0, 0, 0, 0.88);
+
+    backdrop-filter:
+      blur(3px);
+
+    cursor: zoom-out;
+  }
+
+
+  /* Modal window */
+
+  .section-{{ section.id }} .product-gallery-modal__dialog {
+    position: relative;
+    z-index: 2;
+
+    width: min(1600px, 96vw);
+    height: min(94vh, 1100px);
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #111111;
+
+    border:
+      1px solid
+      rgba(255, 255, 255, 0.15);
+
+    box-shadow:
+      0 20px 80px
+      rgba(0, 0, 0, 0.55);
+  }
+
+
+  /* =========================================================
+     MODAL TOOLBAR
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery-modal__toolbar {
+    position: relative;
+
+    min-height: 58px;
+
+    padding: 8px 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    background: #ffffff;
+
+    border-bottom:
+      1px solid
+      rgba(0, 0, 0, 0.1);
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__title {
+    margin: 0;
+
+    color: #111;
+
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__controls {
+    margin-left: auto;
+
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__zoom-label {
+    min-width: 48px;
+
+    color: #111;
+
+    text-align: center;
+
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__control {
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #ffffff;
+
+    border:
+      1px solid
+      rgba(0, 0, 0, 0.15);
+
+    color: #111;
+
+    cursor: pointer;
+
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__control:hover {
+    background: #f2f2f2;
+
+    border-color:
+      rgba(0, 0, 0, 0.35);
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__control:focus-visible {
+    outline:
+      2px solid #000;
+
+    outline-offset: 2px;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__control svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__close {
+    margin-left: 8px;
+  }
+
+
+  /* =========================================================
+     MODAL VIEWPORT
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery-modal__viewport {
+    position: relative;
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow: auto;
+
+    padding: 24px;
+
+    background:
+      #111111;
+
+    overscroll-behavior: contain;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+      rgba(255,255,255,.35)
+      transparent;
+  }
+
+  .section-{{ section.id }}
+  .product-gallery-modal__viewport::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .section-{{ section.id }}
+  .product-gallery-modal__viewport::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .section-{{ section.id }}
+  .product-gallery-modal__viewport::-webkit-scrollbar-thumb {
+    background:
+      rgba(255, 255, 255, 0.32);
+
+    border-radius: 10px;
+  }
+
+
+  /* =========================================================
+     ZOOM STAGE
+  ========================================================= */
+
+  .section-{{ section.id }} .product-gallery-modal__stage {
+    width: max-content;
+    min-width: 100%;
+
+    height: max-content;
+    min-height: 100%;
+
+    display: grid;
+    place-items: center;
+
+    margin: auto;
+  }
+
+  .section-{{ section.id }} .product-gallery-modal__image {
+    display: block;
+
+    width: auto;
+    height: auto;
+
+    max-width: 100%;
+    max-height:
+      calc(94vh - 110px);
+
+    object-fit: contain;
+
+    user-select: none;
+
+    cursor: zoom-in;
+
+    transition:
+      width 0.18s ease;
+  }
+
+  .section-{{ section.id }}
+  .product-gallery-modal__image.is-zoomed {
+    max-width: none;
+    max-height: none;
+
+    cursor: zoom-out;
+  }
+
+
+  /* =========================================================
+     RIGHT COLUMN
+  ========================================================= */
+
+  .section-{{ section.id }} .product-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-{{ section.id }} .product-block {
+    margin-bottom: 24px;
+  }
+
+  .section-{{ section.id }} .product-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .section-{{ section.id }} .product-block--vendor {
+    margin-bottom: 12px;
+
+    font-size: 0.65rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.1em;
+
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .section-{{ section.id }} .product-block--title h2 {
+    margin: 0;
+
+    font-family:
+      var(--font-heading-family, serif);
+
+    font-weight: 400;
+
+    line-height: 1.2;
+  }
+
+  .section-{{ section.id }} .product-block--description {
+    color:
+      rgba(0, 0, 0, 0.8);
+
+    font-size: 0.875rem;
+
+    line-height: 1.6;
+  }
+
+  .section-{{ section.id }} .product-block--description p {
+    margin:
+      0 0 1em 0;
+  }
+
+  .section-{{ section.id }} .product-block--notice {
+    padding:
+      16px 20px;
+
+    text-align: left;
+  }
+
+  .section-{{ section.id }} .product-block--notice h4 {
+    margin:
+      0 0 8px 0;
+
+    font-size: 0.75rem;
+
+    font-weight: 600;
+  }
+
+  .section-{{ section.id }} .product-block--notice p {
+    margin: 0;
+
+    color:
+      rgba(0, 0, 0, 0.7);
+
+    font-size: 0.75rem;
+
+    line-height: 1.5;
+  }
+
+  .section-{{ section.id }} .product-block--button a {
+    width: 100%;
+
+    padding:
+      16px 24px;
+
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    text-decoration: none;
+
+    font-size: 0.875rem;
+
+    font-weight: 500;
+
+    transition:
+      opacity 0.3s ease;
+  }
+
+  .section-{{ section.id }} .product-block--button a:hover {
+    opacity: 0.9;
+  }
+
+  .section-{{ section.id }} .product-block--button .btn-icon {
+    margin-left: 12px;
+
+    font-size: 1rem;
+
+    line-height: 1;
+  }
+
+  .section-{{ section.id }} .product-block--link a {
+    display: block;
+
+    color: inherit;
+
+    text-align: center;
+
+    text-decoration: none;
+
+    font-size: 0.75rem;
+  }
+
+  .section-{{ section.id }} .product-block--link a:hover {
+    text-decoration: underline;
+  }
+
+  .section-{{ section.id }} .product-block--details {
+    padding-top: 24px;
+
+    border-top:
+      1px solid
+      rgba(0, 0, 0, 0.1);
+
+    text-align: left;
+  }
+
+  .section-{{ section.id }} .product-block--details h3 {
+    margin:
+      0 0 16px 0;
+
+    font-size: 0.875rem;
+
+    font-weight: 600;
+  }
+
+  .section-{{ section.id }} .product-block--details .details-content {
+    color:
+      rgba(0, 0, 0, 0.7);
+
+    font-size: 0.75rem;
+
+    line-height: 1.6;
+  }
+
+  .section-{{ section.id }} .product-block--details ul {
+    padding-left: 16px;
+
+    margin-top: 0;
+  }
+
+  .section-{{ section.id }} .product-block--details li {
+    margin-bottom: 8px;
+  }
+
+
+  /* =========================================================
+     MOBILE MODAL
+  ========================================================= */
+
+  @media screen and (max-width: 767px) {
+
+    .section-{{ section.id }} .product-gallery-modal {
+      padding: 0;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__dialog {
+      width: 100vw;
+      height: 100dvh;
+
+      border: 0;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__toolbar {
+      min-height: 56px;
+
+      padding:
+        8px 10px;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__title {
+      display: none;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__controls {
+      width: 100%;
+
+      justify-content: center;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__close {
+      margin-left: auto;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__viewport {
+      padding:
+        16px;
+    }
+
+    .section-{{ section.id }} .product-gallery-modal__image {
+      max-height:
+        calc(100dvh - 100px);
+    }
+
+  }
+
+{%- endstyle -%}
+
+
+<section
+  class="section-{{ section.id }}"
+  data-section-id="{{ section.id }}"
+>
+
+  <div
+    class="
+      product-container
+      {% unless section.settings.full_width %}
+        product-container--boxed
+      {% endunless %}
+    "
+  >
+
+    <div class="product-grid">
+
+
+      {%- comment -%}
+        LEFT COLUMN
+      {%- endcomment -%}
+
+      <div class="product-media-col">
+
+        <product-gallery class="product-gallery">
+
+          <div
+            class="product-gallery__main"
+            {% if initial_full_image != blank %}
+              data-full-src="{{ initial_full_image | image_url: width: 2400 }}"
+            {% endif %}
+          >
+
+            {%- if gallery_blocks.size > 0 -%}
+
+              {%- assign first_image = gallery_blocks.first.settings.image -%}
+
+              {%- if first_image != blank -%}
+
+                {{
+                  first_image
+                  | image_url: width: 1200
+                  | image_tag:
+                    class: 'main-gallery-img',
+                    loading: 'lazy',
+                    sizes: '(min-width: 1025px) 50vw, 100vw',
+                    alt: first_image.alt | default: target_product.title | escape
+                }}
+
+              {%- else -%}
+
+                {{
+                  'product-1'
+                  | placeholder_svg_tag:
+                    'main-gallery-img placeholder-svg'
+                }}
+
+              {%- endif -%}
+
+
+            {%- elsif target_product != blank
+              and target_product.media.size > 0
+            -%}
+
+              {{
+                target_product.featured_media
+                | image_url: width: 1200
+                | image_tag:
+                  class: 'main-gallery-img',
+                  loading: 'lazy',
+                  sizes: '(min-width: 1025px) 50vw, 100vw',
+                  alt: target_product.featured_media.alt | default: target_product.title | escape
+              }}
+
+
+            {%- else -%}
+
+              {{
+                'product-1'
+                | placeholder_svg_tag:
+                  'main-gallery-img placeholder-svg'
+              }}
+
+            {%- endif -%}
+
+
+            <button
+              type="button"
+              class="product-gallery__view-btn"
+              aria-label="View full image"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 3h6v6"></path>
+                <path d="M9 21H3v-6"></path>
+                <path d="M21 3l-7 7"></path>
+                <path d="M3 21l7-7"></path>
+              </svg>
+
+              <span>
+                View full image
+              </span>
+
+            </button>
+
+          </div>
+
+
+          {%- comment -%}
+            PREVIOUS / NEXT
+          {%- endcomment -%}
+
+          <div class="product-gallery__controls">
+
+            <button
+              type="button"
+              aria-label="Previous image"
+              class="gallery-prev"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 12H5"></path>
+                <path d="M12 19l-7-7 7-7"></path>
+              </svg>
+
+            </button>
+
+
+            <span class="gallery-status">
+
+              1 /
+
+              {%- if gallery_blocks.size > 0 -%}
+
+                {{ gallery_blocks.size }}
+
+                <span class="gallery-caption">
+                  {{ gallery_blocks.first.settings.caption | escape }}
+                </span>
+
+              {%- elsif target_product != blank
+                and target_product.media.size > 0
+              -%}
+
+                {{ target_product.media.size }}
+
+                <span class="gallery-caption">
+                  {{ target_product.featured_media.alt | escape }}
+                </span>
+
+              {%- else -%}
+
+                4
+
+                <span class="gallery-caption">
+                  Demo Product Image
+                </span>
+
+              {%- endif -%}
+
+            </span>
+
+
+            <button
+              type="button"
+              aria-label="Next image"
+              class="gallery-next"
+            >
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12h14"></path>
+                <path d="M12 5l7 7-7 7"></path>
+              </svg>
+
+            </button>
+
+          </div>
+
+
+          {%- comment -%}
+            CUSTOM GALLERY THUMBNAILS
+          {%- endcomment -%}
+
+          {%- if gallery_blocks.size > 1 -%}
+
+            <div class="product-gallery__thumbnails">
+
+              {%- for block in gallery_blocks -%}
+
+                <div
+                  class="
+                    product-gallery__thumb
+                    {% if forloop.first %}
+                      is-active
+                    {% endif %}
+                  "
+                  data-index="{{ forloop.index0 }}"
+                  data-caption="{{ block.settings.caption | escape }}"
+
+                  {% if block.settings.image %}
+                    data-src="{{ block.settings.image | image_url: width: 1200 }}"
+
+                    data-full-src="{{ block.settings.image | image_url: width: 2400 }}"
+
+                    data-srcset="
+                      {{ block.settings.image | image_url: width: 600 }} 600w,
+                      {{ block.settings.image | image_url: width: 1200 }} 1200w
+                    "
+                  {% endif %}
+
+                  {{ block.shopify_attributes }}
+                >
+
+                  {%- if block.settings.image != blank -%}
+
+                    {{
+                      block.settings.image
+                      | image_url: width: 150
+                      | image_tag:
+                        loading: 'lazy',
+                        alt: block.settings.caption | escape
+                    }}
+
+                  {%- else -%}
+
+                    {{
+                      'image'
+                      | placeholder_svg_tag:
+                        'placeholder-svg'
+                    }}
+
+                  {%- endif -%}
+
+                </div>
+
+              {%- endfor -%}
+
+            </div>
+
+
+          {%- elsif gallery_blocks.size == 0
+            and target_product != blank
+            and target_product.media.size > 1
+          -%}
+
+            <div class="product-gallery__thumbnails">
+
+              {%- for media in target_product.media -%}
+
+                <div
+                  class="
+                    product-gallery__thumb
+                    {% if forloop.first %}
+                      is-active
+                    {% endif %}
+                  "
+
+                  data-index="{{ forloop.index0 }}"
+
+                  data-caption="{{ media.alt | escape }}"
+
+                  data-src="{{ media | image_url: width: 1200 }}"
+
+                  data-full-src="{{ media | image_url: width: 2400 }}"
+
+                  data-srcset="
+                    {{ media | image_url: width: 600 }} 600w,
+                    {{ media | image_url: width: 1200 }} 1200w
+                  "
+                >
+
+                  {{
+                    media
+                    | image_url: width: 150
+                    | image_tag:
+                      loading: 'lazy',
+                      alt: media.alt | default: 'Thumbnail'
+                  }}
+
+                </div>
+
+              {%- endfor -%}
+
+            </div>
+
+
+          {%- elsif gallery_blocks.size == 0
+            and target_product == blank
+          -%}
+
+            <div class="product-gallery__thumbnails">
+
+              {%- for i in (1..4) -%}
+
+                <div
+                  class="
+                    product-gallery__thumb
+                    {% if forloop.first %}
+                      is-active
+                    {% endif %}
+                  "
+                  data-index="{{ forloop.index0 }}"
+                >
+
+                  {{
+                    'product-'
+                    | append: i
+                    | placeholder_svg_tag:
+                      'placeholder-svg'
+                  }}
+
+                </div>
+
+              {%- endfor -%}
+
+            </div>
+
+          {%- endif -%}
+
+
+          {%- comment -%}
+            FULLSCREEN IMAGE MODAL
+          {%- endcomment -%}
+
+          <div
+            class="product-gallery-modal"
+            hidden
+            aria-hidden="true"
+          >
+
+            <div
+              class="product-gallery-modal__backdrop"
+              data-modal-close
+            ></div>
+
+
+            <div
+              class="product-gallery-modal__dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Full product image"
+            >
+
+              <div class="product-gallery-modal__toolbar">
+
+                <p class="product-gallery-modal__title">
+                  Full image
+                </p>
+
+
+                <div class="product-gallery-modal__controls">
+
+                  <button
+                    type="button"
+                    class="
+                      product-gallery-modal__control
+                      product-gallery-modal__zoom-out
+                    "
+                    aria-label="Zoom out"
+                    title="Zoom out"
+                  >
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <circle
+                        cx="11"
+                        cy="11"
+                        r="7"
+                      ></circle>
+
+                      <path
+                        d="M8 11h6"
+                      ></path>
+
+                      <path
+                        d="M20 20l-4-4"
+                      ></path>
+                    </svg>
+
+                  </button>
+
+
+                  <span
+                    class="product-gallery-modal__zoom-label"
+                    aria-live="polite"
+                  >
+                    100%
+                  </span>
+
+
+                  <button
+                    type="button"
+                    class="
+                      product-gallery-modal__control
+                      product-gallery-modal__zoom-in
+                    "
+                    aria-label="Zoom in"
+                    title="Zoom in"
+                  >
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <circle
+                        cx="11"
+                        cy="11"
+                        r="7"
+                      ></circle>
+
+                      <path
+                        d="M11 8v6"
+                      ></path>
+
+                      <path
+                        d="M8 11h6"
+                      ></path>
+
+                      <path
+                        d="M20 20l-4-4"
+                      ></path>
+                    </svg>
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    class="
+                      product-gallery-modal__control
+                      product-gallery-modal__reset
+                    "
+                    aria-label="Reset zoom"
+                    title="Reset zoom"
+                  >
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M3 12a9 9 0 1 0 3-6.7"
+                      ></path>
+
+                      <path
+                        d="M3 4v6h6"
+                      ></path>
+                    </svg>
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    class="
+                      product-gallery-modal__control
+                      product-gallery-modal__close
+                    "
+                    aria-label="Close full image"
+                    title="Close"
+                    data-modal-close
+                  >
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M6 6l12 12"></path>
+                      <path d="M18 6L6 18"></path>
+                    </svg>
+
+                  </button>
+
+                </div>
+
+              </div>
+
+
+              <div class="product-gallery-modal__viewport">
+
+                <div class="product-gallery-modal__stage">
+
+                  <img
+                    class="product-gallery-modal__image"
+                    alt=""
+                    draggable="false"
+                  >
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </product-gallery>
+
+      </div>
+
+
+      {%- comment -%}
+        RIGHT COLUMN
+      {%- endcomment -%}
+
+      <div
+        class="product-content-col"
+        style="text-align: {{ section.settings.text_alignment }};"
+      >
+
+        {%- for block in section.blocks -%}
+
+          {%- case block.type -%}
+
+
+            {%- when 'vendor' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--vendor
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                {{
+                  target_product.vendor
+                  | default:
+                    'DISNEY • FIGURES'
+                }}
+
+              </div>
+
+
+            {%- when 'title' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--title
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                <h2
+                  style="
+                    font-size:
+                    clamp(
+                      {{ block.settings.heading_size_mobile }}px,
+                      4vw,
+                      {{ block.settings.heading_size_desktop }}px
+                    );
+                  "
+                >
+
+                  {{
+                    target_product.title
+                    | default:
+                      'Disney Toy Story Claw Machine Series Articulated Figure Blind Box'
+                  }}
+
+                </h2>
+
+              </div>
+
+
+            {%- when 'description' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--description
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                {%- if target_product.description != blank -%}
+
+                  {{
+                    target_product.description
+                  }}
+
+                {%- else -%}
+
+                  <p>
+                    A miniature arcade moment with the Toy Story cast.
+                    Each illustrated design places a familiar character
+                    inside a brightly colored claw-machine scene.
+                  </p>
+
+                {%- endif -%}
+
+              </div>
+
+
+            {%- when 'notice' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--notice
+                "
+
+                style="
+                  background-color:
+                  {{ block.settings.bg_color }};
+
+                  border-left:
+                  3px solid
+                  {{ block.settings.border_color }};
+                "
+
+                {{ block.shopify_attributes }}
+              >
+
+                <h4
+                  style="
+                    color:
+                    {{ block.settings.border_color }};
+                  "
+                >
+                  {{ block.settings.title | escape }}
+                </h4>
+
+                <p>
+                  {{ block.settings.text | escape }}
+                </p>
+
+              </div>
+
+
+            {%- when 'button' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--button
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                <a
+                  href="
+                    {{
+                      block.settings.link
+                      | default:
+                        target_product.url
+                      | default:
+                        '#'
+                    }}
+                  "
+
+                  style="
+                    background-color:
+                    {{ block.settings.btn_bg_color }};
+
+                    color:
+                    {{ block.settings.btn_text_color }};
+                  "
+                >
+
+                  {{ block.settings.text | escape }}
+
+                  <span class="btn-icon">
+                  →
+                  </span>
+
+                </a>
+
+              </div>
+
+
+            {%- when 'link' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--link
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                <a
+                  href="
+                    {{
+                      block.settings.link
+                      | default:
+                        target_product.collections.first.url
+                      | default:
+                        '#'
+                    }}
+                  "
+                >
+
+                  {{ block.settings.text | escape }}
+
+                  &rarr;
+
+                </a>
+
+              </div>
+
+
+            {%- when 'details' -%}
+
+              <div
+                class="
+                  product-block
+                  product-block--details
+                "
+                {{ block.shopify_attributes }}
+              >
+
+                <h3>
+                  {{ block.settings.title | escape }}
+                </h3>
+
+                <div class="details-content">
+                  {{ block.settings.richtext }}
+                </div>
+
+              </div>
+
+
+          {%- endcase -%}
+
+        {%- endfor -%}
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<script>
+  if (!customElements.get('product-gallery')) {
+
+    class ProductGallery extends HTMLElement {
+
+      constructor() {
+
+        super();
+
+        this.initialized = false;
+
+        this.currentIndex = 0;
+
+        this.zoom = 1;
+
+        this.minZoom = 1;
+
+        this.maxZoom = 4;
+
+        this.zoomStep = 0.25;
+
+        this.baseImageWidth = 0;
+
+        this.baseImageHeight = 0;
+
+        this.lastFocusedElement = null;
+
+        this.previousDocumentOverflow = '';
+
+        this.handleDocumentKeydown =
+          this.handleDocumentKeydown.bind(this);
+
+      }
+
+
+      connectedCallback() {
+
+        if (this.initialized) {
+          return;
+        }
+
+        this.initialized = true;
+
+
+        /* ================================
+           Gallery elements
+        ================================ */
+
+        this.mainWrap =
+          this.querySelector(
+            '.product-gallery__main'
+          );
+
+        this.mainImage =
+          this.querySelector(
+            '.main-gallery-img'
+          );
+
+        this.thumbnails =
+          this.querySelectorAll(
+            '.product-gallery__thumb'
+          );
+
+        this.statusText =
+          this.querySelector(
+            '.gallery-status'
+          );
+
+        this.prevBtn =
+          this.querySelector(
+            '.gallery-prev'
+          );
+
+        this.nextBtn =
+          this.querySelector(
+            '.gallery-next'
+          );
+
+        this.viewBtn =
+          this.querySelector(
+            '.product-gallery__view-btn'
+          );
+
+        this.totalImages =
+          this.thumbnails.length;
+
+
+        /* ================================
+           Modal elements
+        ================================ */
+
+        this.modal =
+          this.querySelector(
+            '.product-gallery-modal'
+          );
+
+        this.modalImage =
+          this.querySelector(
+            '.product-gallery-modal__image'
+          );
+
+        this.modalViewport =
+          this.querySelector(
+            '.product-gallery-modal__viewport'
+          );
+
+        this.zoomInBtn =
+          this.querySelector(
+            '.product-gallery-modal__zoom-in'
+          );
+
+        this.zoomOutBtn =
+          this.querySelector(
+            '.product-gallery-modal__zoom-out'
+          );
+
+        this.resetBtn =
+          this.querySelector(
+            '.product-gallery-modal__reset'
+          );
+
+        this.zoomLabel =
+          this.querySelector(
+            '.product-gallery-modal__zoom-label'
+          );
+
+        this.closeButtons =
+          this.querySelectorAll(
+            '[data-modal-close]'
+          );
+
+
+        this.bindGalleryEvents();
+
+        this.bindModalEvents();
+
+      }
+
+
+      disconnectedCallback() {
+
+        document.removeEventListener(
+          'keydown',
+          this.handleDocumentKeydown
+        );
+
+      }
+
+
+      /* =====================================================
+         GALLERY EVENTS
+      ===================================================== */
+
+      bindGalleryEvents() {
+
+        this.thumbnails.forEach(
+          (thumb, index) => {
+
+            thumb.addEventListener(
+              'click',
+              () => {
+                this.goToSlide(index);
+              }
+            );
+
+          }
+        );
+
+
+        if (
+          this.prevBtn &&
+          this.totalImages > 0
+        ) {
+
+          this.prevBtn.addEventListener(
+            'click',
+            () => {
+
+              const previousIndex =
+                this.currentIndex === 0
+                  ? this.totalImages - 1
+                  : this.currentIndex - 1;
+
+              this.goToSlide(
+                previousIndex
+              );
+
+            }
+          );
+
+        }
+
+
+        if (
+          this.nextBtn &&
+          this.totalImages > 0
+        ) {
+
+          this.nextBtn.addEventListener(
+            'click',
+            () => {
+
+              const nextIndex =
+                this.currentIndex ===
+                this.totalImages - 1
+                  ? 0
+                  : this.currentIndex + 1;
+
+              this.goToSlide(
+                nextIndex
+              );
+
+            }
+          );
+
+        }
+
+      }
+
+
+      goToSlide(index) {
+
+        if (
+          !this.thumbnails.length ||
+          !this.thumbnails[index]
+        ) {
+          return;
+        }
+
+
+        if (
+          this.thumbnails[
+            this.currentIndex
+          ]
+        ) {
+
+          this.thumbnails[
+            this.currentIndex
+          ].classList.remove(
+            'is-active'
+          );
+
+        }
+
+
+        this.currentIndex =
+          index;
+
+
+        const activeThumb =
+          this.thumbnails[
+            this.currentIndex
+          ];
+
+
+        activeThumb.classList.add(
+          'is-active'
+        );
+
+
+        /* Change main image */
+
+        if (
+          this.mainImage &&
+          activeThumb.dataset.src
+        ) {
+
+          this.mainImage.src =
+            activeThumb.dataset.src;
+
+
+          if (
+            activeThumb.dataset.srcset
+          ) {
+
+            this.mainImage.srcset =
+              activeThumb.dataset.srcset;
+
+          }
+
+        }
+
+
+        /* Store high-resolution image */
+
+        if (
+          this.mainWrap
+        ) {
+
+          this.mainWrap.dataset.fullSrc =
+            activeThumb.dataset.fullSrc ||
+            activeThumb.dataset.src ||
+            '';
+
+        }
+
+
+        /* Update gallery status */
+
+        if (
+          this.statusText
+        ) {
+
+          const caption =
+            activeThumb.dataset.caption ||
+            '';
+
+          this.statusText.innerHTML =
+            `${this.currentIndex + 1} / ${this.totalImages}
+            <span class="gallery-caption">${caption}</span>`;
+
+        }
+
+      }
+
+
+      /* =====================================================
+         MODAL EVENTS
+      ===================================================== */
+
+      bindModalEvents() {
+
+        if (
+          this.viewBtn
+        ) {
+
+          this.viewBtn.addEventListener(
+            'click',
+            () => {
+              this.openModal();
+            }
+          );
+
+        }
+
+
+        this.closeButtons.forEach(
+          (button) => {
+
+            button.addEventListener(
+              'click',
+              () => {
+                this.closeModal();
+              }
+            );
+
+          }
+        );
+
+
+        if (
+          this.zoomInBtn
+        ) {
+
+          this.zoomInBtn.addEventListener(
+            'click',
+            () => {
+
+              this.setZoom(
+                this.zoom +
+                this.zoomStep
+              );
+
+            }
+          );
+
+        }
+
+
+        if (
+          this.zoomOutBtn
+        ) {
+
+          this.zoomOutBtn.addEventListener(
+            'click',
+            () => {
+
+              this.setZoom(
+                this.zoom -
+                this.zoomStep
+              );
+
+            }
+          );
+
+        }
+
+
+        if (
+          this.resetBtn
+        ) {
+
+          this.resetBtn.addEventListener(
+            'click',
+            () => {
+              this.resetZoom();
+            }
+          );
+
+        }
+
+
+        /*
+          Double-click image:
+          100% -> 200%
+          zoomed -> 100%
+        */
+
+        if (
+          this.modalImage
+        ) {
+
+          this.modalImage.addEventListener(
+            'dblclick',
+            () => {
+
+              if (
+                this.zoom > 1
+              ) {
+
+                this.resetZoom();
+
+              } else {
+
+                this.setZoom(2);
+
+              }
+
+            }
+          );
+
+        }
+
+      }
+
+
+      /* =====================================================
+         OPEN MODAL
+      ===================================================== */
+
+      openModal() {
+
+        if (
+          !this.modal ||
+          !this.modalImage
+        ) {
+          return;
+        }
+
+
+        let fullImageSource = '';
+
+
+        /*
+          First preference:
+          currently selected high resolution
+          gallery image.
+        */
+
+        if (
+          this.mainWrap &&
+          this.mainWrap.dataset.fullSrc
+        ) {
+
+          fullImageSource =
+            this.mainWrap.dataset.fullSrc;
+
+        }
+
+
+        /*
+          Fallback to current main image.
+        */
+
+        if (
+          !fullImageSource &&
+          this.mainImage
+        ) {
+
+          fullImageSource =
+            this.mainImage.currentSrc ||
+            this.mainImage.src;
+
+        }
+
+
+        if (
+          !fullImageSource
+        ) {
+          return;
+        }
+
+
+        this.lastFocusedElement =
+          document.activeElement;
+
+
+        this.previousDocumentOverflow =
+          document.documentElement.style.overflow;
+
+
+        document.documentElement.style.overflow =
+          'hidden';
+
+
+        this.modal.hidden =
+          false;
+
+        this.modal.classList.add(
+          'is-open'
+        );
+
+        this.modal.setAttribute(
+          'aria-hidden',
+          'false'
+        );
+
+
+        /*
+          Reset before loading
+          next image.
+        */
+
+        this.zoom = 1;
+
+        this.modalImage.classList.remove(
+          'is-zoomed'
+        );
+
+        this.modalImage.style.width =
+          '';
+
+        this.modalImage.style.height =
+          '';
+
+        this.modalImage.style.maxWidth =
+          '100%';
+
+        this.modalImage.style.maxHeight =
+          'calc(94vh - 110px)';
+
+
+        if (
+          this.mainImage
+        ) {
+
+          this.modalImage.alt =
+            this.mainImage.alt ||
+            'Full product image';
+
+        }
+
+
+        this.modalImage.onload =
+          () => {
+
+            this.captureBaseImageSize();
+
+          };
+
+
+        this.modalImage.src =
+          fullImageSource;
+
+
+        this.updateZoomLabel();
+
+
+        requestAnimationFrame(
+          () => {
+
+            const closeButton =
+              this.querySelector(
+                '.product-gallery-modal__close'
+              );
+
+            if (
+              closeButton
+            ) {
+
+              closeButton.focus();
+
+            }
+
+          }
+        );
+
+
+        document.addEventListener(
+          'keydown',
+          this.handleDocumentKeydown
+        );
+
+      }
+
+
+      /* =====================================================
+         CLOSE MODAL
+      ===================================================== */
+
+      closeModal() {
+
+        if (
+          !this.modal ||
+          !this.modal.classList.contains(
+            'is-open'
+          )
+        ) {
+          return;
+        }
+
+
+        this.modal.classList.remove(
+          'is-open'
+        );
+
+        this.modal.setAttribute(
+          'aria-hidden',
+          'true'
+        );
+
+        this.modal.hidden =
+          true;
+
+
+        document.documentElement.style.overflow =
+          this.previousDocumentOverflow;
+
+
+        document.removeEventListener(
+          'keydown',
+          this.handleDocumentKeydown
+        );
+
+
+        this.resetZoom();
+
+
+        if (
+          this.lastFocusedElement &&
+          typeof
+          this.lastFocusedElement.focus ===
+          'function'
+        ) {
+
+          this.lastFocusedElement.focus();
+
+        }
+
+      }
+
+
+      /* =====================================================
+         IMAGE SIZE
+      ===================================================== */
+
+      captureBaseImageSize() {
+
+        if (
+          !this.modalImage
+        ) {
+          return;
+        }
+
+
+        this.modalImage.style.width =
+          '';
+
+        this.modalImage.style.height =
+          '';
+
+        this.modalImage.style.maxWidth =
+          '100%';
+
+        this.modalImage.style.maxHeight =
+          'calc(94vh - 110px)';
+
+
+        requestAnimationFrame(
+          () => {
+
+            const rect =
+              this.modalImage
+                .getBoundingClientRect();
+
+
+            this.baseImageWidth =
+              rect.width;
+
+            this.baseImageHeight =
+              rect.height;
+
+
+            this.zoom =
+              1;
+
+
+            this.modalImage.classList.remove(
+              'is-zoomed'
+            );
+
+
+            this.updateZoomLabel();
+
+
+            if (
+              this.modalViewport
+            ) {
+
+              this.modalViewport.scrollTop =
+                0;
+
+              this.modalViewport.scrollLeft =
+                0;
+
+            }
+
+          }
+        );
+
+      }
+
+
+      /* =====================================================
+         ZOOM
+      ===================================================== */
+
+      setZoom(value) {
+
+        if (
+          !this.modalImage
+        ) {
+          return;
+        }
+
+
+        const nextZoom =
+          Math.min(
+            this.maxZoom,
+            Math.max(
+              this.minZoom,
+              value
+            )
+          );
+
+
+        this.zoom =
+          nextZoom;
+
+
+        if (
+          !this.baseImageWidth
+        ) {
+
+          const rect =
+            this.modalImage
+              .getBoundingClientRect();
+
+          this.baseImageWidth =
+            rect.width;
+
+          this.baseImageHeight =
+            rect.height;
+
+        }
+
+
+        if (
+          this.zoom <= 1
+        ) {
+
+          this.modalImage.style.width =
+            `${this.baseImageWidth}px`;
+
+          this.modalImage.style.height =
+            'auto';
+
+          this.modalImage.style.maxWidth =
+            'none';
+
+          this.modalImage.style.maxHeight =
+            'none';
+
+          this.modalImage.classList.remove(
+            'is-zoomed'
+          );
+
+        } else {
+
+          const zoomedWidth =
+            this.baseImageWidth *
+            this.zoom;
+
+
+          this.modalImage.style.width =
+            `${zoomedWidth}px`;
+
+          this.modalImage.style.height =
+            'auto';
+
+          this.modalImage.style.maxWidth =
+            'none';
+
+          this.modalImage.style.maxHeight =
+            'none';
+
+          this.modalImage.classList.add(
+            'is-zoomed'
+          );
+
+        }
+
+
+        this.updateZoomLabel();
+
+      }
+
+
+      resetZoom() {
+
+        if (
+          !this.modalImage
+        ) {
+          return;
+        }
+
+
+        this.zoom = 1;
+
+
+        if (
+          this.baseImageWidth > 0
+        ) {
+
+          this.modalImage.style.width =
+            `${this.baseImageWidth}px`;
+
+          this.modalImage.style.height =
+            'auto';
+
+          this.modalImage.style.maxWidth =
+            'none';
+
+          this.modalImage.style.maxHeight =
+            'none';
+
+        } else {
+
+          this.modalImage.style.width =
+            '';
+
+          this.modalImage.style.height =
+            '';
+
+          this.modalImage.style.maxWidth =
+            '100%';
+
+          this.modalImage.style.maxHeight =
+            'calc(94vh - 110px)';
+
+        }
+
+
+        this.modalImage.classList.remove(
+          'is-zoomed'
+        );
+
+
+        if (
+          this.modalViewport
+        ) {
+
+          this.modalViewport.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+          });
+
+        }
+
+
+        this.updateZoomLabel();
+
+      }
+
+
+      updateZoomLabel() {
+
+        if (
+          !this.zoomLabel
+        ) {
+          return;
+        }
+
+
+        this.zoomLabel.textContent =
+          `${Math.round(
+            this.zoom * 100
+          )}%`;
+
+
+        if (
+          this.zoomOutBtn
+        ) {
+
+          this.zoomOutBtn.disabled =
+            this.zoom <=
+            this.minZoom;
+
+        }
+
+
+        if (
+          this.zoomInBtn
+        ) {
+
+          this.zoomInBtn.disabled =
+            this.zoom >=
+            this.maxZoom;
+
+        }
+
+      }
+
+
+      /* =====================================================
+         KEYBOARD CONTROLS
+      ===================================================== */
+
+      handleDocumentKeydown(event) {
+
+        if (
+          !this.modal ||
+          !this.modal.classList.contains(
+            'is-open'
+          )
+        ) {
+          return;
+        }
+
+
+        if (
+          event.key ===
+          'Escape'
+        ) {
+
+          this.closeModal();
+
+          return;
+
+        }
+
+
+        if (
+          event.key === '+' ||
+          event.key === '='
+        ) {
+
+          event.preventDefault();
+
+          this.setZoom(
+            this.zoom +
+            this.zoomStep
+          );
+
+          return;
+
+        }
+
+
+        if (
+          event.key === '-' ||
+          event.key === '_'
+        ) {
+
+          event.preventDefault();
+
+          this.setZoom(
+            this.zoom -
+            this.zoomStep
+          );
+
+          return;
+
+        }
+
+
+        if (
+          event.key === '0'
+        ) {
+
+          event.preventDefault();
+
+          this.resetZoom();
+
+        }
+
+      }
+
+    }
+
+
+    customElements.define(
+      'product-gallery',
+      ProductGallery
+    );
+
+  }
+</script>
+
+
+{% schema %}
+{
+  "name": "Product Feature Details",
+  "tag": "section",
+  "class": "section",
+
+  "settings": [
+
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Select Product",
+      "info": "Leave blank if using on a product page template to auto-detect the current product."
+    },
+
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Make section full width",
+      "default": false
+    },
+
+    {
+      "type": "range",
+      "id": "container_max_width",
+      "min": 1000,
+      "max": 1600,
+      "step": 20,
+      "unit": "px",
+      "label": "Container max width",
+      "default": 1440
+    },
+
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#FAF8F5"
+    },
+
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#1A1A1A"
+    },
+
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Content Alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left"
+    },
+
+    {
+      "type": "select",
+      "id": "image_aspect_ratio",
+      "label": "Main Image Aspect Ratio",
+      "options": [
+        {
+          "value": "1 / 1",
+          "label": "Square (1:1)"
+        },
+        {
+          "value": "4 / 5",
+          "label": "Portrait (4:5)"
+        },
+        {
+          "value": "3 / 4",
+          "label": "Tall (3:4)"
+        }
+      ],
+      "default": "4 / 5"
+    },
+
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding",
+      "default": 48
+    },
+
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding",
+      "default": 64
+    }
+
+  ],
+
+  "blocks": [
+
+    {
+      "type": "gallery_image",
+      "name": "Custom Gallery Image",
+      "limit": 12,
+
+      "settings": [
+
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+
+        {
+          "type": "text",
+          "id": "caption",
+          "label": "Image Caption",
+          "default": "Custom figure image"
+        }
+
+      ]
+    },
+
+    {
+      "type": "vendor",
+      "name": "Product Vendor / Eyebrow",
+      "limit": 1
+    },
+
+    {
+      "type": "title",
+      "name": "Product Title",
+      "limit": 1,
+
+      "settings": [
+
+        {
+          "type": "range",
+          "id": "heading_size_desktop",
+          "min": 20,
+          "max": 60,
+          "step": 2,
+          "unit": "px",
+          "label": "Heading Size (Desktop)",
+          "default": 36
+        },
+
+        {
+          "type": "range",
+          "id": "heading_size_mobile",
+          "min": 16,
+          "max": 40,
+          "step": 1,
+          "unit": "px",
+          "label": "Heading Size (Mobile)",
+          "default": 24
+        }
+
+      ]
+    },
+
+    {
+      "type": "description",
+      "name": "Product Description",
+      "limit": 1
+    },
+
+    {
+      "type": "notice",
+      "name": "Notice Box",
+      "limit": 1,
+
+      "settings": [
+
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Notice Title",
+          "default": "Collection preview"
+        },
+
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Notice Text",
+          "default": "Price, stock, and purchase options are awaiting confirmation. Images show the series, not guaranteed box contents."
+        },
+
+        {
+          "type": "color",
+          "id": "bg_color",
+          "label": "Background Color",
+          "default": "#F8EBF0"
+        },
+
+        {
+          "type": "color",
+          "id": "border_color",
+          "label": "Border & Title Color",
+          "default": "#9C3B61"
+        }
+
+      ]
+    },
+
+    {
+      "type": "button",
+      "name": "Action Button",
+      "limit": 1,
+
+      "settings": [
+
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Button Text",
+          "default": "Ask about this series"
+        },
+
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Button Link (Overrides Product URL)"
+        },
+
+        {
+          "type": "color",
+          "id": "btn_bg_color",
+          "label": "Button Background",
+          "default": "#3A1A2F"
+        },
+
+        {
+          "type": "color",
+          "id": "btn_text_color",
+          "label": "Button Text Color",
+          "default": "#FFFFFF"
+        }
+
+      ]
+    },
+
+    {
+      "type": "link",
+      "name": "Secondary Link",
+      "limit": 1,
+
+      "settings": [
+
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Link Text",
+          "default": "Browse all 15 series"
+        },
+
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link URL (Overrides Collection URL)"
+        }
+
+      ]
+    },
+
+    {
+      "type": "details",
+      "name": "Series Details",
+      "limit": 1,
+
+      "settings": [
+
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Details Title",
+          "default": "Series details"
+        },
+
+        {
+          "type": "richtext",
+          "id": "richtext",
+          "label": "Details Text",
+          "default": "<ul><li>Articulated figure blind-box series.</li><li>Includes characters from the series.</li></ul><p>See the complete gallery for details.</p>"
+        }
+
+      ]
+    }
+
+  ],
+
+  "presets": [
+
+    {
+      "name": "Product Feature Details",
+
+      "blocks": [
+
+        {
+          "type": "gallery_image"
+        },
+
+        {
+          "type": "gallery_image"
+        },
+
+        {
+          "type": "vendor"
+        },
+
+        {
+          "type": "title"
+        },
+
+        {
+          "type": "description"
+        },
+
+        {
+          "type": "notice"
+        },
+
+        {
+          "type": "button"
+        },
+
+        {
+          "type": "link"
+        },
+
+        {
+          "type": "details"
+        }
+
+      ]
+    }
+
+  ]
+}
+{% endschema %}

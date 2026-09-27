@@ -1,0 +1,237 @@
+{% style %}
+  #shopify-section-{{ section.id }} .case-gallery {
+    --cg-bg: {{ section.settings.background }};
+    --cg-text: {{ section.settings.text_color }};
+    --cg-accent: {{ section.settings.accent_color }};
+    --cg-border: {{ section.settings.border_color }};
+    --cg-gap: {{ section.settings.gap }}px;
+    --cg-radius: {{ section.settings.card_radius }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="case-gallery">
+  <div class="case-gallery__inner case-gallery__inner--{{ section.settings.content_width }} case-gallery__inner--{{ section.settings.layout }}">
+    {% for block in section.blocks %}
+      <article class="case-gallery__card case-gallery__card--{{ block.settings.card_size }}" {{ block.shopify_attributes }}>
+        <a href="{{ block.settings.link | default: '#' }}" {% if block.settings.link == blank %}aria-disabled="true"{% endif %}>
+          <span class="case-gallery__media case-gallery__media--{{ section.settings.image_ratio }}">
+            {% if block.settings.image != blank %}
+              {{ block.settings.image | image_url: width: 1000 | image_tag: widths: '360, 540, 720, 900, 1000', sizes: '(max-width: 767px) 90vw, 33vw', loading: 'lazy', class: 'case-gallery__image' }}
+            {% else %}
+              <span class="case-gallery__placeholder">{{ 'collection-1' | placeholder_svg_tag }}</span>
+            {% endif %}
+          </span>
+          {% if block.settings.eyebrow != blank or block.settings.title != blank %}
+            <span class="case-gallery__caption">
+              {% if block.settings.eyebrow != blank %}<small>{{ block.settings.eyebrow }}</small>{% endif %}
+              {% if block.settings.title != blank %}<strong>{{ block.settings.title }}</strong>{% endif %}
+              {% if block.settings.subtitle != blank %}<em>{{ block.settings.subtitle }}</em>{% endif %}
+            </span>
+          {% endif %}
+        </a>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-gallery {
+    color: var(--cg-text);
+    background: var(--cg-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .case-gallery__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--cg-gap);
+  }
+
+  .case-gallery__inner--first_wide {
+    grid-template-columns: 1.15fr .925fr .925fr;
+  }
+
+  .case-gallery__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .case-gallery__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .case-gallery__card {
+    min-width: 0;
+  }
+
+  .case-gallery__card a {
+    position: relative;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    border-radius: var(--cg-radius);
+    border: 1px solid var(--cg-border);
+  }
+
+  .case-gallery__media {
+    display: block;
+    overflow: hidden;
+    background: #eae0d5;
+  }
+
+  .case-gallery__media--square {
+    aspect-ratio: 1;
+  }
+
+  .case-gallery__media--portrait {
+    aspect-ratio: 4 / 5;
+  }
+
+  .case-gallery__media--wide {
+    aspect-ratio: 16 / 11;
+  }
+
+  .case-gallery__image,
+  .case-gallery__placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .45s ease;
+  }
+
+  .case-gallery__placeholder {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #fcf8f2, #dfccba);
+  }
+
+  .case-gallery__placeholder svg {
+    width: 48%;
+    opacity: .38;
+  }
+
+  .case-gallery__card a:hover .case-gallery__image {
+    transform: scale(1.035);
+  }
+
+  .case-gallery__caption {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+    max-width: calc(100% - 36px);
+    padding: 10px 12px;
+    color: #fff;
+    background: rgba(41,10,32,.82);
+  }
+
+  .case-gallery__caption small,
+  .case-gallery__caption strong,
+  .case-gallery__caption em {
+    display: block;
+  }
+
+  .case-gallery__caption small {
+    color: var(--cg-accent);
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .case-gallery__caption strong {
+    margin-top: 2px;
+    font-size: 12px;
+  }
+
+  .case-gallery__caption em {
+    margin-top: 2px;
+    font-size: 11px;
+    font-style: normal;
+    opacity: .76;
+  }
+
+  .case-gallery a:focus-visible {
+    outline: 2px solid var(--cg-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .case-gallery__inner,
+    .case-gallery__inner--first_wide {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .case-gallery__inner,
+    .case-gallery__inner--first_wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case-gallery__image {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Case System Gallery",
+  "settings": [
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "layout", "label": "Desktop layout", "default": "first_wide", "options": [
+      { "value": "equal", "label": "Equal columns" },
+      { "value": "first_wide", "label": "First wider" }
+    ] },
+    { "type": "select", "id": "image_ratio", "label": "Image ratio", "default": "square", "options": [
+      { "value": "square", "label": "Square" },
+      { "value": "portrait", "label": "Portrait" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "range", "id": "gap", "label": "Gap", "min": 8, "max": 32, "step": 2, "unit": "px", "default": 12 },
+    { "type": "range", "id": "card_radius", "label": "Card radius", "min": 0, "max": 8, "step": 1, "unit": "px", "default": 0 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F7F0E7" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#E6A2BC" },
+    { "type": "color", "id": "border_color", "label": "Border", "default": "#D9CEC4" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 28 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 108 }
+  ],
+  "blocks": [
+    {
+      "type": "image",
+      "name": "Gallery image",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Custom system" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Finished case" },
+        { "type": "text", "id": "subtitle", "label": "Subtitle", "default": "Preview, print, swap" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "select", "id": "card_size", "label": "Card size", "default": "standard", "options": [
+          { "value": "standard", "label": "Standard" },
+          { "value": "wide", "label": "Wide" }
+        ] }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Case System Gallery",
+      "blocks": [
+        { "type": "image", "settings": { "title": "Artwork wall", "subtitle": "Choose or upload" } },
+        { "type": "image", "settings": { "title": "Black shell", "subtitle": "Backplate-ready" } },
+        { "type": "image", "settings": { "title": "Clear shell", "subtitle": "Insert and swap" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

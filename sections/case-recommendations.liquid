@@ -1,0 +1,185 @@
+{% liquid
+  assign manual_products = section.settings.products
+  assign source_collection = section.settings.collection
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .case-recs {
+    --cr-bg: {{ section.settings.background }};
+    --cr-text: {{ section.settings.text_color }};
+    --cr-muted: {{ section.settings.muted_text_color }};
+    --cr-accent: {{ section.settings.accent_color }};
+    --cr-gap: {{ section.settings.gap }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="case-recs">
+  <div class="case-recs__inner case-recs__inner--{{ section.settings.content_width }}">
+    {% if section.settings.heading != blank %}
+      <h2>{{ section.settings.heading }}</h2>
+    {% endif %}
+    <div class="case-recs__grid case-recs__grid--{{ section.settings.desktop_columns }}">
+      {% if manual_products != blank %}
+        {% for rec_product in manual_products limit: section.settings.products_to_show %}
+          <article class="case-rec-card">
+            <a href="{{ rec_product.url }}" aria-label="{{ rec_product.title | escape }}">
+              <span class="case-rec-card__media">
+                {% if rec_product.featured_image != blank %}
+                  {{ rec_product.featured_image | image_url: width: 700 | image_tag: widths: '320, 480, 640, 700', sizes: '(max-width: 767px) 50vw, 25vw', loading: 'lazy' }}
+                {% else %}
+                  {{ 'product-1' | placeholder_svg_tag }}
+                {% endif %}
+              </span>
+              <strong>{{ rec_product.title }}</strong>
+              {% if section.settings.show_price %}
+                <small>{% if rec_product.price_varies %}From {{ rec_product.price_min | money }}{% else %}{{ rec_product.price | money }}{% endif %}</small>
+              {% endif %}
+            </a>
+          </article>
+        {% endfor %}
+      {% elsif source_collection != blank %}
+        {% for rec_product in source_collection.products limit: section.settings.products_to_show %}
+          <article class="case-rec-card">
+            <a href="{{ rec_product.url }}" aria-label="{{ rec_product.title | escape }}">
+              <span class="case-rec-card__media">
+                {% if rec_product.featured_image != blank %}
+                  {{ rec_product.featured_image | image_url: width: 700 | image_tag: widths: '320, 480, 640, 700', sizes: '(max-width: 767px) 50vw, 25vw', loading: 'lazy' }}
+                {% else %}
+                  {{ 'product-1' | placeholder_svg_tag }}
+                {% endif %}
+              </span>
+              <strong>{{ rec_product.title }}</strong>
+              {% if section.settings.show_price %}
+                <small>{% if rec_product.price_varies %}From {{ rec_product.price_min | money }}{% else %}{{ rec_product.price | money }}{% endif %}</small>
+              {% endif %}
+            </a>
+          </article>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-recs {
+    color: var(--cr-text);
+    background: var(--cr-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .case-recs__inner {
+    margin-inline: auto;
+  }
+
+  .case-recs__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .case-recs__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .case-recs h2 {
+    margin: 0 0 34px;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(34px, 4vw, 58px);
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .case-recs__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--cr-gap);
+  }
+
+  .case-recs__grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .case-rec-card a {
+    display: grid;
+    gap: 12px;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .case-rec-card__media {
+    aspect-ratio: 4 / 5;
+    display: block;
+    overflow: hidden;
+    background: #eae0d5;
+  }
+
+  .case-rec-card__media img,
+  .case-rec-card__media svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .case-rec-card strong {
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .case-rec-card small {
+    color: var(--cr-muted);
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .case-rec-card a:focus-visible {
+    outline: 2px solid var(--cr-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .case-recs__grid,
+    .case-recs__grid--3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .case-recs__inner--page,
+    .case-recs__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Case Recommendations",
+  "settings": [
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "More custom pieces" },
+    { "type": "product_list", "id": "products", "label": "Manual products", "limit": 8 },
+    { "type": "collection", "id": "collection", "label": "Collection source" },
+    { "type": "range", "id": "products_to_show", "label": "Products to show", "min": 2, "max": 8, "step": 1, "default": 4 },
+    { "type": "checkbox", "id": "show_price", "label": "Show price", "default": true },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_columns", "label": "Desktop columns", "default": "4", "options": [
+      { "value": "3", "label": "3" },
+      { "value": "4", "label": "4" }
+    ] },
+    { "type": "range", "id": "gap", "label": "Gap", "min": 12, "max": 40, "step": 2, "unit": "px", "default": 22 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F7F0E7" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#746970" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C63B73" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 76 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 96 }
+  ],
+  "presets": [
+    { "name": "Case Recommendations" }
+  ]
+}
+{% endschema %}

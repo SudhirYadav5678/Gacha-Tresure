@@ -1,0 +1,415 @@
+{% style %}
+  #shopify-section-{{ section.id }} .armory-categories {
+    --ac-bg: {{ section.settings.background }};
+    --ac-panel: {{ section.settings.panel_background }};
+    --ac-text: {{ section.settings.text_color }};
+    --ac-muted: {{ section.settings.muted_text_color }};
+    --ac-accent: {{ section.settings.accent_color }};
+    --ac-border: {{ section.settings.divider_color }};
+    --ac-hover: {{ section.settings.hover_background }};
+    --ac-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --ac-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --ac-card-min: {{ section.settings.card_min_height }}px;
+    --ac-card-pad: {{ section.settings.card_padding }}px;
+    --ac-gap: {{ section.settings.card_gap }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .armory-categories {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="armory-categories">
+  <div class="armory-categories__outer armory-categories__outer--{{ section.settings.content_width }}">
+    <div class="armory-categories__panel">
+      <div class="armory-categories__intro">
+        {% if section.settings.eyebrow != blank %}
+          <p class="armory-categories__eyebrow">{{ section.settings.eyebrow }}</p>
+        {% endif %}
+        {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+          <h2>
+            {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+            {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+          </h2>
+        {% endif %}
+      </div>
+
+      {% if section.blocks.size > 0 %}
+        <div class="armory-categories__grid armory-categories__grid--desktop-{{ section.settings.desktop_columns }} armory-categories__grid--tablet-{{ section.settings.tablet_columns }}">
+          {% for block in section.blocks %}
+            {% liquid
+              assign block_link = block.settings.link
+              if block_link == blank and block.settings.collection != blank
+                assign block_link = block.settings.collection.url
+              endif
+              assign has_link = false
+              if block_link != blank and block.settings.coming_soon == false
+                assign has_link = true
+              endif
+            %}
+            <article
+              class="armory-category-card{% if block.settings.highlight %} armory-category-card--highlight{% endif %}{% if block.settings.coming_soon %} armory-category-card--locked{% endif %}"
+              style="--acc-card-bg: {{ block.settings.background }}; --acc-card-text: {{ block.settings.text_color }}; --acc-card-accent: {{ block.settings.accent_color }};"
+              {{ block.shopify_attributes }}
+            >
+              {% if has_link %}
+                <a class="armory-category-card__link" href="{{ block_link }}" aria-label="{{ block.settings.title | escape }}"></a>
+              {% endif %}
+              {% if block.settings.image != blank %}
+                <div class="armory-category-card__media" aria-hidden="true">
+                  {{ block.settings.image | image_url: width: 720 | image_tag: widths: '360, 540, 720', sizes: '(min-width: 990px) 33vw, 100vw', loading: 'lazy' }}
+                </div>
+              {% endif %}
+              <div class="armory-category-card__top">
+                {% if block.settings.number != blank %}
+                  <span>{{ block.settings.number }}</span>
+                {% endif %}
+                {% if block.settings.icon != blank %}
+                  <span aria-hidden="true">{{ block.settings.icon }}</span>
+                {% endif %}
+              </div>
+              <div class="armory-category-card__copy">
+                {% if block.settings.title != blank %}
+                  <h3>{{ block.settings.title }}</h3>
+                {% endif %}
+                {% if block.settings.subtitle != blank %}
+                  <p>{{ block.settings.subtitle }}</p>
+                {% endif %}
+                {% if block.settings.description != blank %}
+                  <div class="armory-category-card__description">{{ block.settings.description }}</div>
+                {% endif %}
+                {% if block.settings.coming_soon %}
+                  <span class="armory-category-card__status">{{ section.settings.coming_soon_label }}</span>
+                {% elsif has_link %}
+                  <span class="armory-category-card__arrow" aria-hidden="true">-></span>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .armory-categories {
+    color: var(--ac-text);
+    background: var(--ac-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .armory-categories__outer {
+    margin-inline: auto;
+  }
+
+  .armory-categories__outer--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .armory-categories__outer--wide {
+    width: min(1680px, calc(100vw - 64px));
+  }
+
+  .armory-categories__panel {
+    background: var(--ac-panel);
+    border: 1px solid var(--ac-border);
+  }
+
+  .armory-categories__intro {
+    padding: clamp(34px, 5vw, 70px);
+    border-bottom: 1px solid var(--ac-border);
+  }
+
+  .armory-categories__eyebrow {
+    margin: 0 0 20px;
+    color: var(--ac-muted);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .armory-categories h2 {
+    max-width: 820px;
+    margin: 0;
+    color: var(--ac-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--ac-heading-mobile), 5.2vw, var(--ac-heading-desktop));
+    font-weight: 500;
+    line-height: 1.02;
+  }
+
+  .armory-categories h2 span,
+  .armory-categories h2 em {
+    display: block;
+  }
+
+  .armory-categories h2 em {
+    color: var(--ac-accent);
+    font-style: italic;
+  }
+
+  .armory-categories__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ac-gap);
+    background: var(--ac-border);
+  }
+
+  .armory-categories__grid--desktop-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .armory-category-card {
+    position: relative;
+    min-height: var(--ac-card-min);
+    padding: var(--ac-card-pad);
+    display: grid;
+    align-content: space-between;
+    overflow: hidden;
+    color: var(--acc-card-text);
+    background: var(--acc-card-bg);
+    isolation: isolate;
+    transition: background-color .2s ease, transform .2s ease;
+  }
+
+  .armory-category-card--highlight {
+    background: color-mix(in srgb, var(--acc-card-bg) 78%, var(--ac-hover));
+  }
+
+  .armory-category-card__link {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+  }
+
+  .armory-category-card__link:focus-visible {
+    outline: 2px solid var(--ac-accent);
+    outline-offset: -4px;
+  }
+
+  .armory-category-card__media {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: .24;
+  }
+
+  .armory-category-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.02);
+    transition: transform .35s ease;
+  }
+
+  .armory-category-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(33,8,23,.18), rgba(33,8,23,.82));
+    pointer-events: none;
+  }
+
+  .armory-category-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    color: var(--acc-card-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .armory-category-card__copy {
+    max-width: 92%;
+  }
+
+  .armory-category-card h3 {
+    margin: 0 0 9px;
+    color: var(--acc-card-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(24px, 2.2vw, 34px);
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  .armory-category-card p {
+    margin: 0;
+    color: var(--acc-card-accent);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .armory-category-card__description {
+    max-width: 360px;
+    margin-top: 14px;
+    color: var(--ac-muted);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .armory-category-card__description p {
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .armory-category-card__status,
+  .armory-category-card__arrow {
+    display: inline-flex;
+    margin-top: 18px;
+    color: var(--acc-card-accent);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .armory-category-card__arrow {
+    transform: translateX(-4px);
+    opacity: .72;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+
+  .armory-category-card:hover {
+    background: var(--ac-hover);
+  }
+
+  .armory-category-card:hover .armory-category-card__media img {
+    transform: scale(1.06);
+  }
+
+  .armory-category-card:hover .armory-category-card__arrow {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  @media (max-width: 989px) {
+    .armory-categories__grid,
+    .armory-categories__grid--desktop-2,
+    .armory-categories__grid--tablet-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .armory-categories__outer--page,
+    .armory-categories__outer--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .armory-categories__intro {
+      padding: 30px 22px;
+    }
+
+    .armory-categories__grid,
+    .armory-categories__grid--desktop-2,
+    .armory-categories__grid--tablet-2 {
+      grid-template-columns: 1fr;
+    }
+
+    .armory-category-card {
+      min-height: max(210px, var(--ac-card-min));
+      padding: 28px 22px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .armory-category-card,
+    .armory-category-card__media img,
+    .armory-category-card__arrow {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Armory Categories",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "What waits beyond the gate" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Craft. Character." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "Collector presence." },
+    { "type": "text", "id": "coming_soon_label", "label": "Coming soon label", "default": "Part of the future collection" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "desktop_columns", "label": "Desktop columns", "default": "3", "options": [
+      { "value": "2", "label": "2" },
+      { "value": "3", "label": "3" }
+    ] },
+    { "type": "select", "id": "tablet_columns", "label": "Tablet columns", "default": "2", "options": [
+      { "value": "1", "label": "1" },
+      { "value": "2", "label": "2" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 48, "max": 92, "step": 2, "unit": "px", "default": 72 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 58, "step": 2, "unit": "px", "default": 42 },
+    { "type": "range", "id": "card_min_height", "label": "Card minimum height", "min": 220, "max": 380, "step": 20, "unit": "px", "default": 280 },
+    { "type": "range", "id": "card_padding", "label": "Card padding", "min": 24, "max": 56, "step": 4, "unit": "px", "default": 36 },
+    { "type": "range", "id": "card_gap", "label": "Card gap", "min": 0, "max": 12, "step": 1, "unit": "px", "default": 1 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#45313F" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#210817" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#FAF5EE" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#C9B7C0" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#D692AB" },
+    { "type": "color", "id": "divider_color", "label": "Divider", "default": "#56354B" },
+    { "type": "color", "id": "hover_background", "label": "Hover background", "default": "#4B1738" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 48, "max": 160, "step": 4, "unit": "px", "default": 112 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 48, "max": 180, "step": 4, "unit": "px", "default": 132 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 36, "max": 100, "step": 2, "unit": "px", "default": 64 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 36, "max": 110, "step": 2, "unit": "px", "default": 72 }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        { "type": "text", "id": "number", "label": "Number", "default": "01" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Katana-inspired collectibles" },
+        { "type": "text", "id": "subtitle", "label": "Subtitle", "default": "Part of the future collection" },
+        { "type": "richtext", "id": "description", "label": "Description" },
+        { "type": "text", "id": "icon", "label": "Icon text" },
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "collection", "id": "collection", "label": "Collection" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "checkbox", "id": "highlight", "label": "Highlight card", "default": false },
+        { "type": "checkbox", "id": "coming_soon", "label": "Coming soon", "default": true },
+        { "type": "color", "id": "background", "label": "Background", "default": "#2D0A21" },
+        { "type": "color", "id": "text_color", "label": "Text", "default": "#FAF5EE" },
+        { "type": "color", "id": "accent_color", "label": "Accent", "default": "#D692AB" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Armory Categories",
+      "blocks": [
+        { "type": "category", "settings": { "number": "01", "title": "Katana-inspired collectibles" } },
+        { "type": "category", "settings": { "number": "02", "title": "Anime-inspired blades" } },
+        { "type": "category", "settings": { "number": "03", "title": "Collector swords" } },
+        { "type": "category", "settings": { "number": "04", "title": "Pocket-scale collectibles" } },
+        { "type": "category", "settings": { "number": "05", "title": "Nunchaku-inspired display pieces" } },
+        { "type": "category", "settings": { "number": "06", "title": "Display weapons", "highlight": true, "background": "#4B1738" } },
+        { "type": "category", "settings": { "number": "07", "title": "Airsoft accessories" } },
+        { "type": "category", "settings": { "number": "08", "title": "Samurai-inspired collectibles" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

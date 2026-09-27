@@ -1,0 +1,435 @@
+{% comment %}
+  Filename: custom-process-steps.liquid
+  Description: A two-column responsive section outlining a multi-step process with a sticky/centered heading on the left and bordered step cards on the right. Supports custom SVG code per step.
+{% endcomment %}
+
+<style>
+  #shopify-section-{{ section.id }} {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.accent_color }};
+    --border-color: {{ section.settings.border_color }};
+    
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+  }
+
+  .cp-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  /* --- Layout --- */
+  .cp-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .cp-layout {
+      grid-template-columns: 1fr 1.75fr;
+      gap: 64px;
+    }
+  }
+
+  /* --- Left Column: Header --- */
+  .cp-text-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cp-eyebrow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 0 0 24px 0;
+    color: var(--text-color);
+  }
+
+  .cp-heading {
+    margin: 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text-color);
+  }
+
+  .cp-heading-accent {
+    display: block;
+    color: var(--accent-color);
+    font-style: italic;
+  }
+
+  @media screen and (min-width: 768px) {
+    .cp-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+  }
+
+  /* --- Right Column: Steps Grid --- */
+  .cp-steps-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+  }
+
+  @media screen and (min-width: 768px) {
+    .cp-steps-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .cp-step {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  @media screen and (min-width: 768px) {
+    .cp-step {
+      border-bottom: none;
+      border-right: 1px solid var(--border-color);
+      min-height: 340px;
+      padding: 40px 32px;
+    }
+    
+    .cp-step:last-child {
+      border-right: none;
+    }
+  }
+  
+  /* Mobile last child border removal */
+  @media screen and (max-width: 767px) {
+    .cp-step:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .cp-step-number {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 24px;
+  }
+
+  .cp-step-content {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cp-step-icon {
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .cp-step-icon svg {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .cp-step-title {
+    font-family: var(--font-heading-family), serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 0 0 12px 0;
+    color: var(--text-color);
+    line-height: 1.2;
+  }
+
+  .cp-step-desc {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    margin: 0;
+    opacity: 0.75;
+    color: var(--text-color);
+  }
+</style>
+
+<div class="custom-process-section">
+  <div class="cp-container">
+    <div class="cp-layout">
+      
+      <!-- Header Column -->
+      <div class="cp-text-col">
+        {% if section.settings.eyebrow != blank %}
+          <p class="cp-eyebrow">{{ section.settings.eyebrow }}</p>
+        {% endif %}
+        
+        <h2 class="cp-heading">
+          {% if section.settings.heading_regular != blank %}
+            <span class="cp-heading-regular">{{ section.settings.heading_regular | newline_to_br }}</span>
+          {% endif %}
+          {% if section.settings.heading_accent != blank %}
+            <span class="cp-heading-accent">{{ section.settings.heading_accent | newline_to_br }}</span>
+          {% endif %}
+        </h2>
+      </div>
+
+      <!-- Steps Column -->
+      <div class="cp-steps-col">
+        <div class="cp-steps-grid">
+          {% for block in section.blocks %}
+            <div class="cp-step" {{ block.shopify_attributes }}>
+              
+              {% if block.settings.number != blank %}
+                <div class="cp-step-number">{{ block.settings.number }}</div>
+              {% endif %}
+              
+              <div class="cp-step-content">
+                {% if block.settings.svg_icon != blank %}
+                  <div class="cp-step-icon">
+                    {{ block.settings.svg_icon }}
+                  </div>
+                {% endif %}
+                
+                {% if block.settings.title != blank %}
+                  <h3 class="cp-step-title">{{ block.settings.title }}</h3>
+                {% endif %}
+                
+                {% if block.settings.description != blank %}
+                  <div class="cp-step-desc">{{ block.settings.description }}</div>
+                {% endif %}
+              </div>
+              
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Custom Process Steps",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Text Settings"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow Text",
+      "default": "A HUMAN-GUIDED CUSTOM PROCESS"
+    },
+    {
+      "type": "textarea",
+      "id": "heading_regular",
+      "label": "Heading (Regular Text)",
+      "default": "Upload. Refine."
+    },
+    {
+      "type": "textarea",
+      "id": "heading_accent",
+      "label": "Heading (Accent & Italic)",
+      "default": "Approve.\nIlluminate."
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#f5f0ea"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#2d1a25"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Color",
+      "default": "#b73c68"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#e2d7cc"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 32,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 24,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1800,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Container Width",
+      "default": 1450
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 120
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 120
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 60
+    }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "Process Step",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "text",
+          "id": "number",
+          "label": "Step Number",
+          "default": "01"
+        },
+        {
+          "type": "html",
+          "id": "svg_icon",
+          "label": "Custom SVG Code",
+          "info": "Paste raw SVG code here. It will automatically inherit the Accent Color.",
+          "default": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z\"></path><circle cx=\"12\" cy=\"13\" r=\"4\"></circle></svg>"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Share your photo"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Upload a clear image and tell us the story behind it."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Process Steps",
+      "blocks": [
+        {
+          "type": "step",
+          "settings": {
+            "number": "01",
+            "title": "Share your photo",
+            "description": "Upload a clear image and tell us the story behind it.",
+            "svg_icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z\"></path><circle cx=\"12\" cy=\"13\" r=\"4\"></circle></svg>"
+          }
+        },
+        {
+          "type": "step",
+          "settings": {
+            "number": "02",
+            "title": "We prepare the relief",
+            "description": "Our team improves contrast and composition for a stronger print.",
+            "svg_icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"></path><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"></polyline><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"></line></svg>"
+          }
+        },
+        {
+          "type": "step",
+          "settings": {
+            "number": "03",
+            "title": "Approve before print",
+            "description": "We email a digital proof and only print after you are happy.",
+            "svg_icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"12 2 2 7 12 12 22 7 12 2\"></polygon><polyline points=\"2 17 12 22 22 17\"></polyline><polyline points=\"2 12 12 17 22 12\"></polyline></svg>"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,185 @@
+{% liquid
+  assign cta_image = section.settings.image
+  assign mobile_image = section.settings.mobile_image | default: cta_image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .visit-cta {
+    --vc-bg: {{ section.settings.background }};
+    --vc-overlay: {{ section.settings.overlay_color }};
+    --vc-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    --vc-text: {{ section.settings.text_color }};
+    --vc-accent: {{ section.settings.accent_color }};
+    --vc-button-bg: {{ section.settings.button_background }};
+    --vc-button-text: {{ section.settings.button_text_color }};
+    --vc-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --vc-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --vc-min: {{ section.settings.desktop_min_height }}px;
+    --vc-mobile-min: {{ section.settings.mobile_min_height }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .visit-cta {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="visit-cta">
+  <div class="visit-cta__media" aria-hidden="true">
+    {% if cta_image != blank %}
+      <picture>
+        {% if mobile_image != blank %}
+          <source media="(max-width: 767px)" srcset="{{ mobile_image | image_url: width: 900 }}">
+        {% endif %}
+        {{ cta_image | image_url: width: 2000 | image_tag: widths: '720, 1000, 1400, 1800, 2000', sizes: '100vw', loading: 'lazy', class: 'visit-cta__image' }}
+      </picture>
+    {% endif %}
+  </div>
+  <div class="visit-cta__shade" aria-hidden="true"></div>
+  <div class="visit-cta__inner">
+    {% if section.settings.eyebrow != blank %}
+      <p class="visit-cta__eyebrow">{{ section.settings.eyebrow }}</p>
+    {% endif %}
+    {% if section.settings.heading != blank %}
+      <h2>{{ section.settings.heading }}</h2>
+    {% endif %}
+    {% if section.settings.body != blank %}
+      <div class="visit-cta__body">{{ section.settings.body }}</div>
+    {% endif %}
+    {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+      <a class="visit-cta__button" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .visit-cta {
+    position: relative;
+    min-height: var(--vc-min);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: var(--vc-text);
+    background: var(--vc-bg);
+    text-align: center;
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .visit-cta__media,
+  .visit-cta__media picture,
+  .visit-cta__image,
+  .visit-cta__shade {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .visit-cta__image {
+    object-fit: cover;
+  }
+
+  .visit-cta__shade {
+    background: var(--vc-overlay);
+    opacity: var(--vc-overlay-opacity);
+  }
+
+  .visit-cta__inner {
+    position: relative;
+    z-index: 1;
+    width: min(760px, calc(100vw - 48px));
+  }
+
+  .visit-cta__eyebrow {
+    margin: 0 0 18px;
+    color: var(--vc-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .visit-cta h2 {
+    margin: 0;
+    color: var(--vc-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--vc-heading-mobile), 5vw, var(--vc-heading-desktop));
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .visit-cta__body {
+    max-width: 580px;
+    margin: 20px auto 0;
+    font-size: 14px;
+    line-height: 1.75;
+    opacity: .78;
+  }
+
+  .visit-cta__body p {
+    margin: 0;
+  }
+
+  .visit-cta__button {
+    min-height: 48px;
+    margin-top: 28px;
+    padding: 0 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vc-button-text);
+    background: var(--vc-button-bg);
+    border: 1px solid var(--vc-button-bg);
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  .visit-cta__button:focus-visible {
+    outline: 2px solid var(--vc-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 767px) {
+    .visit-cta {
+      min-height: var(--vc-mobile-min);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Visit CTA",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Desktop image" },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Visit in Vegas" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Stay connected anywhere." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Start with a store visit, a message, or a custom idea.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Send a message" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "range", "id": "desktop_min_height", "label": "Desktop minimum height", "min": 320, "max": 620, "step": 20, "unit": "px", "default": 420 },
+    { "type": "range", "id": "mobile_min_height", "label": "Mobile minimum height", "min": 300, "max": 520, "step": 20, "unit": "px", "default": 360 },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 44, "max": 82, "step": 2, "unit": "px", "default": 62 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 32, "max": 56, "step": 2, "unit": "px", "default": 40 },
+    { "type": "range", "id": "overlay_opacity", "label": "Overlay opacity", "min": 0, "max": 95, "step": 5, "unit": "%", "default": 80 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#27091E" },
+    { "type": "color", "id": "overlay_color", "label": "Overlay", "default": "#27091E" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#FCF8F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#DB87A5" },
+    { "type": "color", "id": "button_background", "label": "Button background", "default": "#FCF8F2" },
+    { "type": "color", "id": "button_text_color", "label": "Button text", "default": "#27091E" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 0, "max": 100, "step": 2, "unit": "px", "default": 0 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 0, "max": 100, "step": 2, "unit": "px", "default": 0 }
+  ],
+  "presets": [
+    { "name": "Visit CTA" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,400 @@
+{% liquid
+  assign hero_image = section.settings.image
+  assign mobile_image = section.settings.mobile_image | default: hero_image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .print-hero {
+    --ph-bg: {{ section.settings.background }};
+    --ph-heading: {{ section.settings.heading_color }};
+    --ph-accent: {{ section.settings.accent_color }};
+    --ph-body: {{ section.settings.body_color }};
+    --ph-overlay: {{ section.settings.overlay_color }};
+    --ph-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    --ph-gradient: {{ section.settings.gradient_strength | divided_by: 100.0 }};
+    --ph-min: {{ section.settings.desktop_min_height }}px;
+    --ph-mobile-min: {{ section.settings.mobile_min_height }}px;
+    --ph-content: {{ section.settings.content_width }}px;
+    --ph-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --ph-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --ph-eyebrow: {{ section.settings.eyebrow_size }}px;
+    --ph-body-size: {{ section.settings.body_size }}px;
+    --ph-position: {{ section.settings.image_position }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .print-hero {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="print-hero print-hero--{{ section.settings.content_position }}">
+  <div class="print-hero__media" aria-hidden="true">
+    {% if hero_image != blank %}
+      <picture>
+        {% if mobile_image != blank %}
+          <source media="(max-width: 767px)" srcset="{{ mobile_image | image_url: width: 900 }}">
+        {% endif %}
+        {{ hero_image | image_url: width: 2200 | image_tag: widths: '720, 1000, 1400, 1800, 2200', sizes: '100vw', loading: 'eager', class: 'print-hero__image' }}
+      </picture>
+    {% else %}
+      <div class="print-hero__placeholder">{{ 'lifestyle-1' | placeholder_svg_tag }}</div>
+    {% endif %}
+  </div>
+
+  <div class="print-hero__shade"></div>
+
+  <div class="print-hero__inner">
+    <div class="print-hero__content print-hero__content--{{ section.settings.text_alignment }} print-hero__content--mobile-{{ section.settings.mobile_text_alignment }}">
+      {% if section.settings.eyebrow != blank %}
+        <p class="print-hero__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+        <h1>
+          {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+          {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+        </h1>
+      {% endif %}
+      {% if section.settings.body != blank %}
+        <div class="print-hero__body">{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.settings.primary_label != blank or section.settings.secondary_label != blank %}
+        <div class="print-hero__actions">
+          {% if section.settings.primary_label != blank and section.settings.primary_link != blank %}
+            <a class="print-hero__button print-hero__button--primary" href="{{ section.settings.primary_link }}">{{ section.settings.primary_label }}</a>
+          {% endif %}
+          {% if section.settings.secondary_label != blank and section.settings.secondary_link != blank %}
+            <a class="print-hero__button print-hero__button--secondary" href="{{ section.settings.secondary_link }}">{{ section.settings.secondary_label }}</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if section.settings.show_badge %}
+    <div class="print-hero__badge print-hero__badge--{{ section.settings.badge_position }}">
+      <strong>{{ section.settings.badge_number }}</strong>
+      <span>{{ section.settings.badge_label }}</span>
+    </div>
+  {% endif %}
+</section>
+
+{% stylesheet %}
+  .print-hero {
+    position: relative;
+    min-height: var(--ph-min);
+    overflow: hidden;
+    display: grid;
+    align-items: center;
+    color: var(--ph-body);
+    background: var(--ph-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .print-hero__media,
+  .print-hero__shade,
+  .print-hero__media picture,
+  .print-hero__image,
+  .print-hero__placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .print-hero__image,
+  .print-hero__placeholder {
+    object-fit: cover;
+    object-position: var(--ph-position);
+  }
+
+  .print-hero__placeholder {
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 72% 42%, rgba(231,167,191,.24), transparent 28%), linear-gradient(120deg, #24091d, #12121c 72%);
+  }
+
+  .print-hero__placeholder svg {
+    width: min(420px, 44%);
+    opacity: .25;
+  }
+
+  .print-hero__shade {
+    z-index: 1;
+    background:
+      linear-gradient(90deg, rgba(36,9,29,var(--ph-gradient)), rgba(36,9,29,.54) 34%, rgba(36,9,29,.12) 68%),
+      var(--ph-overlay);
+    opacity: var(--ph-overlay-opacity);
+  }
+
+  .print-hero__inner {
+    position: relative;
+    z-index: 2;
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+    margin-inline: auto;
+    display: grid;
+  }
+
+  .print-hero--center .print-hero__inner {
+    justify-items: center;
+  }
+
+  .print-hero--right .print-hero__inner {
+    justify-items: end;
+  }
+
+  .print-hero__content {
+    width: min(100%, var(--ph-content));
+  }
+
+  .print-hero__content--center {
+    text-align: center;
+  }
+
+  .print-hero__content--right {
+    text-align: right;
+  }
+
+  .print-hero__eyebrow {
+    margin: 0 0 18px;
+    color: var(--ph-body);
+    font-size: var(--ph-eyebrow);
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .print-hero h1 {
+    margin: 0;
+    color: var(--ph-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--ph-heading-mobile), 6vw, var(--ph-heading-desktop));
+    font-weight: 500;
+    line-height: .96;
+  }
+
+  .print-hero h1 span,
+  .print-hero h1 em {
+    display: block;
+  }
+
+  .print-hero h1 em {
+    color: var(--ph-accent);
+    font-style: italic;
+  }
+
+  .print-hero__body {
+    max-width: 560px;
+    margin-top: 26px;
+    font-size: var(--ph-body-size);
+    line-height: 1.75;
+    opacity: .84;
+  }
+
+  .print-hero__body p {
+    margin: 0;
+  }
+
+  .print-hero__content--center .print-hero__body {
+    margin-inline: auto;
+  }
+
+  .print-hero__actions {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .print-hero__content--center .print-hero__actions {
+    justify-content: center;
+  }
+
+  .print-hero__button {
+    min-height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #fbf7f0;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .04em;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease;
+  }
+
+  .print-hero__button--primary {
+    color: #24091d;
+    background: #fbf7f0;
+  }
+
+  .print-hero__button--secondary {
+    color: #fbf7f0;
+    background: transparent;
+  }
+
+  .print-hero__button:hover {
+    transform: translateY(-1px);
+  }
+
+  .print-hero__button:focus-visible {
+    outline: 2px solid var(--ph-accent);
+    outline-offset: 3px;
+  }
+
+  .print-hero__badge {
+    position: absolute;
+    z-index: 2;
+    width: 118px;
+    height: 118px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    border-radius: 999px;
+    color: var(--ph-body);
+    border: 1px solid rgba(251,247,240,.45);
+    background: rgba(36,9,29,.34);
+    text-align: center;
+    backdrop-filter: blur(8px);
+  }
+
+  .print-hero__badge--bottom_right {
+    right: 8vw;
+    bottom: 54px;
+  }
+
+  .print-hero__badge--bottom_left {
+    left: 8vw;
+    bottom: 54px;
+  }
+
+  .print-hero__badge strong {
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .print-hero__badge span {
+    max-width: 72px;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 767px) {
+    .print-hero {
+      min-height: var(--ph-mobile-min);
+      align-items: end;
+    }
+
+    .print-hero__shade {
+      background: linear-gradient(0deg, rgba(36,9,29,.92), rgba(36,9,29,.62) 44%, rgba(36,9,29,.12));
+    }
+
+    .print-hero__inner {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .print-hero__content--mobile-center {
+      text-align: center;
+    }
+
+    .print-hero__content--mobile-right {
+      text-align: right;
+    }
+
+    .print-hero__actions,
+    .print-hero__content--center .print-hero__actions {
+      justify-content: stretch;
+    }
+
+    .print-hero__button {
+      width: 100%;
+    }
+
+    .print-hero__badge {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .print-hero__button {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Print Hero",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Desktop image" },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Gacha 3D studio - made from your memories" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Printed in layers." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "Revealed in light." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Choose a format, upload a photo, and collaborate with our Las Vegas team on a custom 3D printed keepsake.</p>" },
+    { "type": "text", "id": "primary_label", "label": "Primary button label", "default": "Create a lithophane" },
+    { "type": "url", "id": "primary_link", "label": "Primary button link" },
+    { "type": "text", "id": "secondary_label", "label": "Secondary button label" },
+    { "type": "url", "id": "secondary_link", "label": "Secondary button link" },
+    { "type": "select", "id": "image_position", "label": "Image focal point", "default": "center center", "options": [
+      { "value": "center center", "label": "Center" },
+      { "value": "center top", "label": "Top" },
+      { "value": "center bottom", "label": "Bottom" },
+      { "value": "left center", "label": "Left" },
+      { "value": "right center", "label": "Right" }
+    ] },
+    { "type": "select", "id": "content_position", "label": "Content position", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "select", "id": "text_alignment", "label": "Text alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "select", "id": "mobile_text_alignment", "label": "Mobile alignment", "default": "left", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "checkbox", "id": "show_badge", "label": "Show badge", "default": true },
+    { "type": "text", "id": "badge_number", "label": "Badge number", "default": "01" },
+    { "type": "text", "id": "badge_label", "label": "Badge label", "default": "For collection lithophanes" },
+    { "type": "select", "id": "badge_position", "label": "Badge position", "default": "bottom_right", "options": [
+      { "value": "bottom_right", "label": "Bottom right" },
+      { "value": "bottom_left", "label": "Bottom left" }
+    ] },
+    { "type": "range", "id": "content_width", "label": "Content width", "min": 420, "max": 760, "step": 20, "unit": "px", "default": 620 },
+    { "type": "range", "id": "desktop_min_height", "label": "Desktop minimum height", "min": 560, "max": 900, "step": 20, "unit": "px", "default": 760 },
+    { "type": "range", "id": "mobile_min_height", "label": "Mobile minimum height", "min": 520, "max": 760, "step": 20, "unit": "px", "default": 620 },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 60, "max": 112, "step": 2, "unit": "px", "default": 86 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 40, "max": 62, "step": 2, "unit": "px", "default": 48 },
+    { "type": "range", "id": "eyebrow_size", "label": "Eyebrow size", "min": 10, "max": 14, "step": 1, "unit": "px", "default": 11 },
+    { "type": "range", "id": "body_size", "label": "Body size", "min": 13, "max": 18, "step": 1, "unit": "px", "default": 15 },
+    { "type": "range", "id": "overlay_opacity", "label": "Overlay opacity", "min": 0, "max": 90, "step": 5, "unit": "%", "default": 30 },
+    { "type": "range", "id": "gradient_strength", "label": "Gradient strength", "min": 20, "max": 100, "step": 5, "unit": "%", "default": 90 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#24091D" },
+    { "type": "color", "id": "heading_color", "label": "Heading", "default": "#FBF7F0" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#E7A7BF" },
+    { "type": "color", "id": "body_color", "label": "Body", "default": "#FBF7F0" },
+    { "type": "color", "id": "overlay_color", "label": "Overlay", "default": "#24091D" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 0, "max": 100, "step": 2, "unit": "px", "default": 0 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 0, "max": 100, "step": 2, "unit": "px", "default": 44 }
+  ],
+  "presets": [
+    { "name": "Print Hero" }
+  ]
+}
+{% endschema %}

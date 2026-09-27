@@ -1,0 +1,459 @@
+{% liquid
+  assign grid_collection = section.settings.collection
+  if grid_collection == blank
+    assign grid_collection = collection
+  endif
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .gacha-products {
+    --gp-bg: {{ section.settings.background }};
+    --gp-text: {{ section.settings.text_color }};
+    --gp-muted: {{ section.settings.muted_text_color }};
+    --gp-accent: {{ section.settings.accent_color }};
+    --gp-card-bg: {{ section.settings.card_background }};
+    --gp-border: {{ section.settings.card_border_color }};
+    --gp-image-radius: {{ section.settings.image_radius }}px;
+    --gp-columns: {{ section.settings.desktop_columns }};
+    --gp-tablet-columns: {{ section.settings.tablet_columns }};
+    --gp-mobile-columns: {{ section.settings.mobile_columns }};
+    --gp-x-gap: {{ section.settings.horizontal_gap }}px;
+    --gp-y-gap: {{ section.settings.vertical_gap }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .gacha-products {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="gacha-products">
+  <div class="gacha-products__inner gacha-products__inner--{{ section.settings.section_width }}">
+    {% if grid_collection != blank and grid_collection.products_count > 0 %}
+      {% paginate grid_collection.products by section.settings.products_per_page %}
+        <div class="gacha-products__grid">
+          {% for product in grid_collection.products %}
+            {% liquid
+              assign product_badge = blank
+              if section.settings.show_custom_badge
+                for tag in product.tags
+                  if tag contains 'badge:'
+                    assign product_badge = tag | remove: 'badge:' | strip
+                    break
+                  endif
+                endfor
+              endif
+              if product_badge == blank and product.compare_at_price > product.price and section.settings.show_sale_badge
+                assign product_badge = section.settings.sale_badge_text
+              endif
+              assign category_label = product.type
+              if category_label == blank
+                assign category_label = product.vendor
+              endif
+            %}
+            <article class="gacha-product-card">
+              <a class="gacha-product-card__image-link" href="{{ product.url }}" aria-label="{{ product.title | escape }}">
+                {% if product_badge != blank %}
+                  <span class="gacha-product-card__badge">{{ product_badge }}</span>
+                {% endif %}
+                <span class="gacha-product-card__media gacha-product-card__media--{{ section.settings.image_ratio }}">
+                  {% if product.featured_image != blank %}
+                    {{ product.featured_image | image_url: width: 1000 | image_tag: widths: '360, 540, 720, 900, 1000', sizes: '(max-width: 767px) 50vw, 25vw', loading: 'lazy', class: 'gacha-product-card__image gacha-product-card__image--primary' }}
+                    {% if section.settings.show_hover_image and product.images.size > 1 %}
+                      {% assign hover_image = product.images[1] %}
+                      {{ hover_image | image_url: width: 1000 | image_tag: widths: '360, 540, 720, 900, 1000', sizes: '(max-width: 767px) 50vw, 25vw', loading: 'lazy', class: 'gacha-product-card__image gacha-product-card__image--secondary' }}
+                    {% endif %}
+                  {% else %}
+                    <span class="gacha-product-card__placeholder">{{ 'product-1' | placeholder_svg_tag }}</span>
+                  {% endif %}
+                </span>
+              </a>
+              <div class="gacha-product-card__info">
+                {% if section.settings.show_category_label and category_label != blank %}
+                  <p class="gacha-product-card__category">{{ category_label }}</p>
+                {% endif %}
+                <h3><a href="{{ product.url }}">{{ product.title }}</a></h3>
+                {% if section.settings.show_product_description and product.description != blank %}
+                  <p class="gacha-product-card__description">{{ product.description | strip_html | truncate: 84 }}</p>
+                {% endif %}
+                <div class="gacha-product-card__bottom">
+                  {% if section.settings.show_price %}
+                    <p class="gacha-product-card__price">
+                      {% if product.compare_at_price > product.price and section.settings.show_compare_at_price %}
+                        <s>{{ product.compare_at_price | money }}</s>
+                      {% endif %}
+                      {% if product.price_varies %}
+                        {{ section.settings.from_label }} {{ product.price_min | money }}
+                      {% else %}
+                        {{ product.price | money }}
+                      {% endif %}
+                    </p>
+                  {% endif %}
+                  {% if section.settings.show_quick_add and product.available and product.has_only_default_variant %}
+                    {% form 'product', product, class: 'gacha-product-card__form' %}
+                      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+                      <button type="submit" aria-label="Add {{ product.title | escape }} to cart">+</button>
+                    {% endform %}
+                  {% else %}
+                    <a class="gacha-product-card__open" href="{{ product.url }}" aria-label="View {{ product.title | escape }}">+</a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+
+        {% if section.settings.show_pagination and paginate.pages > 1 %}
+          <nav class="gacha-products__pagination" aria-label="Collection pagination">
+            {{ paginate | default_pagination }}
+          </nav>
+        {% endif %}
+      {% endpaginate %}
+    {% else %}
+      <div class="gacha-products__empty">
+        <div class="gacha-product-card">
+          <span class="gacha-product-card__media gacha-product-card__media--{{ section.settings.image_ratio }}">
+            <span class="gacha-product-card__placeholder">{{ 'product-1' | placeholder_svg_tag }}</span>
+          </span>
+          <div class="gacha-product-card__info">
+            <p class="gacha-product-card__category">Gachapon</p>
+            <h3>Mystery capsule treasure</h3>
+            <p class="gacha-product-card__description">Select a collection to show real products here.</p>
+            <div class="gacha-product-card__bottom">
+              <p class="gacha-product-card__price">{{ section.settings.from_label }} $8</p>
+              <span class="gacha-product-card__open">+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .gacha-products {
+    color: var(--gp-text);
+    background: var(--gp-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .gacha-products__inner {
+    margin-inline: auto;
+  }
+
+  .gacha-products__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .gacha-products__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .gacha-products__inner--full {
+    width: calc(100vw - 48px);
+  }
+
+  .gacha-products__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--gp-columns), minmax(0, 1fr));
+    column-gap: var(--gp-x-gap);
+    row-gap: var(--gp-y-gap);
+  }
+
+  .gacha-product-card {
+    min-width: 0;
+    color: var(--gp-text);
+    background: var(--gp-card-bg);
+  }
+
+  .gacha-product-card__image-link {
+    position: relative;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .gacha-product-card__media {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: var(--gp-image-radius);
+    background: #efe4d8;
+  }
+
+  .gacha-product-card__media--portrait {
+    aspect-ratio: 4 / 5;
+  }
+
+  .gacha-product-card__media--square {
+    aspect-ratio: 1;
+  }
+
+  .gacha-product-card__media--landscape {
+    aspect-ratio: 5 / 4;
+  }
+
+  .gacha-product-card__image,
+  .gacha-product-card__placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .45s ease, opacity .3s ease;
+  }
+
+  .gacha-product-card__image--secondary {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  .gacha-product-card:hover .gacha-product-card__image--primary {
+    transform: scale(1.045);
+  }
+
+  .gacha-product-card:hover .gacha-product-card__image--secondary {
+    opacity: 1;
+    transform: scale(1.045);
+  }
+
+  .gacha-product-card__placeholder {
+    min-height: 240px;
+    display: grid;
+    place-items: center;
+    color: rgba(43,12,33,.45);
+    background: linear-gradient(135deg, #f4eadf, #d9c6b3);
+  }
+
+  .gacha-product-card__placeholder svg {
+    width: min(210px, 58%);
+    opacity: .45;
+  }
+
+  .gacha-product-card__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    max-width: calc(100% - 24px);
+    padding: 8px 10px;
+    color: #281920;
+    background: #fff;
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.2;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .gacha-product-card__info {
+    padding: 18px 0 0;
+  }
+
+  .gacha-product-card__category {
+    margin: 0 0 8px;
+    color: var(--gp-accent);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .gacha-product-card h3 {
+    margin: 0;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(20px, 1.6vw, 26px);
+    font-weight: 500;
+    line-height: 1.14;
+  }
+
+  .gacha-product-card h3 a {
+    color: inherit;
+    text-decoration: none;
+    transition: color .2s ease;
+  }
+
+  .gacha-product-card h3 a:hover {
+    color: var(--gp-accent);
+  }
+
+  .gacha-product-card__description {
+    min-height: 2.9em;
+    margin: 8px 0 0;
+    color: var(--gp-muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .gacha-product-card__bottom {
+    min-height: 46px;
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .gacha-product-card__price {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .gacha-product-card__price s {
+    color: var(--gp-muted);
+  }
+
+  .gacha-product-card__form {
+    margin: 0;
+  }
+
+  .gacha-product-card__form button,
+  .gacha-product-card__open {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: var(--gp-text);
+    background: transparent;
+    border: 1px solid var(--gp-border);
+    border-radius: 999px;
+    font-size: 19px;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease;
+  }
+
+  .gacha-product-card:hover .gacha-product-card__form button,
+  .gacha-product-card:hover .gacha-product-card__open {
+    color: #fff;
+    background: var(--gp-accent);
+    transform: rotate(90deg);
+  }
+
+  .gacha-product-card a:focus-visible,
+  .gacha-product-card button:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 3px;
+  }
+
+  .gacha-products__pagination {
+    margin-top: 56px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .gacha-products__empty {
+    width: min(360px, 100%);
+  }
+
+  @media (max-width: 1023px) {
+    .gacha-products__grid {
+      grid-template-columns: repeat(var(--gp-tablet-columns), minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .gacha-products__inner--page,
+    .gacha-products__inner--wide,
+    .gacha-products__inner--full {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .gacha-products__grid {
+      grid-template-columns: repeat(var(--gp-mobile-columns), minmax(0, 1fr));
+      gap: 28px 14px;
+    }
+
+    .gacha-product-card__info {
+      padding-top: 13px;
+    }
+
+    .gacha-product-card h3 {
+      font-size: 18px;
+    }
+
+    .gacha-product-card__description {
+      min-height: 0;
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 374px) {
+    .gacha-products__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gacha-product-card__image,
+    .gacha-product-card__form button,
+    .gacha-product-card__open {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gacha product grid",
+  "settings": [
+    { "type": "collection", "id": "collection", "label": "Collection override" },
+    { "type": "range", "id": "products_per_page", "label": "Products per page", "min": 4, "max": 48, "step": 4, "default": 12 },
+    { "type": "select", "id": "section_width", "label": "Section width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" },
+      { "value": "full", "label": "Full" }
+    ] },
+    { "type": "range", "id": "desktop_columns", "label": "Desktop columns", "min": 2, "max": 5, "step": 1, "default": 4 },
+    { "type": "select", "id": "tablet_columns", "label": "Tablet columns", "default": "3", "options": [
+      { "value": "2", "label": "2" },
+      { "value": "3", "label": "3" }
+    ] },
+    { "type": "select", "id": "mobile_columns", "label": "Mobile columns", "default": "2", "options": [
+      { "value": "1", "label": "1" },
+      { "value": "2", "label": "2" }
+    ] },
+    { "type": "range", "id": "horizontal_gap", "label": "Horizontal gap", "min": 12, "max": 44, "step": 2, "unit": "px", "default": 22 },
+    { "type": "range", "id": "vertical_gap", "label": "Vertical gap", "min": 28, "max": 80, "step": 4, "unit": "px", "default": 56 },
+    { "type": "select", "id": "image_ratio", "label": "Image ratio", "default": "portrait", "options": [
+      { "value": "portrait", "label": "Portrait" },
+      { "value": "square", "label": "Square" },
+      { "value": "landscape", "label": "Landscape" }
+    ] },
+    { "type": "range", "id": "image_radius", "label": "Image radius", "min": 0, "max": 8, "step": 1, "unit": "px", "default": 0 },
+    { "type": "checkbox", "id": "show_vendor", "label": "Show vendor", "default": false },
+    { "type": "checkbox", "id": "show_category_label", "label": "Show category label", "default": true },
+    { "type": "checkbox", "id": "show_product_description", "label": "Show product description", "default": true },
+    { "type": "checkbox", "id": "show_price", "label": "Show price", "default": true },
+    { "type": "checkbox", "id": "show_compare_at_price", "label": "Show compare-at price", "default": true },
+    { "type": "checkbox", "id": "show_sale_badge", "label": "Show sale badge", "default": true },
+    { "type": "checkbox", "id": "show_custom_badge", "label": "Show badge from product tags", "default": true },
+    { "type": "text", "id": "sale_badge_text", "label": "Sale badge text", "default": "Special find" },
+    { "type": "text", "id": "from_label", "label": "Price prefix", "default": "From" },
+    { "type": "checkbox", "id": "show_quick_add", "label": "Show quick add for simple products", "default": true },
+    { "type": "checkbox", "id": "show_hover_image", "label": "Show second image on hover", "default": true },
+    { "type": "checkbox", "id": "show_pagination", "label": "Show pagination", "default": true },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FBF6EE" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#281920" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#7B6B71" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#CA6E8D" },
+    { "type": "color", "id": "card_background", "label": "Card background", "default": "#FBF6EE" },
+    { "type": "color", "id": "card_border_color", "label": "Card border", "default": "#DDD1C6" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 32, "max": 160, "step": 4, "unit": "px", "default": 48 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 40, "max": 180, "step": 4, "unit": "px", "default": 128 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 24, "max": 100, "step": 4, "unit": "px", "default": 36 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 32, "max": 120, "step": 4, "unit": "px", "default": 76 }
+  ],
+  "presets": [
+    { "name": "Gacha product grid" }
+  ]
+}
+{% endschema %}

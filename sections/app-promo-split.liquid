@@ -1,0 +1,230 @@
+{% style %}
+  #shopify-section-{{ section.id }} .app-promo {
+    --app-left: {{ section.settings.left_background }};
+    --app-right: {{ section.settings.right_background }};
+    --app-text: {{ section.settings.text_color }};
+    --app-dark-text: {{ section.settings.dark_text_color }};
+    --app-accent: {{ section.settings.accent_color }};
+    --app-left-width: {{ section.settings.left_width }}%;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--dark {
+    color: #fff9f2;
+    background: #2a071d;
+    border-color: #2a071d;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="app-promo">
+  <div class="app-promo__left">
+    <div class="app-promo__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p class="app-promo__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>
+        {{ section.settings.heading }}
+        {% if section.settings.accent_heading != blank %}
+          <em>{{ section.settings.accent_heading }}</em>
+        {% endif %}
+      </h2>
+      {% if section.settings.body != blank %}
+        <div class="app-promo__body">{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.blocks.size > 0 %}
+        <ul class="app-promo__list">
+          {% for block in section.blocks %}
+            <li {{ block.shopify_attributes }}>{{ block.settings.text }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="lux-button lux-button--dark" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="app-promo__right">
+    <div class="app-promo__visual">
+      {% if section.settings.image != blank %}
+        {{ section.settings.image | image_url: width: 1000 | image_tag: widths: '420, 640, 820, 1000', sizes: '(max-width: 767px) 80vw, 36vw', loading: 'lazy', class: 'app-promo__image' }}
+      {% else %}
+        <div class="lux-placeholder">{{ 'image' | placeholder_svg_tag }}</div>
+      {% endif %}
+      {% if section.settings.badge_text != blank %}
+        <span class="app-promo__badge">{{ section.settings.badge_text }}</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .app-promo {
+    display: grid;
+    grid-template-columns: minmax(0, var(--app-left-width)) minmax(0, calc(100% - var(--app-left-width)));
+    color: var(--app-dark-text);
+  }
+  .app-promo__left {
+    display: flex;
+    justify-content: flex-end;
+    background: var(--app-left);
+  }
+  .app-promo__copy {
+    width: min(100%, 680px);
+    padding: clamp(54px, 8vw, 118px) clamp(24px, 7vw, 98px);
+  }
+  .app-promo__eyebrow {
+    margin: 0 0 14px;
+    color: #8f2d5a;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .app-promo h2 {
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(42px, 5vw, 78px);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .app-promo h2 em {
+    display: block;
+    color: var(--app-accent);
+    font-style: italic;
+  }
+  .app-promo__body {
+    max-width: 500px;
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: .72;
+  }
+  .app-promo__list {
+    max-width: 560px;
+    margin: 34px 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid rgba(35,21,30,.18);
+  }
+  .app-promo__list li {
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(35,21,30,.18);
+    font-size: 14px;
+  }
+  .app-promo__right {
+    min-height: 680px;
+    display: grid;
+    place-items: center;
+    padding: clamp(42px, 7vw, 96px);
+    color: var(--app-text);
+    background: var(--app-right);
+  }
+  .app-promo__visual {
+    position: relative;
+    width: min(430px, 100%);
+  }
+  .app-promo__image,
+  .app-promo__visual .lux-placeholder {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 34px 90px rgba(0,0,0,.32);
+  }
+  .app-promo__badge {
+    position: absolute;
+    right: -30px;
+    bottom: 42px;
+    width: 112px;
+    height: 112px;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    border-radius: 999px;
+    color: var(--lux-ivory);
+    background: #c65e8a;
+    font-family: var(--font-heading-family);
+    font-size: 16px;
+    line-height: 1.05;
+    text-align: center;
+  }
+  @media (max-width: 860px) {
+    .app-promo { grid-template-columns: 1fr; }
+    .app-promo__left { justify-content: center; }
+    .app-promo__right { min-height: auto; }
+    .app-promo__badge { right: 12px; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "App promo split",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "App or product image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Make it personal" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Your memories." },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "Your case." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Choose your phone model and upload the moment you want to carry. We preview, approve, and print it for a one-of-one case.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Open custom studio" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "text", "id": "badge_text", "label": "Badge text", "default": "Proof in 7 minutes" },
+    { "type": "color", "id": "left_background", "label": "Left background", "default": "#E7A2BC" },
+    { "type": "color", "id": "right_background", "label": "Right background", "default": "#170913" },
+    { "type": "color", "id": "text_color", "label": "Right text color", "default": "#FFF9F2" },
+    { "type": "color", "id": "dark_text_color", "label": "Left text color", "default": "#23151E" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#8F2D5A" },
+    { "type": "range", "id": "left_width", "label": "Desktop left width", "min": 40, "max": 60, "step": 5, "unit": "%", "default": 45 }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "Feature",
+      "limit": 5,
+      "settings": [
+        { "type": "text", "id": "text", "label": "Text", "default": "Upload your artwork" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "App promo split" }
+  ]
+}
+{% endschema %}

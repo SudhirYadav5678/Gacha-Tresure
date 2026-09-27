@@ -1,0 +1,305 @@
+{% style %}
+  #shopify-section-{{ section.id }} .screen-case {
+    --sc-bg: {{ section.settings.background }};
+    --sc-heading: {{ section.settings.heading_color }};
+    --sc-accent: {{ section.settings.accent_color }};
+    --sc-body: {{ section.settings.body_color }};
+    --sc-divider: {{ section.settings.divider_color }};
+    --sc-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --sc-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .screen-case {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="screen-case">
+  <div class="screen-case__inner screen-case__inner--{{ section.settings.content_width }} screen-case__inner--{{ section.settings.media_position }}">
+    <div class="screen-case__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p class="screen-case__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+        <h2>
+          {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+          {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+        </h2>
+      {% endif %}
+      {% if section.settings.body != blank %}
+        <div class="screen-case__body">{{ section.settings.body }}</div>
+      {% endif %}
+
+      {% if section.blocks.size > 0 %}
+        <div class="screen-case__steps screen-case__steps--{{ section.settings.step_columns }}">
+          {% for block in section.blocks %}
+            <article class="screen-case__step" {{ block.shopify_attributes }}>
+              <span>{{ block.settings.number }}</span>
+              <h3>{{ block.settings.heading }}</h3>
+              <div>{{ block.settings.text }}</div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="screen-case__media">
+      {% if section.settings.video != blank %}
+        {{ section.settings.video | video_tag: autoplay: section.settings.video_autoplay, loop: section.settings.video_loop, muted: true, controls: section.settings.video_controls, image_size: '900x' }}
+      {% elsif section.settings.image != blank %}
+        {{ section.settings.image | image_url: width: 900 | image_tag: widths: '360, 540, 720, 900', sizes: '(max-width: 767px) 90vw, 34vw', loading: 'lazy', class: 'screen-case__image' }}
+      {% else %}
+        <div class="screen-case__placeholder">{{ 'collection-1' | placeholder_svg_tag }}</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .screen-case {
+    color: var(--sc-body);
+    background: var(--sc-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .screen-case__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, .48fr);
+    gap: clamp(42px, 9vw, 140px);
+    align-items: center;
+  }
+
+  .screen-case__inner--media_left .screen-case__media {
+    order: -1;
+  }
+
+  .screen-case__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .screen-case__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .screen-case__eyebrow {
+    margin: 0 0 20px;
+    color: var(--sc-body);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .screen-case h2 {
+    max-width: 650px;
+    margin: 0;
+    color: var(--sc-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--sc-heading-mobile), 5vw, var(--sc-heading-desktop));
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .screen-case h2 span,
+  .screen-case h2 em {
+    display: block;
+  }
+
+  .screen-case h2 em {
+    color: var(--sc-accent);
+    font-style: italic;
+  }
+
+  .screen-case__body {
+    max-width: 620px;
+    margin-top: 24px;
+    font-size: 14px;
+    line-height: 1.75;
+    opacity: .82;
+  }
+
+  .screen-case__body p,
+  .screen-case__step div p {
+    margin: 0;
+  }
+
+  .screen-case__steps {
+    margin-top: 46px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--sc-divider);
+  }
+
+  .screen-case__steps--1 {
+    grid-template-columns: 1fr;
+  }
+
+  .screen-case__step {
+    min-width: 0;
+    padding: 30px;
+    border-right: 1px solid var(--sc-divider);
+    border-bottom: 1px solid var(--sc-divider);
+  }
+
+  .screen-case__step:nth-child(2n),
+  .screen-case__step:last-child {
+    border-right: 0;
+  }
+
+  .screen-case__step:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .screen-case__step span {
+    display: block;
+    margin-bottom: 22px;
+    color: var(--sc-accent);
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .screen-case__step h3 {
+    margin: 0 0 8px;
+    color: var(--sc-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .screen-case__step div {
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: .76;
+  }
+
+  .screen-case__media {
+    max-width: 430px;
+    justify-self: end;
+    background: rgba(255,255,255,.05);
+  }
+
+  .screen-case__media video,
+  .screen-case__image,
+  .screen-case__placeholder {
+    width: 100%;
+    aspect-ratio: 9 / 14;
+    object-fit: cover;
+  }
+
+  .screen-case__placeholder {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #441331, #150711);
+  }
+
+  .screen-case__placeholder svg {
+    width: 52%;
+    opacity: .35;
+  }
+
+  @media (max-width: 900px) {
+    .screen-case__inner {
+      grid-template-columns: 1fr;
+    }
+
+    .screen-case__inner--media_left .screen-case__media {
+      order: 0;
+    }
+
+    .screen-case__media {
+      justify-self: start;
+      width: min(430px, 100%);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .screen-case__inner--page,
+    .screen-case__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .screen-case__steps,
+    .screen-case__steps--1 {
+      grid-template-columns: 1fr;
+    }
+
+    .screen-case__step,
+    .screen-case__step:nth-child(2n),
+    .screen-case__step:nth-last-child(-n + 2) {
+      border-right: 0;
+      border-bottom: 1px solid var(--sc-divider);
+    }
+
+    .screen-case__step:last-child {
+      border-bottom: 0;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Screen To Case",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Made inside our Las Vegas shop" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "From your screen" },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "to a finished case." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>See the design before it becomes physical. Each order is reviewed, printed, fitted to the correct model, and prepared by our small shop team.</p>" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "video", "id": "video", "label": "Video" },
+    { "type": "checkbox", "id": "video_autoplay", "label": "Autoplay video", "default": false },
+    { "type": "checkbox", "id": "video_loop", "label": "Loop video", "default": true },
+    { "type": "checkbox", "id": "video_controls", "label": "Show video controls", "default": true },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "select", "id": "media_position", "label": "Media position", "default": "media_right", "options": [
+      { "value": "media_right", "label": "Right" },
+      { "value": "media_left", "label": "Left" }
+    ] },
+    { "type": "select", "id": "step_columns", "label": "Step columns", "default": "2", "options": [
+      { "value": "1", "label": "1" },
+      { "value": "2", "label": "2" }
+    ] },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 44, "max": 86, "step": 2, "unit": "px", "default": 66 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 56, "step": 2, "unit": "px", "default": 42 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#290A20" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#FCF8F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#E6A2BC" },
+    { "type": "color", "id": "body_color", "label": "Body color", "default": "#FCF8F2" },
+    { "type": "color", "id": "divider_color", "label": "Divider color", "default": "#552345" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 100 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 112 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 42, "max": 120, "step": 2, "unit": "px", "default": 64 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 42, "max": 120, "step": 2, "unit": "px", "default": 76 }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "Step",
+      "settings": [
+        { "type": "text", "id": "number", "label": "Number", "default": "01" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Choose" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Select the exact phone model and format.</p>" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Screen To Case",
+      "blocks": [
+        { "type": "step", "settings": { "number": "01", "heading": "Choose", "text": "<p>Select the case and phone model.</p>" } },
+        { "type": "step", "settings": { "number": "02", "heading": "Create", "text": "<p>Choose artwork or upload your image.</p>" } },
+        { "type": "step", "settings": { "number": "03", "heading": "Print", "text": "<p>Artwork is carefully prepared and printed.</p>" } },
+        { "type": "step", "settings": { "number": "04", "heading": "Pack", "text": "<p>Your finished case is checked and packed.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

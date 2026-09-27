@@ -1,0 +1,501 @@
+{% comment %}
+  Filename: watch-treasures-take-shape.liquid
+  Description: A responsive horizontal video/image carousel with a global pause/play motion toggle.
+{% endcomment %}
+
+<style>
+  .wt-section-{{ section.id }} {
+    display: block;
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --card-width-mobile: 240px;
+    --card-width-desktop: 280px;
+    
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .wt-section-{{ section.id }} {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+  }
+
+  .wt-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+  }
+
+  /* Header Row */
+  .wt-header-row {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .wt-header-row {
+      flex-direction: row;
+      align-items: flex-end;
+      margin-bottom: 40px;
+    }
+  }
+
+  .wt-header-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .wt-heading {
+    margin: 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text-color);
+  }
+
+  .wt-subheading {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+
+  @media screen and (min-width: 768px) {
+    .wt-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+    .wt-subheading {
+      font-size: 1rem;
+    }
+  }
+
+  /* Motion Button */
+  .wt-motion-btn {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    border-radius: 2px;
+  }
+
+  .wt-motion-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Carousel */
+  .wt-carousel-wrapper {
+    width: 100%;
+    /* Extra bottom padding to hide scrollbar while keeping snap area */
+    padding-bottom: 24px;
+    margin-bottom: -24px;
+  }
+
+  .wt-carousel {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+
+  .wt-carousel::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  /* Cards */
+  .wt-card {
+    flex: 0 0 var(--card-width-mobile);
+    scroll-snap-align: start;
+    position: relative;
+    aspect-ratio: 9 / 16;
+    background-color: #1a1a1a;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  @media screen and (min-width: 1025px) {
+    .wt-card {
+      flex: 0 0 var(--card-width-desktop);
+    }
+  }
+
+  .wt-card-media {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  .wt-card-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Text Overlay */
+  .wt-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px 20px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #ffffff;
+    pointer-events: none;
+  }
+
+  .wt-card-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+  }
+
+  .wt-card-desc {
+    margin: 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: 1.125rem;
+    font-style: italic;
+    line-height: 1.3;
+    opacity: 0.9;
+  }
+</style>
+
+<watch-treasures-element class="wt-section-{{ section.id }}" data-playing="true">
+  <div class="wt-container">
+    
+    <div class="wt-header-row">
+      <div class="wt-header-text">
+        {% if section.settings.heading != blank %}
+          <h2 class="wt-heading">{{ section.settings.heading }}</h2>
+        {% endif %}
+        {% if section.settings.subheading != blank %}
+          <p class="wt-subheading">{{ section.settings.subheading }}</p>
+        {% endif %}
+      </div>
+      
+      {% if section.settings.show_motion_toggle %}
+        <button class="wt-motion-btn js-motion-toggle" type="button" aria-pressed="false">
+          <span class="js-motion-text-pause">{{ section.settings.pause_text | default: 'Pause motion' }}</span>
+          <span class="js-motion-text-play" style="display: none;">{{ section.settings.play_text | default: 'Play motion' }}</span>
+        </button>
+      {% endif %}
+    </div>
+
+    <div class="wt-carousel-wrapper">
+      <div class="wt-carousel">
+        {% for block in section.blocks %}
+          <div class="wt-card" {{ block.shopify_attributes }}>
+            
+            {% if block.settings.video != blank %}
+              <div class="wt-card-media">
+                {{ block.settings.video | video_tag: autoplay: true, loop: true, muted: true, controls: false, image_size: '600x' }}
+              </div>
+            {% elsif block.settings.image != blank %}
+              {{ block.settings.image | image_url: width: 600 | image_tag: class: 'wt-card-media', loading: 'lazy' }}
+            {% else %}
+              {{ 'collection-1' | placeholder_svg_tag: 'wt-card-media placeholder' }}
+            {% endif %}
+
+            {% if block.settings.title != blank or block.settings.description != blank %}
+              <div class="wt-card-overlay">
+                {% if block.settings.title != blank %}
+                  <h3 class="wt-card-title">{{ block.settings.title }}</h3>
+                {% endif %}
+                {% if block.settings.description != blank %}
+                  <p class="wt-card-desc">{{ block.settings.description }}</p>
+                {% endif %}
+              </div>
+            {% endif %}
+
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</watch-treasures-element>
+
+<script>
+  if (!customElements.get('watch-treasures-element')) {
+    class WatchTreasuresElement extends HTMLElement {
+      constructor() {
+        super();
+        this.toggleBtn = this.querySelector('.js-motion-toggle');
+        this.videos = this.querySelectorAll('video');
+        this.isPlaying = true;
+
+        if (this.toggleBtn && this.videos.length > 0) {
+          this.toggleBtn.addEventListener('click', this.toggleMotion.bind(this));
+          
+          // Ensure videos play on initial load (safari/ios low power mode check)
+          this.videos.forEach(video => {
+             video.play().catch(e => {
+               // Auto-play prevented, set initial state to paused
+               this.setPausedState();
+             });
+          });
+        }
+      }
+
+      toggleMotion() {
+        if (this.isPlaying) {
+          this.videos.forEach(video => video.pause());
+          this.setPausedState();
+        } else {
+          this.videos.forEach(video => video.play());
+          this.setPlayingState();
+        }
+      }
+      
+      setPausedState() {
+        this.isPlaying = false;
+        this.setAttribute('data-playing', 'false');
+        this.toggleBtn.setAttribute('aria-pressed', 'true');
+        this.querySelector('.js-motion-text-pause').style.display = 'none';
+        this.querySelector('.js-motion-text-play').style.display = 'inline-block';
+      }
+      
+      setPlayingState() {
+        this.isPlaying = true;
+        this.setAttribute('data-playing', 'true');
+        this.toggleBtn.setAttribute('aria-pressed', 'false');
+        this.querySelector('.js-motion-text-pause').style.display = 'inline-block';
+        this.querySelector('.js-motion-text-play').style.display = 'none';
+      }
+    }
+    customElements.define('watch-treasures-element', WatchTreasuresElement);
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Watch Treasures (Films)",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Text Settings"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Watch treasures take shape."
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Seven quick films from capsule reveal to custom print."
+    },
+    {
+      "type": "header",
+      "content": "Motion Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_motion_toggle",
+      "label": "Show pause/play motion button",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "pause_text",
+      "label": "Pause Button Text",
+      "default": "Pause motion"
+    },
+    {
+      "type": "text",
+      "id": "play_text",
+      "label": "Play Button Text",
+      "default": "Play motion"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#31182a"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Typography Settings"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 24,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 42
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 20,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 32
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1800,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 40
+    }
+  ],
+  "blocks": [
+    {
+      "type": "film_card",
+      "name": "Film Card",
+      "limit": 12,
+      "settings": [
+        {
+          "type": "video",
+          "id": "video",
+          "label": "Video",
+          "info": "Autoplays silently. Recommended format: Vertical (9:16)."
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Fallback Image",
+          "info": "Used if no video is selected."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Overlay Title",
+          "info": "Optional small uppercase text."
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Overlay Description",
+          "info": "Optional italic subheading."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Watch Treasures (Films)",
+      "blocks": [
+        {
+          "type": "film_card",
+          "settings": {
+            "title": "Pick a size.",
+            "description": "Keep the surprise."
+          }
+        },
+        { "type": "film_card" },
+        { "type": "film_card" },
+        { "type": "film_card" },
+        { "type": "film_card" },
+        {
+          "type": "film_card",
+          "settings": {
+            "title": "Your photo.",
+            "description": "Printed to glow."
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

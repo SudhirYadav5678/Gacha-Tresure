@@ -1,0 +1,487 @@
+{% comment %}
+  Filename: shop-by-collection.liquid
+  Description: A fully responsive, 4-column collection showcase section with hover effects.
+{% endcomment %}
+
+<section id="ShopByCollection-{{ section.id }}" class="shop-by-collection">
+  <div class="sbc-container">
+    
+    <div class="sbc-header sbc-align-{{ section.settings.content_alignment }}">
+      {% if section.settings.label != blank %}
+        <span class="sbc-label">{{ section.settings.label }}</span>
+      {% endif %}
+      
+      {% if section.settings.heading != blank %}
+        <h2 class="sbc-heading">{{ section.settings.heading }}</h2>
+      {% endif %}
+      
+      {% if section.settings.description != blank %}
+        <div class="sbc-description">
+          {{ section.settings.description }}
+        </div>
+      {% endif %}
+      
+      {% if section.settings.link_text != blank and section.settings.link_url != blank %}
+        <a href="{{ section.settings.link_url }}" class="sbc-link">
+          {{ section.settings.link_text }}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 6H11M11 6L6 1M11 6L6 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="sbc-grid">
+      {% for block in section.blocks %}
+        <a href="{{ block.settings.link | default: '#' }}" class="sbc-card" {{ block.shopify_attributes }}>
+          <div class="sbc-card-image-wrapper">
+            {% if block.settings.image != blank %}
+              {{ block.settings.image | image_url: width: 800 | image_tag: 
+                class: 'sbc-card-image', 
+                loading: 'lazy', 
+                sizes: '(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw', 
+                widths: '400, 600, 800' 
+              }}
+            {% else %}
+              {{ 'collection-1' | placeholder_svg_tag: 'sbc-card-image placeholder-svg' }}
+            {% endif %}
+            <div class="sbc-card-overlay"></div>
+          </div>
+          
+          <div class="sbc-card-content">
+            <div class="sbc-card-text">
+              {% if block.settings.title != blank %}
+                <h3 class="sbc-card-title">{{ block.settings.title }}</h3>
+              {% endif %}
+              {% if block.settings.subtitle != blank %}
+                <p class="sbc-card-subtitle">{{ block.settings.subtitle }}</p>
+              {% endif %}
+            </div>
+            <div class="sbc-card-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3.33334 8H12.6667M12.6667 8L8 3.33333M12.6667 8L8 12.6667" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* --- Variables & Section Setup --- */
+  #ShopByCollection-{{ section.id }} {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --container-max-width: {{ section.settings.max_width }}px;
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    --gap: {{ section.settings.grid_gap }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  .sbc-container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+  }
+
+  /* --- Header Styling --- */
+  .sbc-header {
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sbc-align-left { text-align: left; align-items: flex-start; }
+  .sbc-align-center { text-align: center; align-items: center; }
+  .sbc-align-right { text-align: right; align-items: flex-end; }
+
+  .sbc-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .sbc-heading {
+    margin: 0;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text-color);
+  }
+
+  .sbc-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    opacity: 0.8;
+    max-width: 600px;
+  }
+  
+  .sbc-description p { margin: 0; }
+
+  .sbc-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-color);
+    text-decoration: none;
+    margin-top: 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--text-color);
+    transition: opacity 0.3s ease, gap 0.3s ease;
+  }
+
+  .sbc-link:hover {
+    opacity: 0.7;
+    gap: 12px;
+  }
+
+  /* --- Grid & Cards --- */
+  .sbc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+  }
+
+  .sbc-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    border-radius: 4px;
+    overflow: hidden;
+    aspect-ratio: 1.2 / 1; /* Matches slightly wider-than-square proportion from design */
+    group: card;
+  }
+
+  .sbc-card-image-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .sbc-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .placeholder-svg {
+    background-color: #e5e5e5;
+    color: #999;
+  }
+
+  .sbc-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(180deg, rgba(29, 23, 31, 0) 0%, rgba(29, 23, 31, 0.9) 100%);
+    z-index: 2;
+  }
+
+  .sbc-card-content {
+    position: relative;
+    z-index: 3;
+    margin-top: auto;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    color: #ffffff;
+    gap: 16px;
+  }
+
+  .sbc-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sbc-card-title {
+    margin: 0;
+    
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #ffffff;
+  }
+
+  .sbc-card-subtitle {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+
+  .sbc-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+  }
+
+  /* Hover Effects */
+  @media (hover: hover) {
+    .sbc-card:hover .sbc-card-image {
+      transform: scale(1.05);
+    }
+    .sbc-card:hover .sbc-card-icon {
+      transform: translateX(4px);
+    }
+  }
+
+  /* --- Breakpoints --- */
+  /* Tablet */
+  @media screen and (min-width: 768px) {
+    .sbc-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .sbc-heading {
+      font-size: calc({{ section.settings.heading_size_desktop }}px * 0.8);
+    }
+    .sbc-card {
+      aspect-ratio: 1.1 / 1;
+    }
+  }
+
+  /* Desktop */
+  @media screen and (min-width: 1025px) {
+    #ShopByCollection-{{ section.id }} {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+    .sbc-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .sbc-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+    .sbc-header {
+      margin-bottom: 60px;
+      gap: 16px;
+    }
+    .sbc-description {
+      font-size: 1rem;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Shop By Collection",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Section Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#f9f7f4"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#2b2326"
+    },
+    {
+      "type": "header",
+      "content": "Header Content"
+    },
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Subheading / Label",
+      "default": "SHOP BY COLLECTION"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Four ways to start."
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description",
+      "default": "<p>Begin with capsules, collectible boxes, custom cases, or glowing 3D keepsakes.</p>"
+    },
+    {
+      "type": "text",
+      "id": "link_text",
+      "label": "Link Text",
+      "default": "Explore all categories"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Link URL"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Content Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "Typography Settings"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 24,
+      "max": 72,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 20,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 32
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 800,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "grid_gap",
+      "min": 10,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Spacing Between Cards",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 40
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection_card",
+      "name": "Collection Card",
+      "limit": 8,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Background Image",
+          "info": "Aspect ratio will crop to slightly landscape."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Collection Name"
+        },
+        {
+          "type": "text",
+          "id": "subtitle",
+          "label": "Subtitle",
+          "default": "Short description here."
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Card Link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Shop By Collection",
+      "blocks": [
+        { "type": "collection_card", "settings": { "title": "Gashapon", "subtitle": "Turn surprise into a shipment" } },
+        { "type": "collection_card", "settings": { "title": "Blind Boxes", "subtitle": "Sealed series. Rare possibilities." } },
+        { "type": "collection_card", "settings": { "title": "Custom Cases", "subtitle": "Your artwork, printed in store" } },
+        { "type": "collection_card", "settings": { "title": "3D Prints", "subtitle": "Meaningful images transformed into light" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

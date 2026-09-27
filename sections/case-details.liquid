@@ -1,0 +1,156 @@
+{% style %}
+  #shopify-section-{{ section.id }} .case-details {
+    --cd-bg: {{ section.settings.background }};
+    --cd-text: {{ section.settings.text_color }};
+    --cd-muted: {{ section.settings.muted_text_color }};
+    --cd-accent: {{ section.settings.accent_color }};
+    --cd-divider: {{ section.settings.divider_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="case-details">
+  <div class="case-details__inner case-details__inner--{{ section.settings.content_width }}">
+    {% if section.settings.heading != blank %}
+      <h2>{{ section.settings.heading }}</h2>
+    {% endif %}
+    <div class="case-details__items">
+      {% for block in section.blocks %}
+        <details class="case-details__item" {% if section.settings.open_first and forloop.first %}open{% endif %} {{ block.shopify_attributes }}>
+          <summary>{{ block.settings.heading }} <span aria-hidden="true">+</span></summary>
+          <div class="case-details__content">
+            {% if block.settings.page != blank %}
+              {{ block.settings.page.content }}
+            {% else %}
+              {{ block.settings.content }}
+            {% endif %}
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-details {
+    color: var(--cd-text);
+    background: var(--cd-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .case-details__inner {
+    margin-inline: auto;
+  }
+
+  .case-details__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .case-details__inner--narrow {
+    width: min(920px, calc(100vw - 96px));
+  }
+
+  .case-details h2 {
+    margin: 0 0 28px;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(34px, 4vw, 58px);
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .case-details__items {
+    border-top: 1px solid var(--cd-divider);
+  }
+
+  .case-details__item {
+    border-bottom: 1px solid var(--cd-divider);
+  }
+
+  .case-details__item summary {
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--cd-text);
+    font-size: 15px;
+    font-weight: 850;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .case-details__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .case-details__item[open] summary span {
+    transform: rotate(45deg);
+  }
+
+  .case-details__content {
+    max-width: 820px;
+    padding-bottom: 24px;
+    color: var(--cd-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .case-details__content p {
+    margin: 0;
+  }
+
+  .case-details summary:focus-visible {
+    outline: 2px solid var(--cd-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 767px) {
+    .case-details__inner--page,
+    .case-details__inner--narrow {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Case Details",
+  "settings": [
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Case details" },
+    { "type": "checkbox", "id": "open_first", "label": "Open first item", "default": true },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "narrow", "options": [
+      { "value": "narrow", "label": "Narrow" },
+      { "value": "page", "label": "Page width" }
+    ] },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FCF8F2" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#746970" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#C63B73" },
+    { "type": "color", "id": "divider_color", "label": "Divider", "default": "#D9CEC4" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 76 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 88 }
+  ],
+  "blocks": [
+    {
+      "type": "detail",
+      "name": "Detail",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Materials and fit" },
+        { "type": "richtext", "id": "content", "label": "Content", "default": "<p>Cases are prepared for the selected device model and reviewed before print.</p>" },
+        { "type": "page", "id": "page", "label": "Page content" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Case Details",
+      "blocks": [
+        { "type": "detail", "settings": { "heading": "Materials and fit" } },
+        { "type": "detail", "settings": { "heading": "Artwork guidance", "content": "<p>Use a high-resolution JPG or PNG. Uploaded artwork is retained as the source for fulfillment.</p>" } },
+        { "type": "detail", "settings": { "heading": "Production timing", "content": "<p>Custom cases are reviewed, printed, checked, and packed by the shop team.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

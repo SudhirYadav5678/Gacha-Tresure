@@ -1,0 +1,1154 @@
+{% comment %}
+  Gacha / Armory header section.
+  Mobile-first: compact top bar + logo/actions row + collapsible Shopify menu.
+  Desktop: 3-column announcement bar, patterned header background, centered pill navigation, right action pill.
+{% endcomment %}
+
+<header
+  id="GachaHeader-{{ section.id }}"
+  class="gacha-header gacha-header--align-{{ section.settings.content_alignment }}"
+  style="
+    --gh-bg: {{ section.settings.background_color }};
+    --gh-gradient: {{ section.settings.background_gradient | default: 'none' }};
+    --gh-pattern-opacity: {{ section.settings.background_image_opacity | divided_by: 100.0 }};
+    --gh-overlay: {{ section.settings.overlay_color }};
+    --gh-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    --gh-top-bg: {{ section.settings.announcement_background }};
+    --gh-text: {{ section.settings.text_color }};
+    --gh-headline: {{ section.settings.headline_color }};
+    --gh-muted: {{ section.settings.muted_color }};
+    --gh-accent: {{ section.settings.accent_color }};
+    --gh-pill-bg: {{ section.settings.pill_background }};
+    --gh-pill-border: {{ section.settings.pill_border }};
+    --gh-icon-bg: {{ section.settings.icon_pill_background }};
+    --gh-container: {% if section.settings.container_width == 'boxed' %}{{ section.settings.max_width }}px{% else %}100%{% endif %};
+    --gh-padding-top: {{ section.settings.padding_top }}px;
+    --gh-padding-bottom: {{ section.settings.padding_bottom }}px;
+    --gh-padding-left: {{ section.settings.padding_left }}px;
+    --gh-padding-right: {{ section.settings.padding_right }}px;
+    --gh-gap: {{ section.settings.block_spacing }}px;
+    --gh-logo-width-mobile: {{ section.settings.logo_width_mobile }}px;
+    --gh-logo-width-desktop: {{ section.settings.logo_width_desktop }}px;
+    --gh-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    --gh-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+  "
+>
+  <div class="gacha-header__announcement" aria-label="Store announcement">
+    <div class="gacha-header__announcement-inner">
+      {% if section.settings.announcement_left != blank %}
+        <p>{{ section.settings.announcement_left | escape }}</p>
+      {% endif %}
+      {% if section.settings.announcement_center != blank %}
+        <p>{{ section.settings.announcement_center | escape }}</p>
+      {% endif %}
+      {% if section.settings.announcement_right != blank %}
+        <p>{{ section.settings.announcement_right | escape }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="gacha-header__main">
+    {% if section.settings.background_image != blank %}
+      {{
+        section.settings.background_image
+        | image_url: width: 2400
+        | image_tag:
+          class: 'gacha-header__background',
+          loading: 'eager',
+          sizes: '100vw',
+          widths: '750, 1100, 1500, 2000, 2400',
+          alt: ''
+      }}
+    {% endif %}
+
+    <div class="gacha-header__overlay" aria-hidden="true"></div>
+
+    <div class="gacha-header__container">
+      <div class="gacha-header__mobile-row">
+        <a class="gacha-header__logo-link" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }}">
+          {% if section.settings.logo != blank %}
+            {{
+              section.settings.logo
+              | image_url: width: 360
+              | image_tag:
+                class: 'gacha-header__logo',
+                loading: 'eager',
+                sizes: '(min-width: 1025px) 92px, 64px',
+                widths: '96, 160, 240, 360',
+                alt: section.settings.logo_alt
+            }}
+          {% else %}
+            <span class="gacha-header__logo-placeholder">{{ shop.name | slice: 0, 2 | upcase }}</span>
+          {% endif %}
+        </a>
+
+        <div class="gacha-header__mobile-actions">
+          {% if section.settings.show_search %}
+            <a class="gacha-header__icon-link" href="{{ routes.search_url }}" aria-label="Search">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M10.7 4a6.7 6.7 0 0 1 5.2 10.9l4.1 4.1-1.4 1.4-4.1-4.1A6.7 6.7 0 1 1 10.7 4Zm0 2a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Z"/>
+              </svg>
+            </a>
+          {% endif %}
+
+          <details class="gacha-header__mobile-menu">
+            <summary aria-label="Open menu">
+              <span></span>
+              <span></span>
+              <span></span>
+            </summary>
+
+            <nav class="gacha-header__drawer" aria-label="Mobile menu">
+              <ul role="list">
+                {% for link in section.settings.menu.links %}
+                  <li>
+                    {% if link.links.size > 0 %}
+                      <details>
+                        <summary>{{ link.title | escape }}</summary>
+                        <ul role="list">
+                          {% for child_link in link.links %}
+                            <li>
+                              <a href="{{ child_link.url }}">{{ child_link.title | escape }}</a>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      </details>
+                    {% else %}
+                      <a href="{{ link.url }}">{{ link.title | escape }}</a>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </nav>
+          </details>
+        </div>
+      </div>
+
+      <div class="gacha-header__desktop-layout">
+        <a class="gacha-header__logo-link" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }}">
+          {% if section.settings.logo != blank %}
+            {{
+              section.settings.logo
+              | image_url: width: 420
+              | image_tag:
+                class: 'gacha-header__logo',
+                loading: 'eager',
+                sizes: '96px',
+                widths: '120, 180, 240, 320, 420',
+                alt: section.settings.logo_alt
+            }}
+          {% else %}
+            <span class="gacha-header__logo-placeholder">{{ shop.name | slice: 0, 2 | upcase }}</span>
+          {% endif %}
+        </a>
+
+        <nav class="gacha-header__nav" aria-label="Main menu">
+          <ul role="list">
+            {% for link in section.settings.menu.links %}
+              <li class="gacha-header__nav-item">
+                <a href="{{ link.url }}">{{ link.title | escape }}</a>
+
+                {% if link.links.size > 0 %}
+                  <ul class="gacha-header__submenu" role="list">
+                    {% for child_link in link.links %}
+                      <li>
+                        <a href="{{ child_link.url }}">{{ child_link.title | escape }}</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+
+        <div class="gacha-header__actions" aria-label="Header actions">
+          {% if section.settings.show_search %}
+            <a class="gacha-header__icon-link" href="{{ routes.search_url }}" aria-label="Search">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M10.7 4a6.7 6.7 0 0 1 5.2 10.9l4.1 4.1-1.4 1.4-4.1-4.1A6.7 6.7 0 1 1 10.7 4Zm0 2a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Z"/>
+              </svg>
+            </a>
+          {% endif %}
+
+          {% if section.settings.show_account %}
+            <a class="gacha-header__icon-link" href="{{ routes.account_url }}" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 4a4.4 4.4 0 1 1 0 8.8A4.4 4.4 0 0 1 12 4Zm0 2a2.4 2.4 0 1 0 0 4.8A2.4 2.4 0 0 0 12 6Zm0 8.4c4.1 0 7.2 2.4 7.2 5.2v.9h-2v-.9c0-1.5-2.1-3.2-5.2-3.2s-5.2 1.7-5.2 3.2v.9h-2v-.9c0-2.8 3.1-5.2 7.2-5.2Z"/>
+              </svg>
+            </a>
+          {% endif %}
+
+          {% if section.settings.show_cart %}
+            <a class="gacha-header__icon-link gacha-header__cart-link" href="{{ routes.cart_url }}" aria-label="Cart, {{ cart.item_count }} items">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M7 5h10l.8 3H21v2h-2.6l-1.5 8H7.1L5.5 8.2 4.9 6H3V4h3.4L7 5Zm1.6 11h6.7l1.1-6H7.5l1.1 6Zm.4 2.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
+              </svg>
+              <span class="gacha-header__cart-count">{{ cart.item_count }}</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if section.settings.headline != blank or section.settings.subheading != blank or section.settings.rich_text != blank or section.settings.button_text != blank %}
+        <div class="gacha-header__content">
+          {% if section.settings.headline != blank %}
+            <h2>{{ section.settings.headline | escape }}</h2>
+          {% endif %}
+
+          {% if section.settings.subheading != blank %}
+            <p>{{ section.settings.subheading | escape }}</p>
+          {% endif %}
+
+          {% if section.settings.rich_text != blank %}
+            <div class="gacha-header__rich-text">
+              {{ section.settings.rich_text }}
+            </div>
+          {% endif %}
+
+          {% if section.settings.button_text != blank %}
+            <div class="gacha-header__button-wrap gacha-header__button-wrap--{{ section.settings.button_alignment }}">
+              <a class="gacha-header__button gacha-header__button--{{ section.settings.button_style }}" href="{{ section.settings.button_link | default: '#' }}">
+                {{ section.settings.button_text | escape }}
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<style>
+  #GachaHeader-{{ section.id }} {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    background: var(--gh-gradient), var(--gh-bg);
+    color: var(--gh-text);
+    isolation: isolate;
+  }
+
+  #GachaHeader-{{ section.id }},
+  #GachaHeader-{{ section.id }} *,
+  #GachaHeader-{{ section.id }} *::before,
+  #GachaHeader-{{ section.id }} *::after {
+    box-sizing: border-box;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__announcement {
+    min-height: 30px;
+    background: var(--gh-top-bg);
+    border-block: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__announcement-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    width: 100%;
+    max-width: var(--gh-container);
+    min-height: 30px;
+    margin-inline: auto;
+    padding-inline: var(--gh-padding-left) var(--gh-padding-right);
+    gap: 4px;
+    text-align: center;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__announcement p {
+    margin: 0;
+    color: var(--gh-text);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(2),
+  #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(3) {
+    display: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__main {
+  position: relative;
+  overflow: visible;
+  min-height: 86px;
+  padding-block: var(--gh-padding-top) var(--gh-padding-bottom);
+  background: var(--gh-bg);
+  isolation: isolate;
+}
+
+#GachaHeader-{{ section.id }} .gacha-header__background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: var(--gh-pattern-opacity);
+  pointer-events: none;
+}
+
+#GachaHeader-{{ section.id }} .gacha-header__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--gh-overlay);
+  opacity: var(--gh-overlay-opacity);
+  pointer-events: none;
+}
+
+#GachaHeader-{{ section.id }} .gacha-header__container {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  max-width: var(--gh-container);
+  margin-inline: auto;
+  padding-inline: var(--gh-padding-left) var(--gh-padding-right);
+  gap: var(--gh-gap);
+}
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 58px;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__desktop-layout {
+    display: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__logo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--gh-text);
+    text-decoration: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__logo {
+    display: block;
+    width: var(--gh-logo-width-mobile);
+    height: auto;
+    max-height: 74px;
+    object-fit: contain;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--gh-logo-width-mobile);
+    aspect-ratio: 1;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--gh-text);
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__icon-link,
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-menu > summary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    border: 1px solid var(--gh-pill-border);
+    border-radius: 999px;
+    background: var(--gh-icon-bg);
+    color: var(--gh-text);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__icon-link svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-menu {
+    position: relative;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-menu > summary {
+    list-style: none;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__mobile-menu > summary span {
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer {
+    position: absolute;
+    inset-block-start: calc(100% + 10px);
+    inset-inline-end: 0;
+    width: min(86vw, 340px);
+    padding: 14px;
+    border: 1px solid var(--gh-pill-border);
+    border-radius: 18px;
+    background: rgba(36, 13, 29, 0.97);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer ul,
+  #GachaHeader-{{ section.id }} .gacha-header__nav ul,
+  #GachaHeader-{{ section.id }} .gacha-header__submenu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer a,
+  #GachaHeader-{{ section.id }} .gacha-header__drawer summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    margin: 0;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--gh-text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.35;
+    text-align: left;
+    text-decoration: none;
+    white-space: normal;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer summary {
+    list-style: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer details,
+  #GachaHeader-{{ section.id }} .gacha-header__drawer li {
+    width: 100%;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__drawer details ul {
+    padding-inline-start: 12px;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__cart-count {
+    position: absolute;
+    inset-block-start: -6px;
+    inset-inline-end: -4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding-inline: 5px;
+    border-radius: 999px;
+    background: var(--gh-accent);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__content {
+    display: grid;
+    justify-items: start;
+    max-width: 680px;
+    gap: 12px;
+    padding-block: 18px 8px;
+  }
+
+  #GachaHeader-{{ section.id }}.gacha-header--align-center .gacha-header__content {
+    justify-items: center;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  #GachaHeader-{{ section.id }}.gacha-header--align-right .gacha-header__content {
+    justify-items: end;
+    margin-inline-start: auto;
+    text-align: end;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__content h2 {
+    margin: 0;
+    color: var(--gh-headline);
+    font-size: var(--gh-heading-mobile);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__content p,
+  #GachaHeader-{{ section.id }} .gacha-header__rich-text p {
+    margin: 0;
+    color: var(--gh-muted);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button-wrap {
+    display: flex;
+    width: 100%;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button-wrap--left {
+    justify-content: flex-start;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button-wrap--center {
+    justify-content: center;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button-wrap--right {
+    justify-content: flex-end;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 12px 22px;
+    border: 1px solid var(--gh-accent);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button--primary {
+    background: var(--gh-accent);
+    color: #ffffff;
+  }
+
+  #GachaHeader-{{ section.id }} .gacha-header__button--secondary {
+    background: transparent;
+    color: var(--gh-accent);
+  }
+
+  #GachaHeader-{{ section.id }} a:focus-visible,
+  #GachaHeader-{{ section.id }} summary:focus-visible {
+    outline: 2px solid var(--gh-accent);
+    outline-offset: 3px;
+  }
+
+  @media screen and (min-width: 768px) {
+    #GachaHeader-{{ section.id }} .gacha-header__announcement-inner {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(2),
+    #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(3) {
+      display: block;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__announcement p:first-child {
+      text-align: start;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(2) {
+      text-align: center;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__announcement p:nth-child(3) {
+      text-align: end;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__content h2 {
+      font-size: calc((var(--gh-heading-mobile) + var(--gh-heading-desktop)) / 2);
+    }
+  }
+
+  @media screen and (min-width: 1025px) {
+    #GachaHeader-{{ section.id }} .gacha-header__main {
+      min-height: 88px;
+    }
+
+    /* Desktop matches the wireframe: logo left, menu centered, action pill right. */
+    #GachaHeader-{{ section.id }} .gacha-header__mobile-row {
+      display: none;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__desktop-layout {
+      display: grid;
+      grid-template-columns: minmax(100px, 1fr) auto minmax(100px, 1fr);
+      align-items: center;
+      gap: 20px;
+      min-height: 78px;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__logo-link {
+      justify-self: start;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__logo {
+      width: var(--gh-logo-width-desktop);
+      max-height: 86px;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__logo-placeholder {
+      width: var(--gh-logo-width-desktop);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav {
+      justify-self: center;
+      max-width: 100%;
+      border: 1px solid var(--gh-pill-border);
+      border-radius: 999px;
+      background: var(--gh-pill-bg);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 40px rgba(0, 0, 0, 0.18);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav > ul {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      gap: 0;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item {
+      position: relative;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item > a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 27px;
+      color: var(--gh-text);
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item > a:hover {
+      color: var(--gh-accent);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__submenu {
+      position: absolute;
+      inset-block-start: calc(100% + 10px);
+      inset-inline-start: 50%;
+      z-index: 5;
+      display: grid;
+      min-width: 210px;
+      padding: 10px;
+      border: 1px solid var(--gh-pill-border);
+      border-radius: 16px;
+      background: rgba(36, 13, 29, 0.97);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, -6px);
+      transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item:hover .gacha-header__submenu,
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item:focus-within .gacha-header__submenu {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__submenu a {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      color: var(--gh-text);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__submenu a:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--gh-accent);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__actions {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      min-height: 64px;
+      padding: 0 22px;
+      border: 1px solid var(--gh-pill-border);
+      border-radius: 999px;
+      background: var(--gh-icon-bg);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__actions .gacha-header__icon-link {
+      width: 30px;
+      min-width: 30px;
+      height: 44px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__actions .gacha-header__icon-link svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    #GachaHeader-{{ section.id }} .gacha-header__content h2 {
+      font-size: var(--gh-heading-desktop);
+    }
+  }
+
+  @media screen and (min-width: 1440px) {
+    #GachaHeader-{{ section.id }} .gacha-header__nav-item > a {
+      padding-inline: 32px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #GachaHeader-{{ section.id }} .gacha-header__submenu {
+      transition: none;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Gacha armory header",
+  "tag": "section",
+  "class": "section-gacha-armory-header",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Menu"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Shopify menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_search",
+      "label": "Show search icon",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_account",
+      "label": "Show account icon",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_cart",
+      "label": "Show cart icon",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Announcement bar"
+    },
+    {
+      "type": "text",
+      "id": "announcement_left",
+      "label": "Left text",
+      "default": "Explore Las Vegas' Gacha & Armory Districts"
+    },
+    {
+      "type": "text",
+      "id": "announcement_center",
+      "label": "Center text",
+      "default": "Gacha open now - Armory coming soon"
+    },
+    {
+      "type": "text",
+      "id": "announcement_right",
+      "label": "Right text",
+      "default": "Capsules - Collectibles - Custom Creations"
+    },
+    {
+      "type": "color",
+      "id": "announcement_background",
+      "label": "Announcement background",
+      "default": "#9A275A"
+    },
+    {
+      "type": "header",
+      "content": "Logo and images"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo image"
+    },
+    {
+      "type": "text",
+      "id": "logo_alt",
+      "label": "Logo alt text",
+      "default": "Store logo"
+    },
+    {
+      "type": "range",
+      "id": "logo_width_mobile",
+      "label": "Logo width mobile",
+      "min": 44,
+      "max": 140,
+      "step": 2,
+      "unit": "px",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "logo_width_desktop",
+      "label": "Logo width desktop",
+      "min": 56,
+      "max": 180,
+      "step": 2,
+      "unit": "px",
+      "default": 92
+    },
+    {
+      "type": "image_picker",
+      "id": "background_image",
+      "label": "Header background image"
+    },
+    {
+      "type": "range",
+      "id": "background_image_opacity",
+      "label": "Background image opacity",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "overlay_color",
+      "label": "Background overlay color",
+      "default": "#3B1028"
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Overlay opacity",
+      "min": 0,
+      "max": 90,
+      "step": 5,
+      "unit": "%",
+      "default": 25
+    },
+    {
+      "type": "header",
+      "content": "Optional headline content"
+    },
+    {
+      "type": "text",
+      "id": "headline",
+      "label": "Headline text"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Headline font size mobile",
+      "min": 20,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 34
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "label": "Headline font size desktop",
+      "min": 28,
+      "max": 96,
+      "step": 1,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading text"
+    },
+    {
+      "type": "richtext",
+      "id": "rich_text",
+      "label": "Rich text content",
+      "default": "<p></p>"
+    },
+    {
+      "type": "header",
+      "content": "Button"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button link"
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "primary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "button_alignment",
+      "label": "Button alignment",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "container_width",
+      "label": "Max width container",
+      "default": "full",
+      "options": [
+        {
+          "value": "boxed",
+          "label": "Boxed"
+        },
+        {
+          "value": "full",
+          "label": "Full width"
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Boxed max width",
+      "min": 960,
+      "max": 1920,
+      "step": 20,
+      "unit": "px",
+      "default": 1800
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding_left",
+      "label": "Padding left",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "padding_right",
+      "label": "Padding right",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "block_spacing",
+      "label": "Spacing between blocks",
+      "min": 0,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Optional content alignment",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "mobile_stack_order",
+      "label": "Mobile stacking order",
+      "default": "logo_first",
+      "options": [
+        {
+          "value": "logo_first",
+          "label": "Logo first"
+        },
+        {
+          "value": "menu_first",
+          "label": "Menu first"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Header background color",
+      "default": "#4A102E"
+    },
+    {
+      "type": "color_background",
+      "id": "background_gradient",
+      "label": "Header background gradient"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Menu and icon text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "headline_color",
+      "label": "Headline text color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "muted_color",
+      "label": "Subheading text color",
+      "default": "#F4D8E4"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#C03B78"
+    },
+    {
+      "type": "color",
+      "id": "pill_background",
+      "label": "Menu pill background",
+      "default": "#351126"
+    },
+    {
+      "type": "color",
+      "id": "icon_pill_background",
+      "label": "Icon pill background",
+      "default": "#351126"
+    },
+    {
+      "type": "color",
+      "id": "pill_border",
+      "label": "Pill border color",
+      "default": "#85526D"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Gacha armory header"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,84 @@
+{
+  "sections": {
+    "visit_contact_hero": {
+      "type": "visit-contact-hero",
+      "settings": {
+        "eyebrow": "Visit & contact Gacha Treasures",
+        "heading": "Find us in Vegas.",
+        "accent_heading": "Or reach us from anywhere.",
+        "body": "<p>Visit either Las Vegas location, ask about a specific collectible, or start a conversation about a custom phone case or 3D print. We would love to hear what you are looking for.</p>",
+        "primary_label": "View both locations",
+        "primary_link": "#locations",
+        "secondary_label": "Send us a message",
+        "secondary_link": "#contact",
+        "badge_text": "Two Las Vegas locations · online + in person"
+      }
+    },
+    "location_directory": {
+      "type": "location-directory",
+      "blocks": {
+        "location_1": {
+          "type": "location",
+          "settings": {
+            "badge": "Open now",
+            "title": "Fantastic Indoor Swap Meet",
+            "address_line_1": "1717 S Decatur Blvd",
+            "city_line": "Las Vegas, NV 89102",
+            "hours": "<p>Friday-Sunday<br>10:00 AM-6:00 PM</p>",
+            "find_here": "<p>Gacha + Armory selections<br>Custom creations</p>",
+            "directions_label": "Get Swap Meet directions"
+          }
+        },
+        "location_2": {
+          "type": "location",
+          "settings": {
+            "badge": "Opening September",
+            "title": "Fremont Street Experience",
+            "subtitle": "Downtown Las Vegas",
+            "address_line_1": "Exact booth details will be added once finalized.",
+            "city_line": "",
+            "hours": "<p>Seven days a week<br>11:00 AM-11:00 PM</p>",
+            "find_here": "<p>Gacha District products<br>No Armory inventory</p>",
+            "directions_label": "Explore the Fremont area"
+          }
+        }
+      },
+      "block_order": ["location_1", "location_2"],
+      "settings": {
+        "eyebrow": "Choose your stop",
+        "heading": "Two locations.",
+        "accent_heading": "One treasure hunt.",
+        "body": "<p>The Fantastic Indoor Swap Meet carries the full Gacha Treasures experience. Our Fremont Street location opens soon with a focused Gacha District collection.</p>"
+      }
+    },
+    "contact_form_split": {
+      "type": "contact-form-split",
+      "blocks": {
+        "topic_1": { "type": "topic", "settings": { "label": "Choose a topic", "value": "Choose a topic" } },
+        "topic_2": { "type": "topic", "settings": { "label": "Product question", "value": "Product question" } },
+        "topic_3": { "type": "topic", "settings": { "label": "Mystery capsule", "value": "Mystery capsule" } },
+        "topic_4": { "type": "topic", "settings": { "label": "Custom case", "value": "Custom case" } },
+        "topic_5": { "type": "topic", "settings": { "label": "3D print", "value": "3D print" } },
+        "topic_6": { "type": "topic", "settings": { "label": "Store location", "value": "Store location" } },
+        "topic_7": { "type": "topic", "settings": { "label": "Existing order", "value": "Existing order" } },
+        "topic_8": { "type": "topic", "settings": { "label": "General question", "value": "General question" } },
+        "social_1": { "type": "social", "settings": { "label": "Instagram", "icon": "IG" } },
+        "social_2": { "type": "social", "settings": { "label": "TikTok", "icon": "TT" } },
+        "social_3": { "type": "social", "settings": { "label": "Facebook", "icon": "FB" } }
+      },
+      "block_order": ["topic_1", "topic_2", "topic_3", "topic_4", "topic_5", "topic_6", "topic_7", "topic_8", "social_1", "social_2", "social_3"],
+      "settings": {
+        "eyebrow": "Contact Gacha Treasures",
+        "heading": "Looking for something?",
+        "accent_heading": "Tell us about it.",
+        "body": "<p>Have a question, need help finding a collectible, or have an idea for a custom print? Send a message and the shop can reply directly by email.</p>",
+        "notice": "<p>Your message goes privately to the shop. We will reply using the email address you provide. No personal phone number is published.</p>"
+      }
+    }
+  },
+  "order": [
+    "visit_contact_hero",
+    "location_directory",
+    "contact_form_split"
+  ]
+}

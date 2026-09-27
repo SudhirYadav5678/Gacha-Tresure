@@ -1,0 +1,25 @@
+{% doc %}
+  Renders a compact recommendation card for mystery product sections.
+
+  @param {object} rec_product - Shopify product object to render.
+{% enddoc %}
+
+{% if rec_product != blank %}
+  <article class="mystery-rec-card">
+    <a class="mystery-rec-card__media" href="{{ rec_product.url }}" aria-label="{{ rec_product.title | escape }}">
+      {% if rec_product.featured_image != blank %}
+        {{ rec_product.featured_image | image_url: width: 700 | image_tag: widths: '320, 480, 640, 700', sizes: '(max-width: 767px) 50vw, 25vw', loading: 'lazy' }}
+      {% else %}
+        <span class="mystery-rec-card__placeholder">{{ 'product-1' | placeholder_svg_tag }}</span>
+      {% endif %}
+    </a>
+    <h3><a href="{{ rec_product.url }}">{{ rec_product.title }}</a></h3>
+    <p class="mystery-rec-card__price">
+      {% if rec_product.price_varies %}
+        From {{ rec_product.price_min | money }}
+      {% else %}
+        {{ rec_product.price | money }}
+      {% endif %}
+    </p>
+  </article>
+{% endif %}

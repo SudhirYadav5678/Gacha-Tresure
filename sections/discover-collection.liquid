@@ -1,0 +1,484 @@
+{%- comment -%}
+  Filename: discover-collection.liquid
+  Description: A fully responsive, customizable section matching the "A little more to discover" design.
+  Features:
+  - Hybrid Mode: Pulls products from a selected Collection OR from manual Product Blocks.
+  - Background color spans the entire viewport width.
+  - Customizable max-width for the inner content container.
+{%- endcomment -%}
+
+{%- style -%}
+  /* Outer section strictly handles the full-width background */
+  #shopify-section-{{ section.id }} {
+    width: 100%;
+    background-color: {{ section.settings.bg_color }};
+    display: block;
+  }
+
+  .discover-section {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+    color: {{ section.settings.text_color }};
+    overflow: hidden;
+    width: 100%;
+  }
+
+  @media screen and (min-width: 768px) {
+    .discover-section {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  /* Inner container handles the max-width and centering */
+  .discover-container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  {%- unless section.settings.full_width -%}
+  #shopify-section-{{ section.id }} .discover-container {
+    max-width: {{ section.settings.container_max_width }}px;
+  }
+  {%- endunless -%}
+
+  /* Top Info Bar */
+  .discover-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    margin-bottom: 48px;
+    cursor: pointer;
+  }
+  .discover-top-bar__title {
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    margin: 0;
+    font-weight: 400;
+    font-family: var(--font-heading-family, serif);
+  }
+  .discover-top-bar__action {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  /* Main Header */
+  .discover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .discover-heading {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    margin: 0;
+    font-weight: 400;
+    font-family: var(--font-heading-family, serif);
+  }
+  .discover-view-all {
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    transition: opacity 0.3s ease;
+  }
+  .discover-view-all:hover {
+    opacity: 0.7;
+  }
+  .discover-view-all svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Grid Layout */
+  .discover-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: {{ section.settings.grid_gap }}px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .discover-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media screen and (min-width: 1025px) {
+    .discover-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  /* Card Styles */
+  .discover-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    group: hover;
+  }
+
+  .discover-card__image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background-color: #f4f4f4;
+    margin-bottom: 16px;
+  }
+
+  .discover-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .discover-card:hover .discover-card__image {
+    transform: scale(1.03);
+  }
+
+  .discover-card__badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: #fff;
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    line-height: 1;
+    border-radius: 2px;
+  }
+
+  .discover-card__category {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+    margin-bottom: 8px;
+  }
+
+  .discover-card__title {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0 0 16px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .discover-card__link {
+    font-size: 0.8rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+    padding-bottom: 2px;
+    margin-top: auto;
+    align-self: flex-start;
+    transition: border-color 0.3s ease;
+  }
+
+  .discover-card:hover .discover-card__link {
+    border-color: currentColor;
+  }
+
+  .discover-card__link svg {
+    width: 10px;
+    height: 10px;
+  }
+{%- endstyle -%}
+
+<section class="discover-section" data-section-id="{{ section.id }}">
+  <div class="discover-container">
+    
+    {%- if section.settings.show_top_bar -%}
+      <div class="discover-top-bar">
+        <h2 class="discover-top-bar__title">{{ section.settings.top_bar_heading | escape }}</h2>
+        <div class="discover-top-bar__action">
+          {{ section.settings.top_bar_label | escape }}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+      </div>
+    {%- endif -%}
+
+    <div class="discover-header">
+      <h2 class="discover-heading">{{ section.settings.heading | escape }}</h2>
+      {%- if section.settings.link_text != blank -%}
+        <a href="{{ section.settings.link_url | default: section.settings.collection.url | default: '#' }}" class="discover-view-all">
+          {{ section.settings.link_text | escape }}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="7" y1="17" x2="17" y2="7"></line>
+            <polyline points="7 7 17 7 17 17"></polyline>
+          </svg>
+        </a>
+      {%- endif -%}
+    </div>
+
+    <div class="discover-grid">
+
+  {%- assign shown_products = 0 -%}
+
+  {%- for block in section.blocks -%}
+    {%- if block.type == 'collection' and block.settings.collection != blank -%}
+      {%- assign selected_collection = block.settings.collection -%}
+
+      {%- for card_product in selected_collection.products -%}
+
+        {%- if shown_products < section.settings.products_to_show -%}
+
+          <a
+            href="{{ card_product.url }}"
+            class="discover-card"
+            {{ block.shopify_attributes }}
+          >
+            <div class="discover-card__image-wrapper">
+
+              {%- if card_product.featured_image != blank -%}
+                {{
+                  card_product.featured_image
+                  | image_url: width: 800
+                  | image_tag:
+                    class: 'discover-card__image',
+                    loading: 'lazy',
+                    sizes: '(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw',
+                    alt: card_product.featured_image.alt | default: card_product.title | escape
+                }}
+              {%- else -%}
+                {{ 'product-1' | placeholder_svg_tag: 'discover-card__image placeholder-svg' }}
+              {%- endif -%}
+
+              {%- if section.settings.card_badge_text != blank -%}
+                <div class="discover-card__badge">
+                  {{ section.settings.card_badge_text | escape }}
+                </div>
+              {%- endif -%}
+
+            </div>
+
+            <div class="discover-card__category">
+              {{ selected_collection.title | escape }}
+            </div>
+
+            <h3 class="discover-card__title">
+              {{ card_product.title | escape }}
+            </h3>
+
+            {%- if section.settings.card_link_text != blank -%}
+              <span class="discover-card__link">
+                {{ section.settings.card_link_text | escape }}
+
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="7" y1="17" x2="17" y2="7"></line>
+                  <polyline points="7 7 17 7 17 17"></polyline>
+                </svg>
+              </span>
+            {%- endif -%}
+
+          </a>
+
+          {%- assign shown_products = shown_products | plus: 1 -%}
+
+        {%- endif -%}
+
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+</div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Discover Collection",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Collection Settings"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Select Collection",
+      "info": "Overrides manual blocks if selected."
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 4,
+      "label": "Maximum products to show"
+    },
+    {
+      "type": "text",
+      "id": "card_badge_text",
+      "label": "Global Badge Text",
+      "default": "12 images",
+      "info": "Applies to collection items."
+    },
+    {
+      "type": "text",
+      "id": "card_link_text",
+      "label": "Global Link Text",
+      "default": "Explore the series"
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Section Background Color",
+      "default": "#F8F5F0"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Make inner content full width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "container_max_width",
+      "min": 1000,
+      "max": 1600,
+      "step": 20,
+      "unit": "px",
+      "label": "Container max width",
+      "default": 1440
+    },
+    {
+      "type": "range",
+      "id": "grid_gap",
+      "min": 10,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Space between cards",
+      "default": 24
+    },
+    {
+      "type": "header",
+      "content": "Top Bar"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_top_bar",
+      "label": "Show Top Bar",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "top_bar_heading",
+      "label": "Top Bar Heading",
+      "default": "Explore all 12 images"
+    },
+    {
+      "type": "text",
+      "id": "top_bar_label",
+      "label": "Top Bar Label",
+      "default": "Characters, details & packaging"
+    },
+    {
+      "type": "header",
+      "content": "Section Header"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "A little more to discover."
+    },
+    {
+      "type": "text",
+      "id": "link_text",
+      "label": "Section Link Text",
+      "default": "View the collection"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Section Link URL",
+      "info": "Leave blank to link to the selected Collection."
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding",
+      "default": 64
+    }
+  ],
+  "blocks": [
+  {
+    "type": "collection",
+    "name": "Collection",
+    "settings": [
+      {
+        "type": "collection",
+        "id": "collection",
+        "label": "Select collection"
+      }
+    ]
+  }
+],
+"max_blocks": 10,
+  "presets": [
+    {
+      "name": "Discover Collection"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,273 @@
+{% liquid
+  assign featured_product = section.settings.product
+  assign image = section.settings.image
+  if image == blank and featured_product != blank
+    assign image = featured_product.featured_image
+  endif
+  assign mobile_image = section.settings.mobile_image | default: image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .gacha-featured {
+    --gf-bg: {{ section.settings.background }};
+    --gf-panel: {{ section.settings.panel_background }};
+    --gf-text: {{ section.settings.text_color }};
+    --gf-accent: {{ section.settings.accent_color }};
+    --gf-border: {{ section.settings.border_color }};
+    --gf-image-width: {{ section.settings.image_width }}%;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .gacha-featured {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="gacha-featured">
+  <div class="gacha-featured__inner gacha-featured__inner--{{ section.settings.layout_direction }}">
+    <div class="gacha-featured__media gacha-featured__media--{{ section.settings.image_ratio }}">
+      {% if image != blank %}
+        <picture>
+          {% if mobile_image != blank %}
+            <source media="(max-width: 767px)" srcset="{{ mobile_image | image_url: width: 900 }}">
+          {% endif %}
+          {{ image | image_url: width: 1600 | image_tag: widths: '540, 760, 1000, 1300, 1600', sizes: '(max-width: 767px) 100vw, 50vw', loading: 'lazy', class: 'gacha-featured__image' }}
+        </picture>
+      {% else %}
+        <div class="gacha-featured__placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
+      {% endif %}
+    </div>
+    <div class="gacha-featured__content">
+      {% if section.settings.eyebrow != blank %}
+        <p class="gacha-featured__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% elsif featured_product != blank and featured_product.type != blank %}
+        <p class="gacha-featured__eyebrow">{{ featured_product.type }}</p>
+      {% endif %}
+      <h2>{{ section.settings.heading | default: featured_product.title }}</h2>
+      {% if section.settings.text != blank %}
+        <div class="gacha-featured__body">{{ section.settings.text }}</div>
+      {% elsif featured_product != blank and featured_product.description != blank %}
+        <div class="gacha-featured__body"><p>{{ featured_product.description | strip_html | truncate: 180 }}</p></div>
+      {% endif %}
+      {% if featured_product != blank %}
+        <p class="gacha-featured__price">
+          {% if featured_product.price_varies %}
+            {{ section.settings.from_label }} {{ featured_product.price_min | money }}
+          {% else %}
+            {{ featured_product.price | money }}
+          {% endif %}
+        </p>
+      {% endif %}
+      {% liquid
+        assign cta_link = section.settings.button_link
+        if cta_link == blank and featured_product != blank
+          assign cta_link = featured_product.url
+        endif
+      %}
+      {% if section.settings.button_label != blank and cta_link != blank %}
+        <a class="gacha-featured__button" href="{{ cta_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .gacha-featured {
+    color: var(--gf-text);
+    background: var(--gf-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .gacha-featured__inner {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, var(--gf-image-width)) minmax(0, calc(100% - var(--gf-image-width)));
+    min-height: 520px;
+    background: var(--gf-panel);
+    border: 1px solid var(--gf-border);
+  }
+
+  .gacha-featured__inner--image_right .gacha-featured__media {
+    order: 2;
+  }
+
+  .gacha-featured__media {
+    overflow: hidden;
+    background: #eadfce;
+  }
+
+  .gacha-featured__media--portrait {
+    aspect-ratio: 4 / 5;
+  }
+
+  .gacha-featured__media--landscape {
+    aspect-ratio: 16 / 11;
+  }
+
+  .gacha-featured__media--square {
+    aspect-ratio: 1;
+  }
+
+  .gacha-featured__media picture,
+  .gacha-featured__image,
+  .gacha-featured__placeholder {
+    width: 100%;
+    height: 100%;
+  }
+
+  .gacha-featured__image {
+    object-fit: cover;
+  }
+
+  .gacha-featured__placeholder {
+    min-height: 420px;
+    display: grid;
+    place-items: center;
+    color: rgba(43,12,33,.45);
+    background: linear-gradient(135deg, #f4eadf, #d9c6b3);
+  }
+
+  .gacha-featured__placeholder svg {
+    width: min(260px, 58%);
+    opacity: .42;
+  }
+
+  .gacha-featured__content {
+    padding: clamp(36px, 6vw, 86px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .gacha-featured__eyebrow {
+    margin: 0 0 14px;
+    color: var(--gf-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .gacha-featured h2 {
+    max-width: 620px;
+    margin: 0;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(38px, 4.5vw, 68px);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .gacha-featured__body {
+    max-width: 520px;
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: .72;
+  }
+
+  .gacha-featured__body p {
+    margin: 0;
+  }
+
+  .gacha-featured__price {
+    margin: 28px 0 0;
+    color: var(--gf-accent);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .gacha-featured__button {
+    width: fit-content;
+    min-height: 44px;
+    margin-top: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 24px;
+    color: #fff;
+    background: #2b0c21;
+    border: 1px solid #2b0c21;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: transform .2s ease, background-color .2s ease;
+  }
+
+  .gacha-featured__button:hover {
+    transform: translateY(-1px);
+    background: var(--gf-accent);
+  }
+
+  .gacha-featured__button:focus-visible {
+    outline: 2px solid var(--gf-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 860px) {
+    .gacha-featured__inner {
+      width: min(100% - 36px, var(--page-width, 1360px));
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+
+    .gacha-featured__inner--image_right .gacha-featured__media {
+      order: 0;
+    }
+
+    .gacha-featured__button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gacha-featured__button {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Gacha featured product",
+  "settings": [
+    { "type": "product", "id": "product", "label": "Product" },
+    { "type": "image_picker", "id": "image", "label": "Custom image" },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Featured treasure" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "A collector piece with a story." },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Use this editorial card between grids to spotlight a limited drop, custom case, or capsule release with more breathing room.</p>" },
+    { "type": "text", "id": "from_label", "label": "Price prefix", "default": "From" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "View the treasure" },
+    { "type": "url", "id": "button_link", "label": "Custom button link" },
+    { "type": "select", "id": "layout_direction", "label": "Layout direction", "default": "image_left", "options": [
+      { "value": "image_left", "label": "Image left" },
+      { "value": "image_right", "label": "Image right" }
+    ] },
+    { "type": "select", "id": "image_ratio", "label": "Image ratio", "default": "landscape", "options": [
+      { "value": "landscape", "label": "Landscape" },
+      { "value": "portrait", "label": "Portrait" },
+      { "value": "square", "label": "Square" }
+    ] },
+    { "type": "range", "id": "image_width", "label": "Desktop image width", "min": 40, "max": 65, "step": 5, "unit": "%", "default": 55 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FBF6EE" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#F8F1E7" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#281920" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#CA6E8D" },
+    { "type": "color", "id": "border_color", "label": "Border color", "default": "#DDD1C6" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 0, "max": 160, "step": 4, "unit": "px", "default": 72 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 0, "max": 160, "step": 4, "unit": "px", "default": 72 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 48 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 48 }
+  ],
+  "presets": [
+    { "name": "Gacha featured product" }
+  ]
+}
+{% endschema %}

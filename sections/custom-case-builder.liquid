@@ -1,0 +1,2724 @@
+{% liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign form_id = 'case-builder-form-' | append: section.id | append: '-' | append: product.id
+  assign default_artwork_image = blank
+  assign first_artwork_seen = false
+  assign show_context_editor = false
+  assign iphone_base_mockup_url = 'iphone-clear-case-base.png' | asset_url
+  assign product_base_mockup_url = blank
+  if product.featured_image != blank
+    assign product_base_mockup_url = product.featured_image | image_url: width: 1200
+  endif
+  assign initial_phone_model = current_variant.option1 | downcase
+  assign initial_phone_mockup_url = blank
+  if current_variant.featured_image != blank
+    assign initial_phone_mockup_url = current_variant.featured_image | image_url: width: 1200
+  elsif initial_phone_model contains 'iphone'
+    assign initial_phone_mockup_url = iphone_base_mockup_url
+  else
+    assign initial_phone_mockup_url = product_base_mockup_url
+  endif
+  for case_block in section.blocks
+    if case_block.type == 'artwork'
+      if first_artwork_seen == false
+        assign default_artwork_image = case_block.settings.artwork_image | default: case_block.settings.preview_image
+        assign first_artwork_seen = true
+      endif
+      if case_block.settings.default_selected
+        assign default_artwork_image = case_block.settings.artwork_image | default: case_block.settings.preview_image
+      endif
+    endif
+    if case_block.type == 'artwork_controls'
+      assign show_context_editor = true
+    endif
+  endfor
+  assign show_initial_phone_mockup = false
+  if initial_phone_mockup_url != blank
+    assign show_initial_phone_mockup = true
+  endif
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .case-builder {
+    --cb-bg: {{ section.settings.background }};
+    --cb-preview-bg: {{ section.settings.preview_background }};
+    --cb-panel: {{ section.settings.builder_background }};
+    --cb-text: {{ section.settings.text_color }};
+    --cb-heading: {{ section.settings.heading_color }};
+    --cb-muted: {{ section.settings.muted_text_color }};
+    --cb-accent: {{ section.settings.accent_color }};
+    --cb-accent-soft: {{ section.settings.selected_background }};
+    --cb-border: {{ section.settings.border_color }};
+    --cb-card: {{ section.settings.card_background }};
+    --cb-button: {{ section.settings.button_background }};
+    --cb-button-text: {{ section.settings.button_text_color }};
+    --cb-preview-width: {{ section.settings.preview_width }}%;
+    --cb-gap: {{ section.settings.column_gap }}px;
+    --cb-stage-height: {{ section.settings.preview_height }}px;
+    --cb-mobile-stage-height: {{ section.settings.mobile_preview_height }}px;
+    --cb-frame-width: {{ section.settings.frame_width }}px;
+    --cb-frame-height: {{ section.settings.frame_height }}px;
+    --cb-mobile-frame-width: {{ section.settings.mobile_frame_width }}px;
+    --cb-mobile-frame-height: {{ section.settings.mobile_frame_height }}px;
+    --cb-art-inset-x: {{ section.settings.artwork_inset_x }}%;
+    --cb-art-inset-y: {{ section.settings.artwork_inset_y }}%;
+    --cb-radius: {{ section.settings.card_radius }}px;
+    --cb-mockup-blend: {{ section.settings.mockup_blend_mode }};
+    --case-print-clip: url("#CasePrintClip-{{ section.id }}");
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .case-builder {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section
+  class="case-builder"
+  data-case-builder
+  data-case-iphone-base="{{ iphone_base_mockup_url | escape }}"
+  data-case-product-base="{{ product_base_mockup_url | escape }}"
+  data-case-konva-src="{{ 'konva-10.5.0.min.js' | asset_url }}"
+>
+  <div class="case-builder__inner case-builder__inner--{{ section.settings.section_width }}">
+    <div class="case-builder__preview-column{% if section.settings.sticky_preview %} case-builder__preview-column--sticky{% endif %}">
+      <div class="case-preview" data-case-preview>
+        {% if section.settings.show_preview_badge %}
+          <p class="case-preview__badge">{{ section.settings.preview_badge }}</p>
+        {% endif %}
+        {% if section.settings.show_view_controls %}
+          <div class="case-preview__views" aria-label="Preview view">
+            <button type="button" class="is-active" data-case-view="front">{{ section.settings.front_label }}</button>
+            <button type="button" data-case-view="back">{{ section.settings.back_label }}</button>
+          </div>
+        {% endif %}
+        <div class="case-preview__stage{% if section.settings.show_grid %} case-preview__stage--grid{% endif %}">
+          <div class="case-preview__phone{% if show_initial_phone_mockup %} has-phone-mockup{% endif %}" data-case-phone-shell>
+            <img
+              {% if show_initial_phone_mockup %}
+                src="{{ initial_phone_mockup_url }}"
+              {% endif %}
+              alt=""
+              width="{{ current_variant.featured_image.width | default: 650 }}"
+              height="{{ current_variant.featured_image.height | default: 1341 }}"
+              loading="eager"
+              crossorigin="anonymous"
+              class="case-preview__mockup"
+              data-case-phone-mockup
+              {% unless show_initial_phone_mockup %}hidden{% endunless %}
+            >
+            <div class="case-preview__device" aria-hidden="true">
+              <div class="case-preview__camera"></div>
+              <div class="case-preview__print-surface" data-print-surface>
+                <div
+                  class="case-preview__canvas"
+                  data-case-canvas
+                  role="presentation"
+                  aria-hidden="true"
+                ></div>
+                {% if default_artwork_image != blank %}
+                  {{
+                    default_artwork_image
+                    | image_url: width: 900
+                    | image_tag:
+                      widths: '360, 540, 720, 900',
+                      sizes: '420px',
+                      loading: 'eager',
+                      class: 'case-preview__art',
+                      data-case-art: ''
+                  }}
+                {% else %}
+                  <div class="case-preview__art case-preview__art--pattern" data-case-art></div>
+                {% endif %}
+              </div>
+              {% if show_context_editor %}
+                <div class="case-preview__selection" data-case-selection aria-hidden="true">
+                  <span class="case-preview__handle case-preview__handle--nw" data-case-resize-handle="nw"></span>
+                  <span class="case-preview__handle case-preview__handle--ne" data-case-resize-handle="ne"></span>
+                  <span class="case-preview__handle case-preview__handle--sw" data-case-resize-handle="sw"></span>
+                  <span class="case-preview__handle case-preview__handle--se" data-case-resize-handle="se"></span>
+                </div>
+              {% endif %}
+              {% if section.settings.show_safe_area %}
+                <div class="case-preview__safe-area" aria-hidden="true"></div>
+              {% endif %}
+            </div>
+            <svg class="case-preview__mask-definitions" width="0" height="0" aria-hidden="true" focusable="false">
+              <defs>
+                <clipPath id="CasePrintClip-{{ section.id }}" clipPathUnits="objectBoundingBox">
+                  <path data-case-print-path d="M .5 0 H 1 V 1 H 0 V .26 H .44 Q .5 .26 .5 .2 V 0 Z"></path>
+                </clipPath>
+              </defs>
+            </svg>
+          </div>
+          <p class="case-preview__drag-hint" data-drag-hint>Drag artwork to reposition</p>
+        </div>
+        {% if show_context_editor %}
+          <div class="case-editor" data-case-editor>
+            <div class="case-editor__panel hidden" id="CaseEditorScale-{{ section.id }}" data-case-editor-panel="scale">
+              <label class="case-editor__range">
+                <span>Scale <output data-case-toolbar-output="scale">100%</output></span>
+                <input type="range" min="60" max="180" step="1" value="100" data-case-toolbar-control="scale">
+              </label>
+              <label class="case-editor__range">
+                <span>Rotate <output data-case-toolbar-output="rotation">0deg</output></span>
+                <input type="range" min="-25" max="25" step="1" value="0" data-case-toolbar-control="rotation">
+              </label>
+            </div>
+            <div class="case-editor__panel hidden" id="CaseEditorCrop-{{ section.id }}" data-case-editor-panel="crop">
+              <span class="case-editor__panel-label">Image fit</span>
+              <div class="case-editor__segments" role="group" aria-label="Artwork image fit">
+                <button type="button" class="is-active" data-case-fit="cover" aria-pressed="true">Fill case</button>
+                <button type="button" data-case-fit="contain" aria-pressed="false">Fit image</button>
+              </div>
+            </div>
+            <div class="case-editor__panel hidden" id="CaseEditorEffects-{{ section.id }}" data-case-editor-panel="effects">
+              <label class="case-editor__range">
+                <span>Brightness <output data-case-toolbar-output="brightness">100%</output></span>
+                <input type="range" min="60" max="140" step="1" value="100" data-case-effect="brightness">
+              </label>
+              <label class="case-editor__range">
+                <span>Contrast <output data-case-toolbar-output="contrast">100%</output></span>
+                <input type="range" min="60" max="140" step="1" value="100" data-case-effect="contrast">
+              </label>
+              <label class="case-editor__range">
+                <span>Color <output data-case-toolbar-output="saturation">100%</output></span>
+                <input type="range" min="0" max="160" step="1" value="100" data-case-effect="saturation">
+              </label>
+            </div>
+            <div class="case-editor__panel hidden" id="CaseEditorPosition-{{ section.id }}" data-case-editor-panel="position">
+              <div class="case-editor__position-actions">
+                <button type="button" data-case-position="center">Center</button>
+                <button type="button" data-case-position="flip-x" aria-pressed="false">Flip horizontal</button>
+                <button type="button" data-case-position="flip-y" aria-pressed="false">Flip vertical</button>
+              </div>
+            </div>
+            <div class="case-editor__toolbar" role="toolbar" aria-label="Artwork editing tools">
+              <button type="button" data-case-tool="scale" aria-controls="CaseEditorScale-{{ section.id }}" aria-expanded="false">Scale</button>
+              <button type="button" data-case-tool="crop" aria-controls="CaseEditorCrop-{{ section.id }}" aria-expanded="false">Crop</button>
+              <button type="button" data-case-tool="effects" aria-controls="CaseEditorEffects-{{ section.id }}" aria-expanded="false">Effects</button>
+              <button type="button" data-case-tool="replace">Replace</button>
+              <button type="button" data-case-tool="position" aria-controls="CaseEditorPosition-{{ section.id }}" aria-expanded="false">Position</button>
+              <button type="button" data-case-tool="lock" aria-pressed="false">Lock</button>
+              <button type="button" data-case-tool="clear">Clear</button>
+            </div>
+          </div>
+        {% endif %}
+        {% if section.settings.show_selection_card %}
+          <div class="case-preview__summary">
+            <span>{{ section.settings.summary_eyebrow }}</span>
+            <strong data-case-phone-summary>{{ current_variant.option1 | default: product.title }}</strong>
+            <small data-case-format-summary>
+              {{- current_variant.option2 | default: section.settings.summary_fallback -}}
+            </small>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div
+      class="case-builder__form-column{% if section.settings.sticky_builder %} case-builder__form-column--sticky{% endif %}"
+      style="--cb-sticky-top: {{ section.settings.sticky_top_offset }}px;"
+    >
+      {% form 'product',
+        product,
+        id: form_id,
+        class: 'case-builder__form',
+        enctype: 'multipart/form-data',
+        novalidate: 'novalidate',
+        data-case-form: ''
+      %}
+        <input type="hidden" name="id" value="{{ current_variant.id }}" data-case-variant-id>
+        {% for option_value in current_variant.options %}
+          {% assign option_name = product.options[forloop.index0] %}
+          <input
+            type="hidden"
+            name="properties[{{ option_name | escape }}]"
+            value="{{ option_value | escape }}"
+            data-case-option-property-position="{{ forloop.index }}"
+          >
+        {% endfor %}
+        <input
+          type="hidden"
+          name="properties[_Artwork preview]"
+          {% if default_artwork_image != blank %}
+            value="{{ default_artwork_image | image_url: width: 900 }}"
+          {% endif %}
+          data-case-artwork-preview-property
+        >
+        <input type="hidden" name="properties[Artwork fit]" value="Fill case" data-case-editor-property="fit">
+        <input type="hidden" name="properties[Artwork brightness]" value="100%" data-case-editor-property="brightness">
+        <input type="hidden" name="properties[Artwork contrast]" value="100%" data-case-editor-property="contrast">
+        <input type="hidden" name="properties[Artwork color]" value="100%" data-case-editor-property="saturation">
+        <input type="hidden" name="properties[Artwork flip horizontal]" value="No" data-case-editor-property="flip-x">
+        <input type="hidden" name="properties[Artwork flip vertical]" value="No" data-case-editor-property="flip-y">
+        <input type="hidden" name="properties[Artwork locked]" value="No" data-case-editor-property="locked">
+        <input type="hidden" name="properties[Artwork dimensions]" value="" data-case-editor-property="dimensions">
+        <input
+          type="hidden"
+          name="properties[Camera protection]"
+          value="{% if show_initial_phone_mockup %}Model-specific mask{% else %}No frame{% endif %}"
+          data-case-editor-property="camera-protection"
+        >
+        {% for block in section.blocks %}
+          {% case block.type %}
+            {% when 'heading' %}
+              <div class="case-builder__heading" {{ block.shopify_attributes }}>
+                {% if block.settings.eyebrow != blank %}
+                  <p>{{ block.settings.eyebrow }}</p>
+                {% endif %}
+                {% if block.settings.heading != blank %}
+                  <h2>{{ block.settings.heading }}</h2>
+                {% endif %}
+              </div>
+
+            {% when 'phone_variant' %}
+              {% assign phone_option = product.options_with_values[0] %}
+              {% if phone_option != blank %}
+                <div class="case-step" {{ block.shopify_attributes }}>
+                  <div class="case-step__number">{{ block.settings.step_number }}</div>
+                  <div class="case-step__body">
+                    <label class="case-step__title" for="CasePhone-{{ section.id }}">
+                      {{- block.settings.heading -}}
+                    </label>
+                    {% if block.settings.show_brand_tabs %}
+                      {% assign brands = block.settings.brands | split: ',' %}
+                      <div class="case-brand-tabs" role="group" aria-label="Phone brand">
+                        <button type="button" class="is-active" data-case-brand="all">All</button>
+                        {% for brand in brands %}
+                          {% assign brand_clean = brand | strip %}
+                          {% if brand_clean != blank %}
+                            <button type="button" data-case-brand="{{ brand_clean | downcase | escape }}">
+                              {{ brand_clean }}
+                            </button>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <select
+                      id="CasePhone-{{ section.id }}"
+                      class="case-select"
+                      data-case-option
+                      data-case-option-position="1"
+                    >
+                      {% for value in phone_option.values %}
+                        <option
+                          value="{{ value | escape }}"
+                          {% if value == phone_option.selected_value or value == current_variant.option1 %}
+                            selected
+                          {% endif %}
+                        >
+                          {{ value }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    {% if block.settings.show_color_swatches %}
+                      {% assign swatches = block.settings.swatches | split: ',' %}
+                      <fieldset class="case-swatches">
+                        <legend>{{ block.settings.swatch_label }}</legend>
+                        {% for swatch in swatches %}
+                          {% assign swatch_parts = swatch | strip | split: ':' %}
+                          {% assign swatch_label = swatch_parts[0] | strip %}
+                          {% assign swatch_color = swatch_parts[1] | strip | default: '#f2eee8' %}
+                          {% if swatch_label != blank %}
+                            <label style="--swatch-color: {{ swatch_color }};">
+                              <input
+                                type="radio"
+                                name="properties[Case color]"
+                                value="{{ swatch_label | escape }}"
+                                {% if forloop.first %}
+                                  checked
+                                {% endif %}
+                              >
+                              <span aria-hidden="true"></span>
+                              <small>{{ swatch_label }}</small>
+                            </label>
+                          {% endif %}
+                        {% endfor %}
+                      </fieldset>
+                    {% endif %}
+                    {% if block.settings.note != blank %}
+                      <p class="case-step__note">{{ block.settings.note }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+
+            {% when 'format_variant' %}
+              {% assign format_option = product.options_with_values[1] %}
+              {% if format_option != blank %}
+                {% assign selected_format = current_variant.option2 | default: format_option.selected_value %}
+                <div class="case-step" {{ block.shopify_attributes }}>
+                  <div class="case-step__number">{{ block.settings.step_number }}</div>
+                  <div class="case-step__body">
+                    <fieldset class="case-format">
+                      <legend class="case-step__title">{{ block.settings.heading }}</legend>
+                      <div class="case-format__grid">
+                        {% for value in format_option.values %}
+                          {% liquid
+                            assign value_available = false
+                            assign value_price = blank
+                            for variant in product.variants
+                              if variant.option2 == value
+                                if value_price == blank
+                                  assign value_price = variant.price | money
+                                endif
+                                if variant.available
+                                  assign value_available = true
+                                endif
+                              endif
+                            endfor
+                          %}
+                          <label class="case-format__card{% if value == selected_format %} is-selected{% endif %}{% unless value_available %} is-disabled{% endunless %}">
+                            <input
+                              type="radio"
+                              name="case-format-{{ section.id }}"
+                              data-case-option
+                              data-case-option-position="2"
+                              value="{{ value | escape }}"
+                              {% if value == selected_format %}
+                                checked
+                              {% endif %}
+                              {% unless value_available %}
+                                disabled
+                              {% endunless %}
+                            >
+                            <span class="case-format__check" aria-hidden="true">&#10003;</span>
+                            <strong>{{ value }}</strong>
+                            {% if block.settings.description != blank -%}
+                              <small>{{ block.settings.description }}</small>
+                            {%- endif %}
+                            {% if block.settings.show_price and value_price != blank -%}
+                              <em>{{ value_price }}</em>
+                            {%- endif %}
+                          </label>
+                        {% endfor %}
+                      </div>
+                    </fieldset>
+                    {% if block.settings.notice != blank %}
+                      <div class="case-info-note">{{ block.settings.notice }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+
+            {% when 'extra_variant' %}
+              {% assign option_index = block.settings.option_position | minus: 1 %}
+              {% assign extra_option = product.options_with_values[option_index] %}
+              {% if extra_option != blank %}
+                <div class="case-step" {{ block.shopify_attributes }}>
+                  <div class="case-step__number">{{ block.settings.step_number }}</div>
+                  <div class="case-step__body">
+                    <label class="case-step__title" for="CaseExtra-{{ section.id }}-{{ block.id }}">
+                      {{- block.settings.heading | default: extra_option.name -}}
+                    </label>
+                    <select
+                      id="CaseExtra-{{ section.id }}-{{ block.id }}"
+                      class="case-select"
+                      data-case-option
+                      data-case-option-position="{{ block.settings.option_position }}"
+                    >
+                      {% for value in extra_option.values %}
+                        <option
+                          value="{{ value | escape }}"
+                          {% if value == extra_option.selected_value %}
+                            selected
+                          {% endif %}
+                        >
+                          {{ value }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% when 'artwork_picker' %}
+              <div class="case-step" {{ block.shopify_attributes }}>
+                <div class="case-step__number">{{ block.settings.step_number }}</div>
+                <div class="case-step__body">
+                  <fieldset class="case-artworks">
+                    <legend class="case-step__title">{{ block.settings.heading }}</legend>
+                    <div class="case-artworks__grid">
+                      {% assign rendered_artwork = false %}
+                      {% for art_block in section.blocks %}
+                        {% if art_block.type == 'artwork' %}
+                          {% assign art_image = art_block.settings.artwork_image
+                            | default: art_block.settings.preview_image
+                          %}
+                          <label class="case-art-card" {{ art_block.shopify_attributes }}>
+                            <input
+                              type="radio"
+                              name="properties[Selected artwork]"
+                              value="{{ art_block.settings.title | escape }}"
+                              data-case-artwork
+                              {% if art_image != blank %}
+                                data-artwork-src="{{ art_image | image_url: width: 900 }}"
+                              {% endif %}
+                              {% if art_block.settings.default_selected or rendered_artwork == false %}
+                                checked
+                              {% endif %}
+                            >
+                            {% if art_block.settings.badge != blank -%}
+                              <span class="case-art-card__badge">{{ art_block.settings.badge }}</span>
+                            {%- endif %}
+                            <span class="case-art-card__image">
+                              {% if art_block.settings.preview_image != blank %}
+                                {{
+                                  art_block.settings.preview_image
+                                  | image_url: width: 480
+                                  | image_tag:
+                                    widths: '180, 260, 360, 480',
+                                    sizes: '(max-width: 767px) 42vw, 140px',
+                                    loading: 'lazy'
+                                }}
+                              {% else %}
+                                {{ 'collection-1' | placeholder_svg_tag }}
+                              {% endif %}
+                            </span>
+                            <strong>{{ art_block.settings.title }}</strong>
+                          </label>
+                          {% assign rendered_artwork = true %}
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </fieldset>
+                </div>
+              </div>
+
+            {% when 'upload' %}
+              {% if block.settings.enable_upload %}
+                <div class="case-upload" {{ block.shopify_attributes }} data-case-dropzone>
+                  <div class="case-upload__zone" data-case-drop-area>
+                    <div class="case-upload__icon">
+                      <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      >
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                    </div>
+                    <strong>{{ block.settings.heading }}</strong>
+                    <span>{{ block.settings.help_text }}</span>
+                    <span class="case-upload__or">or drag &amp; drop here</span>
+                    <input
+                      id="CaseUpload-{{ section.id }}"
+                      type="file"
+                      name="properties[Custom artwork]"
+                      accept="{{ block.settings.accepted_types }}"
+                      data-case-upload
+                    >
+                  </div>
+                  <div class="case-upload__preview hidden" data-case-upload-preview>
+                    <img alt="Uploaded artwork" width="160" height="160" data-case-upload-thumb>
+                    <div class="case-upload__info">
+                      <p class="case-upload__file" data-case-file-name></p>
+                      <button type="button" class="case-upload__remove" data-case-upload-remove>Remove</button>
+                    </div>
+                  </div>
+                  <p class="case-upload__error" data-case-upload-error role="alert"></p>
+                </div>
+              {% endif %}
+
+            {% when 'artwork_controls' %}
+              <div class="case-step" {{ block.shopify_attributes }}>
+                <div class="case-step__number">{{ block.settings.step_number }}</div>
+                <div class="case-step__body">
+                  <div class="case-controls">
+                    <div class="case-controls__head">
+                      <h3>{{ block.settings.heading }}</h3>
+                      <button type="button" data-case-reset>{{ block.settings.reset_label }}</button>
+                    </div>
+                    {% if block.settings.enable_scale %}
+                      <label class="case-range"
+                        ><span>
+                          {{- block.settings.scale_label }}
+                          <output data-case-output="scale">{{ block.settings.scale_default }}%</output></span
+                        >
+                        <input
+                          type="range"
+                          name="properties[Artwork scale]"
+                          min="{{ block.settings.scale_min }}"
+                          max="{{ block.settings.scale_max }}"
+                          step="1"
+                          value="{{ block.settings.scale_default }}"
+                          data-case-control="scale"
+                        >
+                      </label>
+                    {% endif %}
+                    {% if block.settings.enable_x %}
+                      <label class="case-range"
+                        ><span>
+                          {{- block.settings.x_label }}
+                          <output data-case-output="x">{{ block.settings.x_default }}</output></span
+                        >
+                        <input
+                          type="range"
+                          name="properties[Artwork X position]"
+                          min="-50"
+                          max="50"
+                          step="1"
+                          value="{{ block.settings.x_default }}"
+                          data-case-control="x"
+                        >
+                      </label>
+                    {% endif %}
+                    {% if block.settings.enable_y %}
+                      <label class="case-range"
+                        ><span>
+                          {{- block.settings.y_label }}
+                          <output data-case-output="y">{{ block.settings.y_default }}</output></span
+                        >
+                        <input
+                          type="range"
+                          name="properties[Artwork Y position]"
+                          min="-50"
+                          max="50"
+                          step="1"
+                          value="{{ block.settings.y_default }}"
+                          data-case-control="y"
+                        >
+                      </label>
+                    {% endif %}
+                    {% if block.settings.enable_rotation %}
+                      <label class="case-range"
+                        ><span>
+                          {{- block.settings.rotation_label }}
+                          <output data-case-output="rotation">{{ block.settings.rotation_default }}deg</output></span
+                        >
+                        <input
+                          type="range"
+                          name="properties[Artwork rotation]"
+                          min="-25"
+                          max="25"
+                          step="1"
+                          value="{{ block.settings.rotation_default }}"
+                          data-case-control="rotation"
+                        >
+                      </label>
+                    {% endif %}
+                    {% if block.settings.enable_backgrounds %}
+                      {% assign bg_options = block.settings.background_choices | split: ',' %}
+                      <fieldset class="case-backgrounds">
+                        <legend>{{ block.settings.background_label }}</legend>
+                        {% for bg in bg_options %}
+                          {% assign bg_parts = bg | strip | split: ':' %}
+                          {% assign bg_label = bg_parts[0] | strip %}
+                          {% assign bg_color = bg_parts[1] | strip | default: '#f7f0e7' %}
+                          {% if bg_label != blank %}
+                            <label style="--bg-choice: {{ bg_color }};"
+                              ><input
+                                type="radio"
+                                name="properties[Artwork background]"
+                                value="{{ bg_label | escape }}"
+                                data-case-bg="{{ bg_color }}"
+                                {% if forloop.first %}
+                                  checked
+                                {% endif %}
+
+                              ><span aria-hidden="true"></span><small>{{ bg_label }}</small></label
+                            >
+                          {% endif %}
+                        {% endfor %}
+                      </fieldset>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+            {% when 'print_notes' %}
+              <div class="case-step" {{ block.shopify_attributes }}>
+                <div class="case-step__number">{{ block.settings.step_number }}</div>
+                <div class="case-step__body">
+                  <label class="case-step__title" for="CaseNotes-{{ section.id }}">{{ block.settings.heading }}</label>
+                  <textarea
+                    id="CaseNotes-{{ section.id }}"
+                    name="properties[Print notes]"
+                    rows="{{ block.settings.rows }}"
+                    maxlength="{{ block.settings.max_length }}"
+                    placeholder="{{ block.settings.placeholder | escape }}"
+                    {% if block.settings.required %}
+                      required
+                    {% endif -%}
+                  ></textarea>
+                </div>
+              </div>
+
+            {% when 'confirmation' %}
+              <label class="case-confirmation" {{ block.shopify_attributes }}
+                ><input
+                  type="checkbox"
+                  name="properties[Artwork permission confirmed]"
+                  value="Yes"
+                  {% if block.settings.required %}
+                    required
+                  {% endif %}
+
+                ><span>{{ block.settings.text }}</span></label
+              >
+
+            {% when 'price' %}
+              <div class="case-price-row" {{ block.shopify_attributes }}>
+                <p data-case-summary>
+                  {{ current_variant.option1 -}}
+                  {%- if current_variant.option2 != blank %} &middot; {{ current_variant.option2 }}{% endif %}
+                </p>
+                <strong data-case-price>
+                  {%- if current_variant.compare_at_price > current_variant.price -%}
+                    <s>{{ current_variant.compare_at_price | money }}</s>
+                  {%- endif -%}
+                  <span>{{ current_variant.price | money }}</span></strong
+                >
+              </div>
+
+            {% when 'buy_buttons' %}
+              <div class="case-buy" {{ block.shopify_attributes }}>
+                {% if block.settings.show_quantity %}
+                  <div class="case-quantity">
+                    <button type="button" name="minus" aria-label="Decrease quantity">&minus;</button>
+                    <label class="case-builder__sr" for="CaseQuantity-{{ section.id }}">Quantity</label>
+                    <input
+                      id="CaseQuantity-{{ section.id }}"
+                      type="number"
+                      name="quantity"
+                      value="1"
+                      min="1"
+                      inputmode="numeric"
+                    >
+                    <button type="button" name="plus" aria-label="Increase quantity">+</button>
+                  </div>
+                {% else %}
+                  <input type="hidden" name="quantity" value="1">
+                {% endif %}
+                <button
+                  type="submit"
+                  name="add"
+                  class="case-submit"
+                  data-case-submit
+                  {% unless current_variant.available %}
+                    disabled
+                  {% endunless %}
+                >
+                  <span
+                    data-case-submit-text
+                    data-available="{{ block.settings.button_label | escape }}"
+                    data-sold-out="{{ block.settings.sold_out_label | escape }}"
+                  >
+                    {%- if current_variant.available -%}
+                      {{- block.settings.button_label -}}
+                    {%- else -%}
+                      {{- block.settings.sold_out_label -}}
+                    {%- endif -%}
+                  </span>
+                  <span class="case-submit__loading hidden" data-case-submit-loading>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" opacity=".25"/><path d="M12 2a10 10 0 019.95 9" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".75s" repeatCount="indefinite"/></path>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              {% if block.settings.show_dynamic_checkout %}
+                <div class="case-builder__checkout">{{ form | payment_button }}</div>
+              {% endif %}
+
+            {% when 'trust_note' %}
+              {% if block.settings.text != blank %}
+                <p class="case-trust-note" {{ block.shopify_attributes }}>{{ block.settings.text }}</p>
+              {% endif %}
+
+            {% when 'accordion' %}
+              <details
+                class="case-accordion"
+                {% if block.settings.open_by_default %}
+                  open
+                {% endif %}
+                {{ block.shopify_attributes }}
+              >
+                <summary>
+                  {{ block.settings.heading }}
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <div class="case-accordion__content">{{ block.settings.content }}</div>
+              </details>
+
+            {% when 'custom_liquid' %}
+              <div class="case-builder__custom" {{ block.shopify_attributes }}>{{ block.settings.custom_liquid }}</div>
+
+            {% when '@app' %}
+              {% render block %}
+          {% endcase %}
+        {% endfor %}
+      {% endform %}
+
+      {% comment %}
+        Optional variant metafields: custom.case_print_mask (image) and
+        custom.case_camera_cutout (JSON with width, height, radius, and corner).
+      {% endcomment %}
+      <script type="application/json" data-case-variants>
+        [
+          {%- for variant in product.variants -%}
+            {%- liquid
+              assign variant_print_mask = variant.metafields.custom.case_print_mask.value
+              assign variant_camera_cutout = variant.metafields.custom.case_camera_cutout.value
+            -%}
+            {
+              "id": {{ variant.id | json }},
+              "available": {{ variant.available | json }},
+              "options": {{ variant.options | json }},
+              "price": {{ variant.price | money | json }},
+              "compareAtPrice": {% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | json }}{% else %}null{% endif %},
+              "mockup": {% if variant.featured_image != blank %}{{ variant.featured_image | image_url: width: 1200 | json }}{% else %}null{% endif %},
+              "printMask": {% if variant_print_mask != blank %}{{ variant_print_mask | image_url: width: 1200 | json }}{% else %}null{% endif %},
+              "cameraCutout": {% if variant_camera_cutout != blank %}{{ variant_camera_cutout | json }}{% else %}null{% endif %}
+            }
+            {%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        ]
+      </script>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .case-builder{color:var(--cb-text);background:var(--cb-bg);font-family:var(--font-body-family,Inter,ui-sans-serif,system-ui,sans-serif)}
+  .case-builder *,.case-builder *::before,.case-builder *::after{box-sizing:border-box}
+  .case-builder__inner{margin-inline:auto;display:grid;grid-template-columns:minmax(0,var(--cb-preview-width)) minmax(0,calc(100% - var(--cb-preview-width)));gap:var(--cb-gap);align-items:start}
+  .case-builder__inner--page{width:min(var(--page-width,1360px),calc(100vw - 96px))}
+  .case-builder__inner--wide{width:min(1560px,calc(100vw - 64px))}
+  .case-builder__preview-column--sticky,.case-builder__form-column--sticky{position:sticky;top:var(--cb-sticky-top,92px)}
+  .case-preview{position:relative;min-height:var(--cb-stage-height);overflow:hidden;background:var(--cb-preview-bg);border:1px solid rgba(217,206,196,.6)}
+  .case-preview__stage{min-height:var(--cb-stage-height);display:grid;place-items:center;padding:clamp(38px,7vw,96px);position:relative}
+  .case-preview__stage--grid{background-image:radial-gradient(rgba(41,24,32,.11) 1px,transparent 1px);background-size:12px 12px}
+  .case-preview__badge,.case-preview__views,.case-preview__summary{position:absolute;z-index:4}
+  .case-preview__badge{top:22px;left:22px;margin:0;padding:12px 16px;background:#fff;border:1px solid var(--cb-border);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+  .case-preview__views{top:22px;right:22px;display:flex;background:#fff;border:1px solid var(--cb-border)}
+  .case-preview__views button{min-width:58px;min-height:34px;border:0;color:var(--cb-text);background:transparent;font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+  .case-preview__views button.is-active{color:var(--cb-accent);background:var(--cb-accent-soft)}
+  .case-preview__phone{
+    position:relative;
+    width:var(--cb-frame-width);
+    height:var(--cb-frame-height);
+    flex:0 0 auto;
+  }
+  .case-preview__mockup{position:absolute;z-index:3;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:normal;transform:var(--case-mockup-transform,none);transform-origin:0 0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+  .case-preview__mockup[hidden]{display:none}
+  .case-preview__phone.has-phone-mockup .case-preview__camera{display:none}
+  .case-preview__phone.has-phone-mockup .case-preview__device{
+    inset:auto;
+    left:var(--case-art-left,4%);
+    top:var(--case-art-top,3%);
+    width:var(--case-art-width,92%);
+    height:var(--case-art-height,94%);
+    border:0;
+    border-radius:12% / 6%;
+    background:transparent;
+    box-shadow:none
+  }
+  .case-preview__phone.has-camera-safe-zone .case-preview__print-surface{-webkit-clip-path:none;clip-path:none}
+  .case-preview__device{position:absolute;inset:0;overflow:hidden;border:12px solid #141018;border-radius:42px;background:#111;box-shadow:0 34px 54px rgba(30,13,24,.28),inset 0 0 0 2px rgba(255,255,255,.12)}
+  .case-preview__camera{position:absolute;z-index:2;top:18px;left:18px;width:84px;height:84px;border-radius:24px;background:radial-gradient(circle at 24px 24px,#08070a 0 10px,#31313a 11px 16px,transparent 17px),radial-gradient(circle at 58px 24px,#08070a 0 10px,#31313a 11px 16px,transparent 17px),radial-gradient(circle at 24px 58px,#08070a 0 10px,#31313a 11px 16px,transparent 17px),rgba(255,255,255,.18);backdrop-filter:blur(2px)}
+  .case-preview__print-surface{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none}
+  .case-preview__canvas{position:absolute;z-index:1;inset:0;opacity:0;pointer-events:none;touch-action:none;transition:opacity .16s ease}
+  .case-preview__print-surface.is-canvas-ready .case-preview__canvas{opacity:1;pointer-events:auto}
+  .case-preview__print-surface.is-canvas-ready>.case-preview__art{opacity:0;pointer-events:none}
+  .case-preview__device.has-canvas-editor .case-preview__selection{display:none}
+  .case-preview__print-surface.has-print-mask{-webkit-clip-path:none!important;clip-path:none!important;-webkit-mask-image:var(--case-print-mask);mask-image:var(--case-print-mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-position:center;mask-position:center;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+  .case-preview__mask-definitions{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+  .case-preview__print-surface:active{cursor:grabbing}
+  .case-preview__print-surface.is-locked{cursor:default}
+  .case-preview__art{width:100%;height:100%;object-fit:var(--art-fit,cover);filter:brightness(var(--art-brightness,1)) contrast(var(--art-contrast,1)) saturate(var(--art-saturation,1));transform:translate(var(--art-x,0),var(--art-y,0)) scale(var(--art-scale,1)) rotate(var(--art-rotation,0deg)) scaleX(var(--art-flip-x,1)) scaleY(var(--art-flip-y,1));transform-origin:center;transition:transform .15s ease,filter .15s ease,opacity .2s ease}
+  .case-preview__art--pattern{background:radial-gradient(circle at 74% 28%,#ffd884 0 26px,transparent 27px),radial-gradient(circle at 30% 70%,#f4a5bf 0 5px,transparent 6px),linear-gradient(145deg,transparent 43%,#9a5f83 44% 47%,transparent 48%),#112746}
+  .case-preview__selection{position:absolute;z-index:4;inset:3px;border:1px dashed rgba(41,24,32,.72);pointer-events:none;transition:opacity .15s ease}
+  .case-preview__selection[hidden]{display:none}
+  .case-preview__selection.is-locked{opacity:0}
+  .case-preview__handle{position:absolute;width:18px;height:18px;padding:0;border:1px solid var(--cb-heading);border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(41,24,32,.18);pointer-events:auto;cursor:nwse-resize}
+  .case-preview__handle--nw{inset-block-start:0;inset-inline-start:0;transform:translate(-2px,-2px)}
+  .case-preview__handle--ne{inset-block-start:0;inset-inline-end:0;transform:translate(2px,-2px);cursor:nesw-resize}
+  .case-preview__handle--sw{inset-block-end:0;inset-inline-start:0;transform:translate(-2px,2px);cursor:nesw-resize}
+  .case-preview__handle--se{inset-block-end:0;inset-inline-end:0;transform:translate(2px,2px)}
+  .case-preview__safe-area{position:absolute;inset:74px 32px 42px;border:1px dashed rgba(255,255,255,.52);pointer-events:none}
+  .case-preview__drag-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);margin:0;padding:6px 14px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:5}
+  .case-preview__drag-hint.visible{opacity:1}
+  .case-preview__summary{left:22px;bottom:22px;max-width:min(280px,calc(100% - 44px));padding:16px 18px;background:rgba(255,255,255,.92);border:1px solid var(--cb-border);box-shadow:0 20px 36px rgba(41,24,32,.08)}
+  .case-editor{position:absolute;z-index:8;inset-inline:22px;bottom:22px;display:grid;justify-items:center;gap:10px;pointer-events:none}
+  .case-editor__panel,.case-editor__toolbar{pointer-events:auto;background:rgba(255,255,255,.97);border:1px solid var(--cb-border);box-shadow:0 16px 34px rgba(41,24,32,.14)}
+  .case-editor__panel{width:min(520px,100%);padding:16px;display:grid;gap:13px}
+  .case-editor__panel.hidden{display:none}
+  .case-editor__toolbar{max-width:min(760px,100%);display:flex;overflow-x:auto;scrollbar-width:thin}
+  .case-editor__toolbar button,.case-editor__segments button,.case-editor__position-actions button{min-height:42px;padding:0 15px;flex:0 0 auto;border:0;border-inline-end:1px solid var(--cb-border);color:var(--cb-text);background:transparent;font:inherit;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+  .case-editor__toolbar button:last-child,.case-editor__segments button:last-child,.case-editor__position-actions button:last-child{border-inline-end:0}
+  .case-editor__toolbar button.is-active,.case-editor__toolbar button[aria-pressed="true"],.case-editor__segments button.is-active,.case-editor__position-actions button[aria-pressed="true"]{color:#fff;background:var(--cb-heading)}
+  .case-editor__range{display:grid;gap:7px}
+  .case-editor__range span{display:flex;justify-content:space-between;color:var(--cb-muted);font-size:12px;font-weight:750}
+  .case-editor__range input{width:100%;accent-color:var(--cb-accent)}
+  .case-editor__panel-label{color:var(--cb-muted);font-size:11px;font-weight:800;text-transform:uppercase}
+  .case-editor__segments,.case-editor__position-actions{display:flex;border:1px solid var(--cb-border);overflow-x:auto}
+  .case-editor + .case-preview__summary{bottom:92px}
+  .case-preview:has(.case-editor) .case-preview__drag-hint{bottom:88px}
+  .case-preview__summary span,.case-preview__summary small{display:block;color:var(--cb-muted);font-size:11px}
+  .case-preview__summary strong{display:block;margin:4px 0;color:var(--cb-accent);font-family:var(--font-heading-family,Georgia,serif);font-size:18px;line-height:1.1}
+  .case-builder__form{padding:clamp(30px,5vw,58px);background:var(--cb-panel);display:grid;gap:26px}
+  .case-builder__heading p{margin:0 0 8px;color:var(--cb-accent);font-size:11px;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+  .case-builder__heading h2{margin:0;color:var(--cb-heading);font-family:var(--font-heading-family,Georgia,serif);font-size:clamp(28px,3vw,44px);font-weight:500;line-height:1}
+  .case-step{display:grid;grid-template-columns:32px minmax(0,1fr);gap:20px;padding-top:26px;border-top:1px solid var(--cb-border)}
+  .case-step__number{color:var(--cb-accent);font-size:11px;font-weight:850;letter-spacing:.14em}
+  .case-step__title,.case-controls__head h3{margin:0 0 14px;display:block;color:var(--cb-heading);font-family:var(--font-heading-family,Georgia,serif);font-size:20px;font-weight:500}
+  .case-brand-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));margin-bottom:10px;border:1px solid var(--cb-border);overflow:hidden}
+  .case-brand-tabs button{min-height:42px;border:0;color:var(--cb-text);background:transparent;font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s,color .2s}
+  .case-brand-tabs button.is-active{color:#fff;background:var(--cb-heading)}
+  .case-select,.case-step textarea{width:100%;min-height:46px;padding:0 14px;color:var(--cb-text);background:#fff;border:1px solid var(--cb-border);font:inherit;font-size:13px}
+  .case-step textarea{min-height:112px;padding:14px;resize:vertical}
+  .case-step__note,.case-info-note,.case-trust-note{margin:12px 0 0;color:var(--cb-muted);font-size:12px;line-height:1.55}
+  .case-info-note{padding:14px 16px;background:#edf8f2;border:1px solid #c8e5d8}
+  .case-swatches,.case-format,.case-artworks,.case-backgrounds{margin:0;padding:0;border:0}
+  .case-swatches{margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .case-swatches legend,.case-backgrounds legend{margin-right:8px;color:var(--cb-muted);font-size:11px;font-weight:800}
+  .case-swatches label,.case-backgrounds label{display:inline-grid;place-items:center;gap:4px;cursor:pointer}
+  .case-swatches input,.case-format input,.case-art-card input,.case-backgrounds input{position:absolute;opacity:0;pointer-events:none}
+  .case-swatches label span,.case-backgrounds label span{width:28px;height:28px;border-radius:999px;background:var(--swatch-color,var(--bg-choice));border:1px solid var(--cb-border);transition:outline .15s}
+  .case-swatches label:has(input:checked) span,.case-backgrounds label:has(input:checked) span{outline:2px solid var(--cb-accent);outline-offset:3px}
+  .case-swatches small,.case-backgrounds small{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .case-format__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .case-format__card{position:relative;min-height:96px;padding:18px 44px 18px 18px;display:grid;align-content:start;gap:6px;background:var(--cb-card);border:1px solid var(--cb-border);border-radius:var(--cb-radius);cursor:pointer;transition:background .15s,border-color .15s}
+  .case-format__card.is-selected,.case-format__card:has(input:checked){background:var(--cb-accent-soft);border-color:var(--cb-accent)}
+  .case-format__card.is-disabled{opacity:.48;cursor:not-allowed}
+  .case-format__card strong{color:var(--cb-heading);font-size:13px}
+  .case-format__card small{color:var(--cb-muted);font-size:11px;line-height:1.35}
+  .case-format__card em{position:absolute;top:18px;right:16px;color:var(--cb-accent);font-size:12px;font-style:normal;font-weight:850}
+  .case-format__check{position:absolute;right:16px;bottom:14px;color:var(--cb-accent);opacity:0;font-size:14px}
+  .case-format__card:has(input:checked) .case-format__check{opacity:1}
+  .case-artworks__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .case-art-card{position:relative;min-width:0;background:var(--cb-card);border:1px solid var(--cb-border);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .case-art-card:has(input:checked){border-color:var(--cb-accent);box-shadow:inset 0 0 0 1px var(--cb-accent)}
+  .case-art-card__image{aspect-ratio:4/5;display:block;overflow:hidden;background:var(--cb-preview-bg)}
+  .case-art-card__image img,.case-art-card__image svg{width:100%;height:100%;object-fit:cover}
+  .case-art-card strong{min-height:36px;padding:9px;display:block;color:var(--cb-text);font-size:11px;line-height:1.25}
+  .case-art-card__badge{position:absolute;z-index:2;top:8px;left:8px;padding:5px 7px;background:#fff;color:var(--cb-accent);font-size:9px;font-weight:850;text-transform:uppercase}
+  .case-upload{border:2px dashed var(--cb-border);border-radius:var(--cb-radius);overflow:hidden;transition:border-color .2s}
+  .case-upload.is-dragover{border-color:var(--cb-accent);background:var(--cb-accent-soft)}
+  .case-upload__zone{padding:28px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;cursor:pointer;position:relative}
+  .case-upload__zone input[type="file"]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .case-upload__icon{color:var(--cb-muted);margin-bottom:4px}
+  .case-upload__zone strong{color:var(--cb-heading);font-size:14px}
+  .case-upload__zone span{color:var(--cb-muted);font-size:12px}
+  .case-upload__or{color:var(--cb-accent);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  .case-upload__preview{display:flex;align-items:center;gap:14px;padding:14px 18px}
+  .case-upload__preview img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--cb-border)}
+  .case-upload__info{flex:1;min-width:0}
+  .case-upload__file{margin:0;color:var(--cb-text);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .case-upload__remove{border:0;background:transparent;color:var(--cb-accent);font-size:12px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+  .case-upload__error{margin:6px 18px 12px;color:var(--cb-accent);font-size:12px}
+  .case-upload__error:empty{display:none}
+  .case-controls{display:grid;gap:15px}
+  .case-controls__head{display:flex;justify-content:space-between;gap:16px}
+  .case-controls__head button{align-self:start;border:0;color:var(--cb-muted);background:transparent;font-size:11px;font-weight:850;text-decoration:underline;cursor:pointer}
+  .case-range{display:grid;gap:8px}
+  .case-range span{display:flex;justify-content:space-between;color:var(--cb-muted);font-size:12px;font-weight:750}
+  .case-range input[type="range"]{width:100%;accent-color:var(--cb-accent)}
+  .case-backgrounds{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-top:6px}
+  .case-confirmation{display:grid;grid-template-columns:auto 1fr;gap:10px;color:var(--cb-muted);font-size:12px;line-height:1.45}
+  .case-price-row{display:flex;align-items:end;justify-content:space-between;gap:18px}
+  .case-price-row p{margin:0;color:var(--cb-muted);font-size:12px}
+  .case-price-row strong{display:flex;gap:10px;align-items:baseline;color:var(--cb-heading);font-family:var(--font-heading-family,Georgia,serif);font-size:32px;line-height:1}
+  .case-price-row s{color:var(--cb-muted);font-size:.6em}
+  .case-buy{display:grid;grid-template-columns:minmax(114px,.22fr) minmax(0,1fr);gap:10px}
+  .case-quantity{min-height:54px;display:grid;grid-template-columns:36px 1fr 36px;border:1px solid var(--cb-border);background:#fff}
+  .case-quantity button,.case-quantity input{width:100%;border:0;color:var(--cb-text);background:transparent;text-align:center;font:inherit;font-weight:800}
+  .case-submit{min-height:54px;border:1px solid var(--cb-button);color:var(--cb-button-text);background:var(--cb-button);font:inherit;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s}
+  .case-submit:disabled{opacity:.5;cursor:not-allowed}
+  .case-submit__loading{display:flex;align-items:center}
+  .case-accordion{border-top:1px solid var(--cb-border)}
+  .case-accordion summary{min-height:54px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;list-style:none;font-size:14px;font-weight:850}
+  .case-accordion summary::-webkit-details-marker{display:none}
+  .case-accordion__content{padding-bottom:18px;color:var(--cb-muted);font-size:13px;line-height:1.7}
+  .case-builder__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .hidden{display:none!important}
+  .case-builder button:focus-visible,.case-builder input:focus-visible,.case-builder select:focus-visible,.case-builder textarea:focus-visible,.case-builder summary:focus-visible{outline:2px solid var(--cb-accent);outline-offset:3px}
+  @media(max-width:980px){.case-builder__inner{grid-template-columns:1fr}.case-builder__preview-column--sticky,.case-builder__form-column--sticky{position:static}}
+  @media(max-width:767px){.case-builder__inner--page,.case-builder__inner--wide{width:min(100% - 36px,var(--page-width,1360px))}.case-preview,.case-preview__stage{min-height:var(--cb-mobile-stage-height)}.case-preview__stage{padding:72px 24px 142px}.case-preview__phone{width:var(--cb-mobile-frame-width);height:var(--cb-mobile-frame-height)}.case-preview__badge,.case-preview__views,.case-preview__summary{left:16px;right:auto}.case-preview__views{top:64px}.case-preview__summary{bottom:112px;max-width:calc(100% - 32px)}.case-editor{inset-inline:16px;bottom:16px;justify-items:stretch}.case-editor__toolbar{max-width:100%}.case-editor__panel{width:100%}.case-builder__form{padding:30px 0 0;background:transparent}.case-step{grid-template-columns:1fr;gap:8px}.case-format__grid,.case-buy,.case-price-row{grid-template-columns:1fr}.case-artworks__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+{% endstylesheet %}
+
+{% javascript %}
+  let caseBuilderKonvaPromise = null;
+
+  function loadCaseBuilderKonva(src) {
+    if (window.Konva) return Promise.resolve(window.Konva);
+    if (!src) return Promise.reject(new Error('Konva asset URL is missing.'));
+    if (caseBuilderKonvaPromise) return caseBuilderKonvaPromise;
+
+    caseBuilderKonvaPromise = new Promise((resolve, reject) => {
+      let script = document.querySelector('[data-case-konva-library]');
+      const onLoad = () => {
+        if (window.Konva) {
+          resolve(window.Konva);
+          return;
+        }
+        caseBuilderKonvaPromise = null;
+        reject(new Error('Konva did not initialize.'));
+      };
+      const onError = () => {
+        caseBuilderKonvaPromise = null;
+        reject(new Error('Konva could not be loaded.'));
+      };
+
+      if (script) {
+        script.addEventListener('load', onLoad, { once: true });
+        script.addEventListener('error', onError, { once: true });
+        return;
+      }
+
+      script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.dataset.caseKonvaLibrary = 'true';
+      script.addEventListener('load', onLoad, { once: true });
+      script.addEventListener('error', onError, { once: true });
+      document.head.appendChild(script);
+    });
+
+    return caseBuilderKonvaPromise;
+  }
+
+  class CaseCanvasEditor {
+    constructor(builder, Konva) {
+      this.builder = builder;
+      this.Konva = Konva;
+      this.host = builder.el('[data-case-canvas]');
+      this.surface = builder.surface;
+      this.device = builder.device;
+      this.artNode = null;
+      this.imageElement = null;
+      this.imageRequestId = 0;
+      this.fit = 'cover';
+      this.locked = false;
+      this.cameraZone = null;
+      this.hasCameraZone = false;
+
+      this.lastState = {
+        scale: 100,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipX: 1,
+        flipY: 1,
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+      };
+
+      if (!this.host) return;
+
+      this.stage = new Konva.Stage({ container: this.host, width: 1, height: 1 });
+
+      /* artwork layer (bottom) */
+      this.artLayer = new Konva.Layer();
+      this.clipGroup = new Konva.Group({ clipFunc: () => this.createClipPath() });
+      this.transformer = new Konva.Transformer({
+        enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+        rotateEnabled: false,
+        keepRatio: true,
+        flipEnabled: false,
+        centeredScaling: true,
+        borderStroke: this.cssColor('--cb-accent', '#bf356d'),
+        borderDash: [5, 4],
+        borderStrokeWidth: 1,
+        anchorFill: '#ffffff',
+        anchorStroke: this.cssColor('--cb-accent', '#bf356d'),
+        anchorStrokeWidth: 1,
+        anchorSize: 11,
+        anchorCornerRadius: 11,
+        padding: 2,
+        boundBoxFunc: (oldBox, newBox) => this.limitTransform(oldBox, newBox),
+      });
+      this.transformer.visible(false);
+      this.artLayer.add(this.clipGroup);
+      this.artLayer.add(this.transformer);
+      this.stage.add(this.artLayer);
+
+      this.resizeObserver = new ResizeObserver(() => this.resize());
+      this.resizeObserver.observe(this.host);
+      requestAnimationFrame(() => this.resize());
+    }
+
+    cssColor(property, fallback) {
+      const value = getComputedStyle(this.builder.root).getPropertyValue(property).trim();
+      return value || fallback;
+    }
+
+    createClipPath() {
+      const width = this.stage ? this.stage.width() : 1;
+      const height = this.stage ? this.stage.height() : 1;
+      const path = new Path2D();
+      this.addRoundedRect(path, 0, 0, width, height, Math.min(width, height) * 0.065);
+
+      if (this.hasCameraZone && this.cameraZone) {
+        const cutoutWidth = width * (this.cameraZone.width / 100);
+        const cutoutHeight = height * (this.cameraZone.height / 100);
+        const cutoutX = this.cameraZone.corner === 'top-right' ? width - cutoutWidth : 0;
+        const cutoutRadius = Math.min(width, height) * (this.cameraZone.radius / 100);
+        this.addRoundedRect(path, cutoutX, 0, cutoutWidth, cutoutHeight, cutoutRadius);
+      }
+
+      return [path, 'evenodd'];
+    }
+
+    addRoundedRect(path, x, y, width, height, radius) {
+      const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+      path.moveTo(x + r, y);
+      path.lineTo(x + width - r, y);
+      path.arcTo(x + width, y, x + width, y + r, r);
+      path.lineTo(x + width, y + height - r);
+      path.arcTo(x + width, y + height, x + width - r, y + height, r);
+      path.lineTo(x + r, y + height);
+      path.arcTo(x, y + height, x, y + height - r, r);
+      path.lineTo(x, y + r);
+      path.arcTo(x, y, x + r, y, r);
+      path.closePath();
+    }
+
+    limitTransform(oldBox, newBox) {
+      if (!this.baseSize) return newBox;
+      const minWidth = this.baseSize.width * 0.6;
+      const minHeight = this.baseSize.height * 0.6;
+      const maxWidth = this.baseSize.width * 1.8;
+      const maxHeight = this.baseSize.height * 1.8;
+      const width = Math.abs(newBox.width);
+      const height = Math.abs(newBox.height);
+      if (width < minWidth || height < minHeight || width > maxWidth || height > maxHeight) return oldBox;
+      return newBox;
+    }
+
+    resize() {
+      if (!this.stage || !this.host) return;
+      const rect = this.host.getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width));
+      const height = Math.max(1, Math.round(rect.height));
+      if (this.stage.width() === width && this.stage.height() === height) return;
+      this.stage.size({ width, height });
+      this.clipGroup.clipFunc(() => this.createClipPath());
+      this.applyState(this.lastState);
+      this.transformer.forceUpdate();
+      this.artLayer.batchDraw();
+    }
+
+    /* ─── artwork methods ─── */
+
+    setArtworkSource(src) {
+      if (!src) {
+        this.clearArtwork();
+        return;
+      }
+
+      const requestId = ++this.imageRequestId;
+      const image = new Image();
+      image.decoding = 'async';
+      if (/^(https?:)?\/\//i.test(src)) image.crossOrigin = 'anonymous';
+      image.addEventListener('load', () => {
+        if (requestId !== this.imageRequestId) return;
+        this.imageElement = image;
+        if (this.artNode) this.artNode.destroy();
+        this.artNode = new this.Konva.Image({
+          image,
+          draggable: !this.locked,
+          name: 'case-artwork',
+          dragBoundFunc: (position) => ({
+            x: Math.max(0, Math.min(this.stage.width(), position.x)),
+            y: Math.max(0, Math.min(this.stage.height(), position.y)),
+          }),
+        });
+        this.artNode.on('dragmove dragend', () => this.syncPositionToControls());
+        this.artNode.on('transformend', () => this.syncTransformToControls());
+        this.clipGroup.add(this.artNode);
+        this.transformer.nodes([this.artNode]);
+        this.setReady(true);
+        this.applyState(this.lastState);
+      });
+      image.addEventListener('error', () => {
+        if (requestId !== this.imageRequestId || this.artNode) return;
+        this.setReady(false);
+      });
+      image.src = src;
+    }
+
+    clearArtwork() {
+      this.imageRequestId += 1;
+      this.imageElement = null;
+      if (this.artNode) {
+        this.artNode.destroy();
+        this.artNode = null;
+      }
+      if (this.transformer) this.transformer.nodes([]);
+      this.setReady(false);
+      if (this.artLayer) this.artLayer.batchDraw();
+    }
+
+    setReady(ready) {
+      if (this.surface) this.surface.classList.toggle('is-canvas-ready', ready);
+      if (this.device) this.device.classList.toggle('has-canvas-editor', ready);
+      if (this.transformer) this.transformer.visible(Boolean(ready && !this.locked));
+    }
+
+    setFit(fit) {
+      this.fit = fit === 'contain' ? 'contain' : 'cover';
+      this.applyState(this.lastState);
+    }
+
+    setLocked(locked) {
+      this.locked = Boolean(locked);
+      if (this.artNode) this.artNode.draggable(!this.locked);
+      if (this.transformer) this.transformer.visible(Boolean(this.artNode && !this.locked));
+      if (this.artLayer) this.artLayer.batchDraw();
+    }
+
+    setMask(zone, enabled) {
+      this.cameraZone = zone || null;
+      this.hasCameraZone = Boolean(enabled && zone);
+      if (!this.clipGroup) return;
+      this.clipGroup.clipFunc(() => this.createClipPath());
+      this.artLayer.batchDraw();
+    }
+
+    fittedSize() {
+      if (!this.imageElement || !this.stage) return null;
+      const stageWidth = this.stage.width();
+      const stageHeight = this.stage.height();
+      const imageWidth = this.imageElement.naturalWidth || this.imageElement.width;
+      const imageHeight = this.imageElement.naturalHeight || this.imageElement.height;
+      if (!stageWidth || !stageHeight || !imageWidth || !imageHeight) return null;
+      const multiplier = this.fit === 'contain'
+        ? Math.min(stageWidth / imageWidth, stageHeight / imageHeight)
+        : Math.max(stageWidth / imageWidth, stageHeight / imageHeight);
+      return { width: imageWidth * multiplier, height: imageHeight * multiplier };
+    }
+
+    applyState(state) {
+      this.lastState = { ...this.lastState, ...state };
+      if (!this.artNode || !this.imageElement || !this.stage) return;
+      const fitted = this.fittedSize();
+      if (!fitted) return;
+      this.baseSize = fitted;
+      this.artNode.size(fitted);
+      this.artNode.offset({ x: fitted.width / 2, y: fitted.height / 2 });
+      this.artNode.position({
+        x: this.stage.width() / 2 + (this.lastState.x / 100) * this.stage.width(),
+        y: this.stage.height() / 2 + (this.lastState.y / 100) * this.stage.height(),
+      });
+      this.artNode.rotation(this.lastState.rotation);
+      this.artNode.scale({
+        x: (this.lastState.scale / 100) * this.lastState.flipX,
+        y: (this.lastState.scale / 100) * this.lastState.flipY,
+      });
+      this.artNode.filters([
+        `brightness(${this.lastState.brightness / 100})`,
+        `contrast(${this.lastState.contrast / 100})`,
+        `saturate(${this.lastState.saturation / 100})`,
+      ]);
+      this.artNode.draggable(!this.locked);
+      this.transformer.visible(!this.locked);
+      this.transformer.forceUpdate();
+      this.artLayer.batchDraw();
+    }
+
+    syncPositionToControls() {
+      if (!this.artNode || !this.stage) return;
+      const x = ((this.artNode.x() - this.stage.width() / 2) / this.stage.width()) * 100;
+      const y = ((this.artNode.y() - this.stage.height() / 2) / this.stage.height()) * 100;
+      this.builder.updateControlsFromCanvas({ x, y });
+    }
+
+    syncTransformToControls() {
+      if (!this.artNode) return;
+      const scale = ((Math.abs(this.artNode.scaleX()) + Math.abs(this.artNode.scaleY())) / 2) * 100;
+      this.builder.updateControlsFromCanvas({
+        x: ((this.artNode.x() - this.stage.width() / 2) / this.stage.width()) * 100,
+        y: ((this.artNode.y() - this.stage.height() / 2) / this.stage.height()) * 100,
+        scale,
+      });
+      this.builder.updatePreview();
+    }
+
+    destroy() {
+      this.resizeObserver?.disconnect();
+      this.stage?.destroy();
+      this.setReady(false);
+    }
+  }
+
+  class CaseBuilder {
+    constructor(r) {
+      this.root = r;
+      this.variants = this.readVariants();
+      this.el = (s) => this.root.querySelector(s);
+      this.els = (s) => this.root.querySelectorAll(s);
+      this.variantInput = this.el('[data-case-variant-id]');
+      this.price = this.el('[data-case-price]');
+      this.summary = this.el('[data-case-summary]');
+      this.phoneSummary = this.el('[data-case-phone-summary]');
+      this.formatSummary = this.el('[data-case-format-summary]');
+      this.submit = this.el('[data-case-submit]');
+      this.submitText = this.el('[data-case-submit-text]');
+      this.submitLoading = this.el('[data-case-submit-loading]');
+      this.art = this.el('[data-case-art]');
+      this.artworkPreviewProperty = this.el('[data-case-artwork-preview-property]');
+      this.phoneMockup = this.el('[data-case-phone-mockup]');
+      this.phoneShell = this.el('[data-case-phone-shell]');
+      this.surface = this.el('[data-print-surface]');
+      this.printPath = this.el('[data-case-print-path]');
+      this.selection = this.el('[data-case-selection]');
+      this.device = this.el('.case-preview__device');
+      this.select = this.el('[data-case-option-position="1"]');
+      this.form = this.el('[data-case-form]');
+      this.dragHint = this.el('[data-drag-hint]');
+      this.objectUrl = null;
+      this.hasCustomFile = false;
+      this.artLocked = false;
+      this.flipX = 1;
+      this.flipY = 1;
+      this.maskRequestId = 0;
+      this.currentCameraZone = null;
+      this.hasCameraSafeZone = false;
+      this.canvasEditor = null;
+      this.artworkSource = this.currentArtworkSource();
+      this.iphoneBaseMockup = this.root.dataset.caseIphoneBase || '';
+      this.productBaseMockup = this.root.dataset.caseProductBase || '';
+
+      this.bindPhoneMockup();
+      this.bindVariants();
+      this.bindBrandTabs();
+      this.bindArtwork();
+      this.bindUpload();
+      this.bindDragDrop();
+      this.bindSliders();
+      this.bindEditorToolbar();
+      this.bindResizeHandles();
+      this.bindDragOnPreview();
+      this.bindQuantity();
+      this.bindViewToggle();
+      this.bindReset();
+      this.bindFormSubmit();
+      this.updateVariant();
+      this.updatePreview();
+      this.initializeCanvas();
+      this.showDragHint();
+    }
+
+    currentArtworkSource() {
+      if (!this.art || this.art.hidden) return '';
+      if (this.art.tagName === 'IMG') return this.art.currentSrc || this.art.getAttribute('src') || '';
+      const background = getComputedStyle(this.art).backgroundImage;
+      const match = background && background.match(/^url\(["']?(.*?)["']?\)$/);
+      return match ? match[1] : '';
+    }
+
+    async initializeCanvas() {
+      try {
+        const Konva = await loadCaseBuilderKonva(this.root.dataset.caseKonvaSrc || '');
+        if (!this.root.isConnected) return;
+        this.canvasEditor = new CaseCanvasEditor(this, Konva);
+        this.canvasEditor.setMask(this.currentCameraZone, this.hasCameraSafeZone);
+        this.canvasEditor.setLocked(this.artLocked);
+        const fitProperty = this.editorProperty('fit');
+        this.canvasEditor.setFit(fitProperty && fitProperty.value === 'Fit image' ? 'contain' : 'cover');
+        if (this.artworkSource && this.art && !this.art.hidden) {
+          this.canvasEditor.setArtworkSource(this.artworkSource);
+        }
+        this.updatePreview();
+      } catch (error) {
+        this.canvasEditor = null;
+      }
+    }
+    readVariants() {
+      const s = this.root.querySelector('[data-case-variants]');
+      if (!s) return [];
+      try {
+        return JSON.parse(s.textContent);
+      } catch (e) {
+        return [];
+      }
+    }
+    selectedOptions() {
+      const g = [];
+      this.els('[data-case-option-position]').forEach((c) => {
+        const i = Number(c.dataset.caseOptionPosition) - 1;
+        if (c.type === 'radio' && !c.checked) return;
+        g[i] = c.value;
+      });
+      return g;
+    }
+    bindVariants() {
+      this.els('[data-case-option]').forEach((c) => c.addEventListener('change', () => this.updateVariant()));
+    }
+    updateVariant() {
+      const sel = this.selectedOptions();
+      const v = this.variants.find((candidate) => sel.every((value, index) => !value || candidate.options[index] === value)) || this.variants[0];
+      this.els('.case-format__card').forEach((card) => {
+        const inp = card.querySelector('[data-case-option]');
+        card.classList.toggle('is-selected', Boolean(inp && inp.checked));
+      });
+      if (!v) return;
+      if (this.variantInput) this.variantInput.value = v.id;
+      this.els('[data-case-option-property-position]').forEach((input) => {
+        const index = Number(input.dataset.caseOptionPropertyPosition) - 1;
+        input.value = v.options[index] || '';
+      });
+      if (this.price)
+        this.price.innerHTML = v.compareAtPrice
+          ? '<s>' + v.compareAtPrice + '</s><span>' + v.price + '</span>'
+          : '<span>' + v.price + '</span>';
+      const phone = sel[0] || v.options[0] || '';
+      const format = sel[1] || v.options[1] || '';
+      this.currentPhone = phone;
+
+      /* Variant-first full-frame resolution.
+         The selected variant featured image is the complete case frame overlay.
+         A same-model variant or the generic base is used only as fallback. */
+      const frameVariant = this.cameraVariantFor(phone, v);
+      const variantFrame = v.mockup || (frameVariant && frameVariant.mockup) || '';
+      const baseMockup = /iphone/i.test(phone) ? this.iphoneBaseMockup : this.productBaseMockup;
+      const frameSrc = variantFrame || baseMockup;
+      const printMask = v.printMask || (frameVariant && frameVariant.printMask);
+      const cameraCutout = v.cameraCutout || (frameVariant && frameVariant.cameraCutout);
+
+      this.updatePhoneMockup(phone, frameSrc, printMask, cameraCutout);
+
+      if (this.summary) this.summary.textContent = [phone, format].filter(Boolean).join(' \u00b7 ');
+      if (this.phoneSummary) this.phoneSummary.textContent = phone || this.phoneSummary.textContent;
+      if (this.formatSummary) this.formatSummary.textContent = format || this.formatSummary.textContent;
+      if (this.submit) this.submit.disabled = !v.available;
+      if (this.submitText)
+        this.submitText.textContent = v.available ? this.submitText.dataset.available : this.submitText.dataset.soldOut;
+      const url = new URL(window.location.href);
+      url.searchParams.set('variant', v.id);
+      window.history.replaceState({}, '', url.toString());
+    }
+    cameraVariantFor(phone, selectedVariant) {
+      if (selectedVariant && selectedVariant.mockup) return selectedVariant;
+      const normalizedPhone = this.normalizedPhoneModel(phone);
+      const exactModel = this.variants.find(
+        (candidate) => candidate.mockup && this.normalizedPhoneModel(candidate.options[0]) === normalizedPhone
+      );
+      if (exactModel) return exactModel;
+      const family = this.cameraFamilyFor(phone);
+      if (!family) return null;
+      return (
+        this.variants.find(
+          (candidate) => candidate.mockup && this.cameraFamilyFor(candidate.options[0]) === family
+        ) || null
+      );
+    }
+    normalizedPhoneModel(phone) {
+      return String(phone || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+    cameraFamilyFor(phone) {
+      const model = this.normalizedPhoneModel(phone);
+      const iphoneGeneration = model.match(/iphone\s*(\d+)/);
+      if (!iphoneGeneration) return '';
+      const tier = model.includes('pro') ? 'pro' : model.includes('plus') ? 'plus' : 'standard';
+      return `iphone-${iphoneGeneration[1]}-${tier}`;
+    }
+
+    /* The selected variant image is always the complete phone-case frame.
+       Camera exclusion is handled separately by the print mask/safe zone. */
+    updatePhoneMockup(phone, frameSrc, printMask, cameraCutout) {
+      if (!this.phoneMockup || !this.phoneShell) return;
+
+      /* A frame implies a camera-safe zone. The image itself is never reused
+         as a small camera-only overlay. */
+      this.applyPrintMask(phone, printMask, cameraCutout);
+
+      if (!frameSrc) {
+        this.phoneMockup.hidden = true;
+        this.phoneShell.classList.remove('has-phone-mockup');
+        this.resetPhoneMockupAlignment();
+        return;
+      }
+
+      this.phoneMockup.removeAttribute('srcset');
+      this.phoneMockup.removeAttribute('sizes');
+      this.phoneMockup.src = frameSrc;
+      this.phoneMockup.hidden = false;
+      this.phoneShell.classList.add('has-phone-mockup');
+      this.resetPhoneMockupAlignment();
+
+      if (this.phoneMockup.complete && this.phoneMockup.naturalWidth) this.alignArtworkToMockup();
+    }
+    applyPrintMask(phone, printMask, cameraCutout) {
+      if (!this.surface || !this.phoneShell) return;
+
+      /* FULL-BLEED PREVIEW MODE
+         Do not subtract a large rectangular camera safe-zone from the artwork.
+         The selected variant PNG is the visual frame/mask and sits above the art. */
+      this.maskRequestId += 1;
+      this.surface.classList.remove('has-print-mask');
+      this.surface.style.removeProperty('--case-print-mask');
+      this.phoneShell.classList.remove('has-camera-safe-zone');
+
+      this.hasCameraSafeZone = false;
+      this.currentCameraZone = null;
+      this.canvasEditor?.setMask(null, false);
+
+      this.setEditorProperty(
+        'camera-protection',
+        printMask ? 'Frame overlay preview · print mask stored separately' : 'Full-bleed frame overlay'
+      );
+    }
+
+    cameraSafeZoneFor(phone, configuredCutout) {
+      let configured = configuredCutout;
+      if (typeof configured === 'string') {
+        try {
+          configured = JSON.parse(configured);
+        } catch (error) {
+          configured = null;
+        }
+      }
+      if (configured && typeof configured === 'object') {
+        const width = Number(configured.width);
+        const height = Number(configured.height);
+        const radius = Number(configured.radius);
+        return {
+          width: Number.isFinite(width) ? Math.max(20, Math.min(72, width)) : 48,
+          height: Number.isFinite(height) ? Math.max(14, Math.min(44, height)) : 25,
+          radius: Number.isFinite(radius) ? Math.max(0, Math.min(14, radius)) : 6,
+          corner: configured.corner === 'top-right' ? 'top-right' : 'top-left',
+        };
+      }
+      const model = String(phone || '').trim().toLowerCase();
+      if (model.includes('iphone 17 pro') || model.includes('iphone 16 pro') || model.includes('iphone 15 pro')) {
+        return { width: 50, height: 26, radius: 6, corner: 'top-left' };
+      }
+      if (model.includes('iphone 17') || model.includes('iphone 16')) {
+        return { width: 38, height: 23, radius: 5, corner: 'top-left' };
+      }
+      if (model.includes('iphone 15')) return { width: 44, height: 23, radius: 5, corner: 'top-left' };
+      return { width: 48, height: 25, radius: 6, corner: 'top-left' };
+    }
+    updateFallbackPrintPath(zone) {
+      if (!this.printPath) return;
+      const width = zone.width / 100;
+      const height = zone.height / 100;
+      const radius = Math.min(zone.radius / 100, width * 0.4, height * 0.4);
+      const number = (value) => Number(value.toFixed(4));
+      let path;
+      if (zone.corner === 'top-right') {
+        const edge = 1 - width;
+        path = `M 0 0 H ${number(edge)} V ${number(height - radius)} Q ${number(edge)} ${number(height)} ${number(edge + radius)} ${number(height)} H 1 V 1 H 0 Z`;
+      } else {
+        path = `M ${number(width)} 0 H 1 V 1 H 0 V ${number(height)} H ${number(width - radius)} Q ${number(width)} ${number(height)} ${number(width)} ${number(height - radius)} V 0 Z`;
+      }
+      this.printPath.setAttribute('d', path);
+    }
+    bindPhoneMockup() {
+      if (!this.phoneMockup) return;
+      this.phoneMockup.addEventListener('load', () => this.alignArtworkToMockup());
+    }
+    resetPhoneMockupAlignment() {
+      if (!this.phoneShell) return;
+      ['--case-art-left', '--case-art-top', '--case-art-width', '--case-art-height'].forEach((property) =>
+        this.phoneShell.style.removeProperty(property)
+      );
+      if (this.phoneMockup) this.phoneMockup.style.removeProperty('--case-mockup-transform');
+    }
+    alignArtworkToMockup() {
+      if (!this.phoneMockup || !this.phoneShell || !this.phoneMockup.naturalWidth) return;
+      const placement = this.normalizedImagePlacement(this.phoneMockup);
+      if (!placement) return;
+      this.phoneMockup.style.setProperty('--case-mockup-transform', placement.transform);
+      const insets = this.artworkInsetsFor(this.currentPhone);
+      const left = placement.left + placement.width * insets.left;
+      const top = placement.top + placement.height * insets.top;
+      const width = placement.width * (1 - insets.left - insets.right);
+      const height = placement.height * (1 - insets.top - insets.bottom);
+      this.phoneShell.style.setProperty('--case-art-left', left + '%');
+      this.phoneShell.style.setProperty('--case-art-top', top + '%');
+      this.phoneShell.style.setProperty('--case-art-width', width + '%');
+      this.phoneShell.style.setProperty('--case-art-height', height + '%');
+
+      requestAnimationFrame(() => this.canvasEditor?.resize());
+    }
+    artworkInsetsFor(phone) {
+      const styles = getComputedStyle(this.root);
+      const xValue = parseFloat(styles.getPropertyValue('--cb-art-inset-x'));
+      const yValue = parseFloat(styles.getPropertyValue('--cb-art-inset-y'));
+      const insetX = Number.isFinite(xValue) ? Math.max(0, Math.min(20, xValue)) / 100 : 0.04;
+      const insetY = Number.isFinite(yValue) ? Math.max(0, Math.min(20, yValue)) / 100 : 0.03;
+      return { left: insetX, right: insetX, top: insetY, bottom: insetY };
+    }
+    normalizedImagePlacement(image) {
+      if (!this.phoneShell || !image || !image.naturalWidth) return null;
+      const bounds = this.visibleImageBounds(image);
+      if (!bounds) return null;
+      const shellWidth = this.phoneShell.clientWidth;
+      const shellHeight = this.phoneShell.clientHeight;
+      if (!shellWidth || !shellHeight) return null;
+      const containedScale = Math.min(shellWidth / image.naturalWidth, shellHeight / image.naturalHeight);
+      const renderedWidth = image.naturalWidth * containedScale;
+      const renderedHeight = image.naturalHeight * containedScale;
+      const offsetX = (shellWidth - renderedWidth) / 2;
+      const offsetY = (shellHeight - renderedHeight) / 2;
+      const visibleLeft = offsetX + (bounds.x / bounds.canvasWidth) * renderedWidth;
+      const visibleTop = offsetY + (bounds.y / bounds.canvasHeight) * renderedHeight;
+      const visibleWidth = (bounds.width / bounds.canvasWidth) * renderedWidth;
+      const visibleHeight = (bounds.height / bounds.canvasHeight) * renderedHeight;
+      const targetFill = 1;
+      const normalizationScale = Math.min(
+        (shellWidth * targetFill) / visibleWidth,
+        (shellHeight * targetFill) / visibleHeight
+      );
+      const width = visibleWidth * normalizationScale;
+      const height = visibleHeight * normalizationScale;
+      const left = (shellWidth - width) / 2;
+      const top = (shellHeight - height) / 2;
+      const translateX = left - visibleLeft * normalizationScale;
+      const translateY = top - visibleTop * normalizationScale;
+      return {
+        transform: `translate(${(translateX / shellWidth) * 100}%, ${(translateY / shellHeight) * 100}%) scale(${normalizationScale})`,
+        left: (left / shellWidth) * 100,
+        top: (top / shellHeight) * 100,
+        width: (width / shellWidth) * 100,
+        height: (height / shellHeight) * 100,
+      };
+    }
+    visibleImageBounds(image) {
+      const maxDimension = 420;
+      const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) return null;
+      try {
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      } catch (error) {
+        return null;
+      }
+      let pixels;
+      try {
+        pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      } catch (error) {
+        return null;
+      }
+      const cornerPoints = [
+        [1, 1],
+        [canvas.width - 2, 1],
+        [1, canvas.height - 2],
+        [canvas.width - 2, canvas.height - 2],
+      ];
+      const corners = cornerPoints.map(([x, y]) => {
+        const index = (Math.max(0, y) * canvas.width + Math.max(0, x)) * 4;
+        return [pixels[index], pixels[index + 1], pixels[index + 2], pixels[index + 3]];
+      });
+      const transparentBackground = corners.filter((corner) => corner[3] < 32).length >= 3;
+      const background = corners.reduce(
+        (sum, corner) => sum.map((value, index) => value + corner[index] / corners.length),
+        [0, 0, 0, 0]
+      );
+      let minX = canvas.width;
+      let minY = canvas.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          const index = (y * canvas.width + x) * 4;
+          const alpha = pixels[index + 3];
+          const colorDistance =
+            Math.abs(pixels[index] - background[0]) +
+            Math.abs(pixels[index + 1] - background[1]) +
+            Math.abs(pixels[index + 2] - background[2]);
+          const visible = transparentBackground ? alpha > 24 : alpha > 24 && colorDistance > 42;
+          if (!visible) continue;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+      if (maxX < minX || maxY < minY) return null;
+      const padding = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * 0.01));
+      minX = Math.max(0, minX - padding);
+      minY = Math.max(0, minY - padding);
+      maxX = Math.min(canvas.width - 1, maxX + padding);
+      maxY = Math.min(canvas.height - 1, maxY + padding);
+      const width = maxX - minX + 1;
+      const height = maxY - minY + 1;
+      if (width < canvas.width * 0.2 || height < canvas.height * 0.35) return null;
+      return { x: minX, y: minY, width, height, canvasWidth: canvas.width, canvasHeight: canvas.height };
+    }
+
+    bindBrandTabs() {
+      if (!this.select) return;
+      const allOpts = Array.from(this.select.options).map((o) => ({ value: o.value, text: o.textContent }));
+      this.els('[data-case-brand]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.els('[data-case-brand]').forEach((b) => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          const brand = btn.dataset.caseBrand;
+          const current = this.select.value;
+          this.select.innerHTML = '';
+          const brandMap={'apple':['iphone','apple'],'samsung':['samsung','galaxy']};const keys=brandMap[brand]||[brand];const filtered=brand==='all'?allOpts:allOpts.filter(o=>{const v=o.value.toLowerCase();return keys.some(k=>v.includes(k))});
+          filtered.forEach((o) => {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o.text;
+            if (o.value === current) opt.selected = true;
+            this.select.appendChild(opt);
+          });
+          if (!filtered.some((o) => o.value === current) && filtered.length) this.select.value = filtered[0].value;
+          this.select.dispatchEvent(new Event('change'));
+        });
+      });
+    }
+    bindArtwork() {
+      this.els('[data-case-artwork]').forEach((inp) => {
+        inp.addEventListener('change', () => {
+          if (!inp.checked || !this.art) return;
+          if (inp.dataset.artworkSrc) {
+            this.setArtImage(inp.dataset.artworkSrc);
+            if (this.artworkPreviewProperty) this.artworkPreviewProperty.value = inp.dataset.artworkSrc;
+          }
+          this.clearCustomUpload();
+          this.setLocked(false);
+        });
+      });
+      this.els('[data-case-bg]').forEach((inp) => {
+        inp.addEventListener('change', () => {
+          if (inp.checked && this.surface) this.surface.style.backgroundColor = inp.dataset.caseBg;
+        });
+      });
+    }
+    setArtImage(src) {
+      if (!this.art) return;
+      this.artworkSource = src;
+      this.art.hidden = false;
+      if (this.selection) this.selection.hidden = false;
+      if (this.art.tagName === 'IMG') {
+        this.art.removeAttribute('srcset');
+        this.art.removeAttribute('sizes');
+        this.art.src = src;
+      } else {
+        this.art.style.backgroundImage = 'url("' + src + '")';
+        this.art.style.backgroundSize = 'cover';
+        this.art.style.backgroundPosition = 'center';
+      }
+      this.canvasEditor?.setArtworkSource(src);
+    }
+    editorProperty(name) {
+      return this.el('[data-case-editor-property="' + name + '"]');
+    }
+    setEditorProperty(name, value) {
+      const property = this.editorProperty(name);
+      if (property) property.value = value;
+    }
+    clearCustomUpload() {
+      const upload = this.el('[data-case-upload]');
+      const fileName = this.el('[data-case-file-name]');
+      const preview = this.el('[data-case-upload-preview]');
+      const zone = this.el('[data-case-drop-area]');
+      const thumb = this.el('[data-case-upload-thumb]');
+      if (upload) upload.value = '';
+      if (fileName) fileName.textContent = '';
+      if (preview) preview.classList.add('hidden');
+      if (zone) zone.classList.remove('hidden');
+      if (thumb) thumb.removeAttribute('src');
+      this.hasCustomFile = false;
+      this.setEditorProperty('dimensions', '');
+      if (this.objectUrl) {
+        URL.revokeObjectURL(this.objectUrl);
+        this.objectUrl = null;
+      }
+    }
+    clearArtwork() {
+      this.clearCustomUpload();
+      this.els('[data-case-artwork]').forEach((input) => {
+        input.checked = false;
+      });
+      if (this.art) this.art.hidden = true;
+      if (this.selection) this.selection.hidden = true;
+      this.artworkSource = '';
+      this.canvasEditor?.clearArtwork();
+      if (this.artworkPreviewProperty) this.artworkPreviewProperty.value = '';
+      this.setLocked(false);
+    }
+    bindUpload() {
+      const upload = this.el('[data-case-upload]');
+      if (!upload) return;
+      const fileName = this.el('[data-case-file-name]');
+      const error = this.el('[data-case-upload-error]');
+      const preview = this.el('[data-case-upload-preview]');
+      const zone = this.el('[data-case-drop-area]');
+      const thumb = this.el('[data-case-upload-thumb]');
+      const removeBtn = this.el('[data-case-upload-remove]');
+      const handleFile = (file) => {
+        if (error) error.textContent = '';
+        if (!file) return;
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowed.includes(file.type)) {
+          upload.value = '';
+          if (error) error.textContent = 'Please use a JPG, PNG, or WebP image.';
+          return;
+        }
+        if (file.size > 12000000) {
+          upload.value = '';
+          if (error) error.textContent = 'Please keep artwork files under 12 MB.';
+          return;
+        }
+        if (fileName) fileName.textContent = file.name;
+        if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+        this.objectUrl = URL.createObjectURL(file);
+        this.setArtImage(this.objectUrl);
+        this.setLocked(false);
+        if (this.artworkPreviewProperty) this.artworkPreviewProperty.value = '';
+        this.hasCustomFile = true;
+        const probe = new Image();
+        probe.addEventListener('load', () => {
+          this.setEditorProperty('dimensions', probe.naturalWidth + ' x ' + probe.naturalHeight + ' px');
+        });
+        probe.src = this.objectUrl;
+        if (preview && zone && thumb) {
+          thumb.src = this.objectUrl;
+          zone.classList.add('hidden');
+          preview.classList.remove('hidden');
+        }
+        this.els('[data-case-artwork]').forEach((r) => {
+          r.checked = false;
+        });
+      };
+      upload.addEventListener('change', () => {
+        const file = upload.files && upload.files[0];
+        handleFile(file);
+      });
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+          this.clearCustomUpload();
+          const first = this.el('[data-case-artwork]');
+          if (first) {
+            first.checked = true;
+            first.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+    }
+    bindDragDrop() {
+      const dropzone = this.el('[data-case-dropzone]');
+      const upload = this.el('[data-case-upload]');
+      if (!dropzone || !upload) return;
+      ['dragenter', 'dragover'].forEach((ev) =>
+        dropzone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('is-dragover');
+        })
+      );
+      ['dragleave', 'drop'].forEach((ev) =>
+        dropzone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('is-dragover');
+        })
+      );
+      dropzone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        upload.files = dt.files;
+        upload.dispatchEvent(new Event('change'));
+      });
+    }
+    bindDragOnPreview() {
+      if (!this.surface || !this.art) return;
+      let dragging = false,
+        startX = 0,
+        startY = 0,
+        origX = 0,
+        origY = 0;
+      const xSlider = this.el('[data-case-control="x"]');
+      const ySlider = this.el('[data-case-control="y"]');
+      if (!xSlider || !ySlider) return;
+      const pointerDown = (e) => {
+        if (this.canvasEditor && this.surface.classList.contains('is-canvas-ready')) return;
+        if (this.artLocked || !this.art || this.art.hidden) return;
+        dragging = true;
+        startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+        startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+        origX = Number(xSlider.value);
+        origY = Number(ySlider.value);
+        if (this.dragHint) this.dragHint.classList.remove('visible');
+      };
+      const pointerMove = (e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        const cx = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+        const cy = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+        const rect = this.surface.getBoundingClientRect();
+        const dx = ((cx - startX) / rect.width) * 100;
+        const dy = ((cy - startY) / rect.height) * 100;
+        xSlider.value = Math.max(-50, Math.min(50, Math.round(origX + dx)));
+        ySlider.value = Math.max(-50, Math.min(50, Math.round(origY + dy)));
+        this.updatePreview();
+      };
+      const pointerUp = () => {
+        dragging = false;
+      };
+      this.surface.addEventListener('mousedown', pointerDown);
+      this.surface.addEventListener('touchstart', pointerDown, { passive: false });
+      document.addEventListener('mousemove', pointerMove);
+      document.addEventListener('touchmove', pointerMove, { passive: false });
+      document.addEventListener('mouseup', pointerUp);
+      document.addEventListener('touchend', pointerUp);
+    }
+    showDragHint() {
+      if (!this.dragHint) return;
+      setTimeout(() => {
+        this.dragHint.classList.add('visible');
+      }, 1500);
+      setTimeout(() => {
+        this.dragHint.classList.remove('visible');
+      }, 5000);
+    }
+    bindSliders() {
+      this.els('[data-case-control]').forEach((input) =>
+        input.addEventListener('input', () => {
+          this.syncToolbarControl(input.dataset.caseControl);
+          this.updatePreview();
+        })
+      );
+    }
+    syncToolbarControl(name) {
+      const source = this.el('[data-case-control="' + name + '"]');
+      const mirror = this.el('[data-case-toolbar-control="' + name + '"]');
+      if (!source || !mirror) return;
+      mirror.min = source.min;
+      mirror.max = source.max;
+      mirror.step = source.step;
+      mirror.value = source.value;
+    }
+    bindEditorToolbar() {
+      this.els('[data-case-toolbar-control]').forEach((mirror) => {
+        const name = mirror.dataset.caseToolbarControl;
+        this.syncToolbarControl(name);
+        mirror.addEventListener('input', () => {
+          const source = this.el('[data-case-control="' + name + '"]');
+          if (source) source.value = mirror.value;
+          this.updatePreview();
+        });
+      });
+      this.els('[data-case-tool]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const tool = button.dataset.caseTool;
+          if (tool === 'replace') {
+            const upload = this.el('[data-case-upload]');
+            if (upload) upload.click();
+            return;
+          }
+          if (tool === 'lock') {
+            this.setLocked(!this.artLocked);
+            return;
+          }
+          if (tool === 'clear') {
+            this.clearArtwork();
+            return;
+          }
+          const panel = this.el('[data-case-editor-panel="' + tool + '"]');
+          if (!panel) return;
+          const shouldOpen = panel.classList.contains('hidden');
+          this.els('[data-case-editor-panel]').forEach((candidate) => candidate.classList.add('hidden'));
+          this.els('[data-case-tool][aria-controls]').forEach((candidate) => {
+            candidate.classList.remove('is-active');
+            candidate.setAttribute('aria-expanded', 'false');
+          });
+          if (shouldOpen) {
+            panel.classList.remove('hidden');
+            button.classList.add('is-active');
+            button.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+      this.els('[data-case-fit]').forEach((button) => {
+        button.addEventListener('click', () => this.setArtworkFit(button.dataset.caseFit));
+      });
+      this.els('[data-case-effect]').forEach((input) => {
+        input.addEventListener('input', () => this.updatePreview());
+      });
+      this.els('[data-case-position]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.casePosition;
+          if (action === 'center') {
+            ['x', 'y'].forEach((name) => {
+              const input = this.el('[data-case-control="' + name + '"]');
+              if (input) input.value = 0;
+            });
+          } else if (action === 'flip-x') {
+            this.flipX *= -1;
+          } else if (action === 'flip-y') {
+            this.flipY *= -1;
+          }
+          this.updateEditorButtons();
+          this.updatePreview();
+        });
+      });
+      this.setArtworkFit('cover');
+      this.setLocked(false);
+      this.updateEditorButtons();
+    }
+    setArtworkFit(fit) {
+      const value = fit === 'contain' ? 'contain' : 'cover';
+      if (this.art) this.art.style.setProperty('--art-fit', value);
+      this.canvasEditor?.setFit(value);
+      this.setEditorProperty('fit', value === 'contain' ? 'Fit image' : 'Fill case');
+      this.els('[data-case-fit]').forEach((button) => {
+        const selected = button.dataset.caseFit === value;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+      this.updatePreview();
+    }
+    setLocked(locked) {
+      this.artLocked = Boolean(locked);
+      if (this.surface) this.surface.classList.toggle('is-locked', this.artLocked);
+      if (this.selection) this.selection.classList.toggle('is-locked', this.artLocked);
+      this.canvasEditor?.setLocked(this.artLocked);
+      const button = this.el('[data-case-tool="lock"]');
+      if (button) {
+        button.textContent = this.artLocked ? 'Unlock' : 'Lock';
+        button.setAttribute('aria-pressed', String(this.artLocked));
+      }
+      this.setEditorProperty('locked', this.artLocked ? 'Yes' : 'No');
+    }
+    updateEditorButtons() {
+      const flipXButton = this.el('[data-case-position="flip-x"]');
+      const flipYButton = this.el('[data-case-position="flip-y"]');
+      if (flipXButton) flipXButton.setAttribute('aria-pressed', String(this.flipX === -1));
+      if (flipYButton) flipYButton.setAttribute('aria-pressed', String(this.flipY === -1));
+      this.setEditorProperty('flip-x', this.flipX === -1 ? 'Yes' : 'No');
+      this.setEditorProperty('flip-y', this.flipY === -1 ? 'Yes' : 'No');
+    }
+    bindResizeHandles() {
+      const scaleInput = this.el('[data-case-control="scale"]');
+      if (!scaleInput) return;
+      this.els('[data-case-resize-handle]').forEach((handle) => {
+        handle.addEventListener('pointerdown', (event) => {
+          if (this.artLocked || !this.art || this.art.hidden) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const corner = handle.dataset.caseResizeHandle || 'se';
+          const directionX = corner.includes('e') ? 1 : -1;
+          const directionY = corner.includes('s') ? 1 : -1;
+          const startX = event.clientX;
+          const startY = event.clientY;
+          const startScale = Number(scaleInput.value);
+          const rect = this.device ? this.device.getBoundingClientRect() : { width: 300, height: 600 };
+          handle.setPointerCapture(event.pointerId);
+          const move = (moveEvent) => {
+            const horizontal = (moveEvent.clientX - startX) * directionX;
+            const vertical = (moveEvent.clientY - startY) * directionY;
+            const delta = ((horizontal / rect.width) + (vertical / rect.height)) * 55;
+            scaleInput.value = Math.max(Number(scaleInput.min), Math.min(Number(scaleInput.max), Math.round(startScale + delta)));
+            this.syncToolbarControl('scale');
+            this.updatePreview();
+          };
+          const finish = () => {
+            handle.removeEventListener('pointermove', move);
+            handle.removeEventListener('pointerup', finish);
+            handle.removeEventListener('pointercancel', finish);
+          };
+          handle.addEventListener('pointermove', move);
+          handle.addEventListener('pointerup', finish);
+          handle.addEventListener('pointercancel', finish);
+        });
+      });
+    }
+    updateControlsFromCanvas(values) {
+      for (const [name, rawValue] of Object.entries(values)) {
+        const input = this.el('[data-case-control="' + name + '"]');
+        if (!input) continue;
+        const minimum = Number(input.min);
+        const maximum = Number(input.max);
+        let value = Number(rawValue);
+        if (!Number.isFinite(value)) continue;
+        if (Number.isFinite(minimum)) value = Math.max(minimum, value);
+        if (Number.isFinite(maximum)) value = Math.min(maximum, value);
+        input.value = String(Math.round(value));
+        this.syncToolbarControl(name);
+      }
+      this.updatePreview({ skipCanvas: true });
+    }
+    updatePreview(options = {}) {
+      const get = (n, fb) => {
+        const i = this.el('[data-case-control="' + n + '"]');
+        return i ? Number(i.value) : fb;
+      };
+      const scale = get('scale', 100),
+        x = get('x', 0),
+        y = get('y', 0),
+        rotation = get('rotation', 0);
+      const effect = (name) => {
+        const input = this.el('[data-case-effect="' + name + '"]');
+        return input ? Number(input.value) : 100;
+      };
+      const brightness = effect('brightness');
+      const contrast = effect('contrast');
+      const saturation = effect('saturation');
+      this.els('[data-case-output]').forEach((out) => {
+        const inp = this.el('[data-case-control="' + out.dataset.caseOutput + '"]');
+        if (!inp) return;
+        out.textContent =
+          out.dataset.caseOutput === 'scale'
+            ? inp.value + '%'
+            : out.dataset.caseOutput === 'rotation'
+            ? inp.value + 'deg'
+            : inp.value;
+      });
+      if (this.art) {
+        this.art.style.setProperty('--art-scale', scale / 100);
+        this.art.style.setProperty('--art-x', x + '%');
+        this.art.style.setProperty('--art-y', y + '%');
+        this.art.style.setProperty('--art-rotation', rotation + 'deg');
+        this.art.style.setProperty('--art-flip-x', this.flipX);
+        this.art.style.setProperty('--art-flip-y', this.flipY);
+        this.art.style.setProperty('--art-brightness', brightness / 100);
+        this.art.style.setProperty('--art-contrast', contrast / 100);
+        this.art.style.setProperty('--art-saturation', saturation / 100);
+        if (this.art.tagName !== 'IMG') {
+          const fitProperty = this.editorProperty('fit');
+          this.art.style.backgroundSize = fitProperty && fitProperty.value === 'Fit image' ? 'contain' : 'cover';
+          this.art.style.backgroundRepeat = 'no-repeat';
+          this.art.style.backgroundPosition = 'center';
+        }
+      }
+      this.els('[data-case-toolbar-output]').forEach((output) => {
+        const name = output.dataset.caseToolbarOutput;
+        const control = this.el('[data-case-control="' + name + '"]') || this.el('[data-case-effect="' + name + '"]');
+        if (!control) return;
+        output.textContent = control.value + (name === 'rotation' ? 'deg' : '%');
+      });
+      this.setEditorProperty('brightness', brightness + '%');
+      this.setEditorProperty('contrast', contrast + '%');
+      this.setEditorProperty('saturation', saturation + '%');
+      this.updateEditorButtons();
+      if (this.canvasEditor && !options.skipCanvas) {
+        this.canvasEditor.applyState({
+          scale,
+          x,
+          y,
+          rotation,
+          flipX: this.flipX,
+          flipY: this.flipY,
+          brightness,
+          contrast,
+          saturation,
+        });
+      }
+    }
+    bindQuantity() {
+      this.els('.case-quantity').forEach((q) => {
+        const inp = q.querySelector('input'),
+          minus = q.querySelector('[name="minus"]'),
+          plus = q.querySelector('[name="plus"]');
+        if (!inp || !minus || !plus) return;
+        minus.addEventListener('click', () => {
+          inp.value = Math.max(Number(inp.min || 1), Number(inp.value || 1) - 1);
+        });
+        plus.addEventListener('click', () => {
+          inp.value = Number(inp.value || 1) + 1;
+        });
+      });
+    }
+    bindViewToggle() {
+      this.els('[data-case-view]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.els('[data-case-view]').forEach((b) => b.classList.toggle('is-active', b === btn));
+        });
+      });
+    }
+    bindReset() {
+      const reset = this.el('[data-case-reset]');
+      if (reset) {
+        reset.addEventListener('click', () => {
+          this.els('[data-case-control]').forEach((inp) => {
+            inp.value = inp.defaultValue;
+            this.syncToolbarControl(inp.dataset.caseControl);
+          });
+          this.els('[data-case-effect]').forEach((inp) => {
+            inp.value = inp.defaultValue;
+          });
+          this.flipX = 1;
+          this.flipY = 1;
+          this.setArtworkFit('cover');
+          this.setLocked(false);
+          this.updatePreview();
+        });
+      }
+    }
+    bindFormSubmit() {
+      if (!this.form) return;
+      this.form.addEventListener('submit', (e) => {
+        if (!this.art || this.art.hidden) {
+          e.preventDefault();
+          e.stopPropagation();
+          alert('Please add artwork before adding this case to your bag.');
+          return;
+        }
+        if (this.hasCustomFile) {
+          this.setLoading(true);
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        this.ajaxAddToCart();
+      });
+    }
+    async ajaxAddToCart() {
+      this.setLoading(true);
+      const formData = new FormData(this.form);
+      formData.delete('properties[Custom artwork]');
+      try {
+        const res = await fetch(window.Shopify.routes.root + 'cart/add.js', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          const cartRes = await fetch(window.Shopify.routes.root + 'cart.js');
+          const cart = await cartRes.json();
+          document.querySelectorAll('.cart-count-bubble span,[data-cart-count]').forEach((el) => {
+            el.textContent = cart.item_count;
+          });
+          if (this.submitText) {
+            const original = this.submitText.textContent;
+            this.submitText.textContent = '\u2713 Added to bag';
+            setTimeout(() => {
+              this.submitText.textContent = original;
+            }, 2000);
+          }
+        } else {
+          alert(data.description || 'Could not add to cart. Please try again.');
+        }
+      } catch (err) {
+        alert('Something went wrong. Please try again.');
+      }
+      this.setLoading(false);
+    }
+    setLoading(on) {
+      if (this.submit) this.submit.disabled = on;
+      if (this.submitText) this.submitText.classList.toggle('hidden', on);
+      if (this.submitLoading) this.submitLoading.classList.toggle('hidden', !on);
+    }
+    destroy() {
+      this.canvasEditor?.destroy();
+      if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+    }
+  }
+  function initCaseBuilders(container) {
+    container = container || document;
+    container.querySelectorAll('[data-case-builder]').forEach((root) => {
+      if (root.dataset.caseBuilderInit) return;
+      root.dataset.caseBuilderInit = 'true';
+      root.caseBuilder = new CaseBuilder(root);
+    });
+  }
+  initCaseBuilders();
+  document.addEventListener('shopify:section:load', function (e) {
+    initCaseBuilders(e.target);
+  });
+  document.addEventListener('shopify:section:unload', function (e) {
+    e.target.querySelectorAll('[data-case-builder]').forEach((root) => root.caseBuilder?.destroy());
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Custom Case Builder",
+  "settings": [
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "Section width",
+      "default": "wide",
+      "options": [
+        { "value": "page", "label": "Page width" },
+        { "value": "wide", "label": "Wide" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "preview_width",
+      "label": "Preview width",
+      "min": 48,
+      "max": 58,
+      "step": 1,
+      "unit": "%",
+      "default": 54
+    },
+    {
+      "type": "range",
+      "id": "column_gap",
+      "label": "Column gap",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    { "type": "checkbox", "id": "sticky_preview", "label": "Sticky preview on desktop", "default": true },
+    { "type": "checkbox", "id": "sticky_builder", "label": "Sticky builder on desktop", "default": false },
+    {
+      "type": "range",
+      "id": "sticky_top_offset",
+      "label": "Sticky top offset",
+      "min": 64,
+      "max": 180,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "preview_height",
+      "label": "Preview height desktop",
+      "min": 620,
+      "max": 920,
+      "step": 20,
+      "unit": "px",
+      "default": 820
+    },
+    {
+      "type": "range",
+      "id": "mobile_preview_height",
+      "label": "Preview height mobile",
+      "min": 430,
+      "max": 680,
+      "step": 10,
+      "unit": "px",
+      "default": 560
+    },
+    {
+      "type": "range",
+      "id": "frame_width",
+      "label": "Frame width desktop",
+      "min": 240,
+      "max": 380,
+      "step": 5,
+      "unit": "px",
+      "default": 300
+    },
+    {
+      "type": "range",
+      "id": "frame_height",
+      "label": "Frame height desktop",
+      "min": 480,
+      "max": 760,
+      "step": 10,
+      "unit": "px",
+      "default": 600
+    },
+    {
+      "type": "range",
+      "id": "mobile_frame_width",
+      "label": "Frame width mobile",
+      "min": 190,
+      "max": 300,
+      "step": 5,
+      "unit": "px",
+      "default": 240
+    },
+    {
+      "type": "range",
+      "id": "mobile_frame_height",
+      "label": "Frame height mobile",
+      "min": 380,
+      "max": 620,
+      "step": 10,
+      "unit": "px",
+      "default": 480
+    },
+    {
+      "type": "range",
+      "id": "artwork_inset_x",
+      "label": "Artwork side inset",
+      "min": 0,
+      "max": 12,
+      "step": 1,
+      "unit": "%",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "artwork_inset_y",
+      "label": "Artwork top bottom inset",
+      "min": 0,
+      "max": 12,
+      "step": 1,
+      "unit": "%",
+      "default": 3
+    },
+    {
+      "type": "select",
+      "id": "mockup_blend_mode",
+      "label": "Phone mockup blend mode",
+      "default": "normal",
+      "options": [
+        { "value": "normal", "label": "Normal (transparent overlays)" },
+        { "value": "multiply", "label": "Multiply (legacy white mockups)" }
+      ]
+    },
+    { "type": "checkbox", "id": "show_preview_badge", "label": "Show preview badge", "default": true },
+    { "type": "text", "id": "preview_badge", "label": "Preview badge", "default": "Realistic mobile preview" },
+    { "type": "checkbox", "id": "show_view_controls", "label": "Show view controls", "default": true },
+    { "type": "text", "id": "front_label", "label": "Front label", "default": "Front" },
+    { "type": "text", "id": "back_label", "label": "Back label", "default": "Back" },
+    { "type": "checkbox", "id": "show_grid", "label": "Show preview grid", "default": true },
+    { "type": "checkbox", "id": "show_safe_area", "label": "Show safe area", "default": false },
+    { "type": "checkbox", "id": "show_selection_card", "label": "Show selection card", "default": true },
+    { "type": "text", "id": "summary_eyebrow", "label": "Summary eyebrow", "default": "Your case" },
+    { "type": "text", "id": "summary_fallback", "label": "Summary fallback", "default": "Full case" },
+    {
+      "type": "range",
+      "id": "card_radius",
+      "label": "Card radius",
+      "min": 0,
+      "max": 8,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F7F0E7" },
+    { "type": "color", "id": "preview_background", "label": "Preview background", "default": "#FCF8F2" },
+    { "type": "color", "id": "builder_background", "label": "Builder background", "default": "#FCF8F2" },
+    { "type": "color", "id": "card_background", "label": "Card background", "default": "#FFFFFF" },
+    { "type": "color", "id": "selected_background", "label": "Selected background", "default": "#FCEBF2" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#291820" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#291820" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#746970" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#C63B73" },
+    { "type": "color", "id": "border_color", "label": "Border color", "default": "#D9CEC4" },
+    { "type": "color", "id": "button_background", "label": "Button background", "default": "#C63B73" },
+    { "type": "color", "id": "button_text_color", "label": "Button text", "default": "#FFFFFF" },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Desktop padding top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Desktop padding bottom",
+      "min": 0,
+      "max": 140,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding_top",
+      "label": "Mobile padding top",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding_bottom",
+      "label": "Mobile padding bottom",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 42
+    }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "name": "Builder heading",
+      "settings": [
+        { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Build your piece" },
+        { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Design the case" }
+      ]
+    },
+    {
+      "type": "phone_variant",
+      "name": "Phone variant",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "01" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Choose your phone" },
+        { "type": "checkbox", "id": "show_brand_tabs", "label": "Show brand tabs", "default": true },
+        { "type": "text", "id": "brands", "label": "Brands", "default": "Apple, Samsung" },
+        { "type": "checkbox", "id": "show_color_swatches", "label": "Show case color swatches", "default": true },
+        { "type": "text", "id": "swatch_label", "label": "Swatch label", "default": "Device color" },
+        {
+          "type": "textarea",
+          "id": "swatches",
+          "label": "Swatches",
+          "default": "Coral Orange:#f57544, Deep Navy:#172942, Clear:#f5f5f3"
+        },
+        {
+          "type": "text",
+          "id": "note",
+          "label": "Note",
+          "default": "Available to configure. Compatible models update with selection."
+        }
+      ]
+    },
+    {
+      "type": "format_variant",
+      "name": "Format variant",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "02" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Choose your format" },
+        {
+          "type": "text",
+          "id": "description",
+          "label": "Card description",
+          "default": "Built from the selected product variant."
+        },
+        { "type": "checkbox", "id": "show_price", "label": "Show variant price", "default": true },
+        {
+          "type": "richtext",
+          "id": "notice",
+          "label": "Notice",
+          "default": "<p>Base price is final. Select phone and format to keep checkout pricing accurate.</p>"
+        }
+      ]
+    },
+    {
+      "type": "extra_variant",
+      "name": "Extra variant",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "02" },
+        { "type": "number", "id": "option_position", "label": "Product option position", "default": 3 },
+        { "type": "text", "id": "heading", "label": "Heading" }
+      ]
+    },
+    {
+      "type": "artwork_picker",
+      "name": "Artwork picker",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "03" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Start your design" }
+      ]
+    },
+    {
+      "type": "artwork",
+      "name": "Artwork",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Title", "default": "Moon night" },
+        { "type": "image_picker", "id": "preview_image", "label": "Preview image" },
+        { "type": "image_picker", "id": "artwork_image", "label": "Preview artwork image" },
+        { "type": "text", "id": "badge", "label": "Badge" },
+        { "type": "checkbox", "id": "default_selected", "label": "Default selected", "default": false }
+      ]
+    },
+    {
+      "type": "upload",
+      "name": "Upload",
+      "settings": [
+        { "type": "checkbox", "id": "enable_upload", "label": "Enable upload", "default": true },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Upload your own image" },
+        {
+          "type": "text",
+          "id": "help_text",
+          "label": "Help text",
+          "default": "JPG, PNG, or WebP. High-resolution artwork is recommended."
+        },
+        {
+          "type": "text",
+          "id": "accepted_types",
+          "label": "Accepted types",
+          "default": ".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        }
+      ]
+    },
+    {
+      "type": "artwork_controls",
+      "name": "Artwork controls",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "04" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Fine-tune your artwork" },
+        { "type": "text", "id": "reset_label", "label": "Reset label", "default": "Reset" },
+        { "type": "checkbox", "id": "enable_scale", "label": "Enable scale", "default": true },
+        { "type": "text", "id": "scale_label", "label": "Scale label", "default": "Scale" },
+        {
+          "type": "range",
+          "id": "scale_min",
+          "label": "Scale minimum",
+          "min": 60,
+          "max": 100,
+          "step": 5,
+          "default": 80
+        },
+        {
+          "type": "range",
+          "id": "scale_max",
+          "label": "Scale maximum",
+          "min": 110,
+          "max": 180,
+          "step": 5,
+          "default": 150
+        },
+        {
+          "type": "range",
+          "id": "scale_default",
+          "label": "Scale default",
+          "min": 80,
+          "max": 150,
+          "step": 5,
+          "default": 100
+        },
+        { "type": "checkbox", "id": "enable_x", "label": "Enable horizontal", "default": true },
+        { "type": "text", "id": "x_label", "label": "Horizontal label", "default": "Move left/right" },
+        {
+          "type": "range",
+          "id": "x_default",
+          "label": "Horizontal default",
+          "min": -20,
+          "max": 20,
+          "step": 1,
+          "default": 0
+        },
+        { "type": "checkbox", "id": "enable_y", "label": "Enable vertical", "default": true },
+        { "type": "text", "id": "y_label", "label": "Vertical label", "default": "Move up/down" },
+        {
+          "type": "range",
+          "id": "y_default",
+          "label": "Vertical default",
+          "min": -20,
+          "max": 20,
+          "step": 1,
+          "default": 0
+        },
+        { "type": "checkbox", "id": "enable_rotation", "label": "Enable rotation", "default": true },
+        { "type": "text", "id": "rotation_label", "label": "Rotation label", "default": "Rotate" },
+        {
+          "type": "range",
+          "id": "rotation_default",
+          "label": "Rotation default",
+          "min": -10,
+          "max": 10,
+          "step": 1,
+          "default": 0
+        },
+        { "type": "checkbox", "id": "enable_backgrounds", "label": "Enable backgrounds", "default": true },
+        { "type": "text", "id": "background_label", "label": "Background label", "default": "Background" },
+        {
+          "type": "textarea",
+          "id": "background_choices",
+          "label": "Background choices",
+          "default": "Cream:#FCF8F2, Rose:#E6A2BC, Plum:#290A20, Teal:#78948E, Gold:#C6A25B"
+        }
+      ]
+    },
+    {
+      "type": "print_notes",
+      "name": "Print notes",
+      "settings": [
+        { "type": "text", "id": "step_number", "label": "Step number", "default": "05" },
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Print notes" },
+        {
+          "type": "textarea",
+          "id": "placeholder",
+          "label": "Placeholder",
+          "default": "Tell us about placement, cropping, or anything we should notice."
+        },
+        { "type": "range", "id": "rows", "label": "Rows", "min": 2, "max": 8, "step": 1, "default": 4 },
+        {
+          "type": "range",
+          "id": "max_length",
+          "label": "Max characters",
+          "min": 120,
+          "max": 800,
+          "step": 20,
+          "default": 360
+        },
+        { "type": "checkbox", "id": "required", "label": "Required", "default": false }
+      ]
+    },
+    {
+      "type": "confirmation",
+      "name": "Confirmation",
+      "settings": [
+        { "type": "checkbox", "id": "required", "label": "Required", "default": true },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "I confirm that I own or have permission to use the uploaded artwork."
+        }
+      ]
+    },
+    { "type": "price", "name": "Price", "settings": [] },
+    {
+      "type": "buy_buttons",
+      "name": "Buy buttons",
+      "settings": [
+        { "type": "checkbox", "id": "show_quantity", "label": "Show quantity", "default": false },
+        { "type": "text", "id": "button_label", "label": "Button label", "default": "Add custom piece to bag" },
+        { "type": "text", "id": "sold_out_label", "label": "Sold out label", "default": "Sold out" },
+        { "type": "checkbox", "id": "show_dynamic_checkout", "label": "Show dynamic checkout", "default": false }
+      ]
+    },
+    {
+      "type": "trust_note",
+      "name": "Trust note",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Text", "default": "Your custom design is reviewed before printing." }
+      ]
+    },
+    {
+      "type": "accordion",
+      "name": "Accordion",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Heading", "default": "Production details" },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Content",
+          "default": "<p>We review artwork placement and prepare your case before printing and packing.</p>"
+        },
+        { "type": "checkbox", "id": "open_by_default", "label": "Open by default", "default": false }
+      ]
+    },
+    {
+      "type": "custom_liquid",
+      "name": "Custom liquid",
+      "settings": [{ "type": "liquid", "id": "custom_liquid", "label": "Custom liquid" }]
+    },
+    { "type": "@app" }
+  ],
+  "presets": [
+    {
+      "name": "Custom Case Builder",
+      "blocks": [
+        { "type": "heading" },
+        { "type": "phone_variant" },
+        { "type": "format_variant" },
+        { "type": "artwork_picker" },
+        { "type": "artwork", "settings": { "title": "Moon night", "default_selected": true } },
+        { "type": "artwork", "settings": { "title": "Indigo wave" } },
+        { "type": "artwork", "settings": { "title": "Lucky cat" } },
+        { "type": "artwork", "settings": { "title": "Paper lantern" } },
+        { "type": "upload" },
+        { "type": "artwork_controls" },
+        { "type": "print_notes" },
+        { "type": "confirmation" },
+        { "type": "price" },
+        { "type": "buy_buttons" },
+        { "type": "trust_note" }
+      ]
+    }
+  ]
+}
+{% endschema %}

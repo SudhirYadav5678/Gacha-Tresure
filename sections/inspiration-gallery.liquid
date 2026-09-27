@@ -1,0 +1,575 @@
+{% comment %}
+  Filename: inspiration-gallery.liquid
+  Description: A responsive split-layout section with a text column and a masonry-style image gallery. 
+{% endcomment %}
+
+<style>
+  #shopify-section-{{ section.id }} {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.accent_color }};
+    
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+  }
+
+  .ig-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  .ig-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* Mobile Stacking Order */
+  .ig-text-col {
+    order: {% if section.settings.mobile_layout == 'text_first' %}1{% else %}2{% endif %};
+    display: flex;
+    flex-direction: column;
+    justify-content: {{ section.settings.text_vertical_alignment }};
+    text-align: {{ section.settings.content_alignment }};
+  }
+
+  .ig-gallery-col {
+    order: {% if section.settings.mobile_layout == 'text_first' %}2{% else %}1{% endif %};
+  }
+
+  @media screen and (min-width: 1025px) {
+    .ig-layout {
+      display: grid;
+      /* Adjusted from 0.8fr 1.2fr to give the gallery more width */
+      grid-template-columns: 0.7fr 1.3fr; 
+      gap: 80px;
+    }
+    .ig-text-col {
+      order: 1;
+      padding-right: 20px;
+    }
+    .ig-gallery-col {
+      order: 2;
+    }
+  }
+
+  /* --- Text Column Typography --- */
+  .ig-eyebrow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 0 0 24px 0;
+    color: var(--text-color);
+    opacity: 0.9;
+  }
+
+  .ig-heading {
+    margin: 0 0 24px 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text-color);
+  }
+
+  .ig-heading-main {
+    display: block;
+  }
+
+  .ig-heading-accent {
+    display: block;
+    color: var(--accent-color);
+    font-style: italic;
+  }
+
+  @media screen and (min-width: 768px) {
+    .ig-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+  }
+
+  .ig-description {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    opacity: 0.8;
+    max-width: 450px;
+  }
+  
+  {% if section.settings.content_alignment == 'center' %}
+    .ig-description { margin: 0 auto; }
+  {% elsif section.settings.content_alignment == 'right' %}
+    .ig-description { margin: 0 0 0 auto; }
+  {% endif %}
+
+  .ig-description p { margin: 0 0 12px 0; }
+  .ig-description p:last-child { margin-bottom: 0; }
+
+  /* --- Gallery Grid --- */
+  .ig-gallery {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: {{ section.settings.grid_gap }}px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .ig-gallery {
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: 1fr; 
+    }
+  }
+
+  /* --- Gallery Cards --- */
+  .ig-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    text-decoration: none;
+    background-color: rgba(0,0,0,0.1);
+    /* Increased mobile height from 250px */
+    min-height: 300px;
+    border-radius: 2px;
+  }
+
+  .ig-card--tall {
+    aspect-ratio: 3 / 4;
+  }
+
+  .ig-card--standard {
+    aspect-ratio: 4 / 3;
+  }
+
+  @media screen and (min-width: 768px) {
+    .ig-card {
+      aspect-ratio: auto;
+      height: 100%;
+    }
+    .ig-card--tall {
+      grid-row: span 2;
+      /* Increased desktop tall height from 500px */
+      min-height: 600px;
+    }
+    .ig-card--standard {
+      /* Increased desktop standard height from 240px */
+      min-height: 290px;
+    }
+  }
+
+  .ig-card-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .ig-card:hover .ig-card-image {
+    transform: scale(1.05);
+  }
+
+  .ig-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 60px 20px 20px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: #ffffff;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .ig-card-meta {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ig-card-number {
+    font-size: 0.6rem;
+    font-family: var(--font-body-family), sans-serif;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  .ig-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ig-card-title {
+    font-family: var(--font-heading-family), serif;
+    font-size: 1.125rem;
+    font-weight: 400;
+    margin: 0;
+    line-height: 1.2;
+    color: #ffffff;
+  }
+
+  .ig-card-subtitle {
+    font-size: 0.65rem;
+    font-family: var(--font-body-family), sans-serif;
+    opacity: 0.7;
+    margin: 0;
+    line-height: 1.4;
+  }
+</style>
+
+<div class="ig-section">
+  <div class="ig-container">
+    <div class="ig-layout">
+      
+      <!-- Text Column -->
+      <div class="ig-text-col">
+        {% if section.settings.eyebrow != blank %}
+          <div class="ig-eyebrow">{{ section.settings.eyebrow }}</div>
+        {% endif %}
+        
+        {% if section.settings.heading_1 != blank or section.settings.heading_2 != blank %}
+          <h2 class="ig-heading">
+            {% if section.settings.heading_1 != blank %}
+              <span class="ig-heading-main">{{ section.settings.heading_1 }}</span>
+            {% endif %}
+            {% if section.settings.heading_2 != blank %}
+              <span class="ig-heading-accent">{{ section.settings.heading_2 }}</span>
+            {% endif %}
+          </h2>
+        {% endif %}
+
+        {% if section.settings.description != blank %}
+          <div class="ig-description">
+            {{ section.settings.description }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Gallery Column -->
+      <div class="ig-gallery-col">
+        <div class="ig-gallery">
+          {% for block in section.blocks %}
+            {% liquid 
+              assign card_class = 'ig-card--standard'
+              if block.settings.layout_size == 'tall'
+                assign card_class = 'ig-card--tall'
+              endif
+            %}
+            <a href="{{ block.settings.link | default: '#' }}" class="ig-card {{ card_class }}" {{ block.shopify_attributes }}>
+              {% if block.settings.image != blank %}
+                {{ block.settings.image | image_url: width: 1000 | image_tag: 
+                  class: 'ig-card-image', 
+                  loading: 'lazy', 
+                  sizes: '(min-width: 1025px) 35vw, (min-width: 768px) 50vw, 100vw',
+                  widths: '400, 600, 800, 1000'
+                }}
+              {% else %}
+                {{ 'image' | placeholder_svg_tag: 'ig-card-image placeholder-svg' }}
+              {% endif %}
+
+              <div class="ig-card-overlay">
+                <div class="ig-card-meta">
+                  {% if block.settings.number != blank %}
+                    <span class="ig-card-number">{{ block.settings.number }}</span>
+                  {% endif %}
+                  
+                  <div class="ig-card-text">
+                    {% if block.settings.title != blank %}
+                      <h3 class="ig-card-title">{{ block.settings.title }}</h3>
+                    {% endif %}
+                    {% if block.settings.subtitle != blank %}
+                      <p class="ig-card-subtitle">{{ block.settings.subtitle }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Inspiration Gallery",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Text Settings"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow Text",
+      "default": "INSPIRATION GALLERY"
+    },
+    {
+      "type": "textarea",
+      "id": "heading_1",
+      "label": "Heading Line 1 (Regular)",
+      "default": "See what a memory"
+    },
+    {
+      "type": "textarea",
+      "id": "heading_2",
+      "label": "Heading Line 2 (Accent & Italic)",
+      "default": "can become."
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description",
+      "default": "<p>Each future 3D Print category will have its own tailored gallery—part inspiration, part proof of the possibilities.</p>"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Text Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "select",
+      "id": "text_vertical_alignment",
+      "label": "Text Vertical Alignment (Desktop)",
+      "options": [
+        { "value": "flex-start", "label": "Top" },
+        { "value": "center", "label": "Center" },
+        { "value": "flex-end", "label": "Bottom" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#F9F6F0"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#2B1828"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Color",
+      "default": "#B75C7A"
+    },
+    {
+      "type": "header",
+      "content": "Typography Settings"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 32,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 24,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "select",
+      "id": "mobile_layout",
+      "label": "Mobile Stacking Order",
+      "options": [
+        { "value": "text_first", "label": "Text First" },
+        { "value": "image_first", "label": "Gallery First" }
+      ],
+      "default": "text_first"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1800,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "grid_gap",
+      "min": 8,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Gallery Grid Gap",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 60
+    }
+  ],
+  "blocks": [
+    {
+      "type": "gallery_image",
+      "name": "Gallery Image",
+      "limit": 6,
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+        {
+          "type": "select",
+          "id": "layout_size",
+          "label": "Desktop Layout Size",
+          "info": "'Tall' spans two grid rows to create a masonry effect. Best used for the first image.",
+          "options": [
+            { "value": "standard", "label": "Standard (1 Row)" },
+            { "value": "tall", "label": "Tall (2 Rows)" }
+          ],
+          "default": "standard"
+        },
+        {
+          "type": "text",
+          "id": "number",
+          "label": "Number Overlay",
+          "default": "01"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title Overlay",
+          "default": "In memory of Gary"
+        },
+        {
+          "type": "text",
+          "id": "subtitle",
+          "label": "Subtitle Overlay",
+          "default": "Portrait • Custom lithophane concept"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link (Optional)"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Inspiration Gallery",
+      "blocks": [
+        {
+          "type": "gallery_image",
+          "settings": {
+            "layout_size": "tall",
+            "number": "01",
+            "title": "In memory of Gary",
+            "subtitle": "Portrait • Custom lithophane concept"
+          }
+        },
+        {
+          "type": "gallery_image",
+          "settings": {
+            "layout_size": "standard",
+            "number": "02",
+            "title": "Wedding heart",
+            "subtitle": "Weddings • Anniversaries • Valentines"
+          }
+        },
+        {
+          "type": "gallery_image",
+          "settings": {
+            "layout_size": "standard",
+            "number": "03",
+            "title": "Family glow",
+            "subtitle": "Families • Grandparents • Children"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

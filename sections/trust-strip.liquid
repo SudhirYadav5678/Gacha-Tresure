@@ -1,0 +1,290 @@
+{% style %}
+  #shopify-section-{{ section.id }} .trust-strip {
+    --trust-bg: {{ section.settings.background }};
+    --trust-text: {{ section.settings.text_color }};
+    --trust-accent: {{ section.settings.accent_color }};
+    --trust-icon-size: {{ section.settings.icon_size }}px;
+    padding-block: {{ section.settings.padding }}px;
+  }
+
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstyle %}
+
+<section class="trust-strip">
+  <div class="trust-strip__inner lux-page-width">
+    {% for block in section.blocks %}
+      <div
+        class="trust-strip__item"
+        {{ block.shopify_attributes }}
+      >
+        <span class="trust-strip__icon" aria-hidden="true">
+          {% if block.settings.svg_code != blank %}
+            <span class="trust-strip__custom-svg">
+              {{ block.settings.svg_code }}
+            </span>
+          {% else %}
+            {% case block.settings.icon %}
+              {% when 'lock' %}
+                <span class="trust-strip__fallback-icon">□</span>
+
+              {% when 'box' %}
+                <span class="trust-strip__fallback-icon">▧</span>
+
+              {% when 'chat' %}
+                <span class="trust-strip__fallback-icon">◇</span>
+
+              {% else %}
+                <span class="trust-strip__fallback-icon">✦</span>
+            {% endcase %}
+          {% endif %}
+        </span>
+
+        <div class="trust-strip__content">
+          {% if block.settings.heading != blank %}
+            <strong>{{ block.settings.heading }}</strong>
+          {% endif %}
+
+          {% if block.settings.text != blank %}
+            <p>{{ block.settings.text }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .trust-strip {
+    color: var(--trust-text);
+    background: var(--trust-bg);
+    border-block: 1px solid rgba(35, 21, 30, 0.11);
+  }
+
+  .trust-strip__inner {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .trust-strip__item {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 18px;
+    text-align: left;
+    border-right: 1px solid rgba(35, 21, 30, 0.1);
+  }
+
+  .trust-strip__item:last-child {
+    border-right: 0;
+  }
+
+  .trust-strip__icon {
+    flex: 0 0 auto;
+    width: var(--trust-icon-size);
+    height: var(--trust-icon-size);
+    color: var(--trust-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--trust-icon-size);
+    line-height: 1;
+  }
+
+  .trust-strip__fallback-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+  }
+
+  .trust-strip__custom-svg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    line-height: 0;
+  }
+
+  .trust-strip__custom-svg svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .trust-strip__custom-svg svg path,
+  .trust-strip__custom-svg svg circle,
+  .trust-strip__custom-svg svg rect,
+  .trust-strip__custom-svg svg line,
+  .trust-strip__custom-svg svg polyline,
+  .trust-strip__custom-svg svg polygon,
+  .trust-strip__custom-svg svg ellipse {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .trust-strip strong {
+    display: block;
+    font-size: 12px;
+    line-height: 1.35;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .trust-strip p {
+    margin: 3px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    opacity: 0.68;
+  }
+
+  @media (max-width: 900px) {
+    .trust-strip__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .trust-strip__item:nth-child(2n) {
+      border-right: 0;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .trust-strip__inner {
+      width: 100%;
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-inline: 18px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .trust-strip__inner::-webkit-scrollbar {
+      display: none;
+    }
+
+    .trust-strip__item {
+      flex: 0 0 76%;
+      justify-content: flex-start;
+      scroll-snap-align: start;
+      border-right: 1px solid rgba(35, 21, 30, 0.1);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Trust strip",
+  "settings": [
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#FFF9F2"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#23151E"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#9B315F"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 12,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Vertical padding",
+      "min": 4,
+      "max": 28,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    }
+  ],
+  "blocks": [
+    {
+      "type": "benefit",
+      "name": "Benefit",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Default icon",
+          "default": "spark",
+          "options": [
+            {
+              "value": "spark",
+              "label": "Spark"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat",
+              "label": "Chat"
+            }
+          ]
+        },
+        {
+          "type": "textarea",
+          "id": "svg_code",
+          "label": "Custom SVG code",
+          "info": "Paste complete SVG code here. When added, it replaces the default icon."
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Curated collectibles"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Selected for charm and display."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Trust strip"
+    }
+  ]
+}
+{% endschema %}

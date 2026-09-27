@@ -1,0 +1,175 @@
+{% style %}
+  #shopify-section-{{ section.id }} .print-faq {
+    --pf-bg: {{ section.settings.background }};
+    --pf-text: {{ section.settings.text_color }};
+    --pf-muted: {{ section.settings.muted_text_color }};
+    --pf-accent: {{ section.settings.accent_color }};
+    --pf-divider: {{ section.settings.divider_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+{% endstyle %}
+
+<section class="print-faq">
+  <div class="print-faq__inner print-faq__inner--{{ section.settings.content_width }}">
+    <div class="print-faq__header">
+      {% if section.settings.eyebrow != blank %}
+        <p>{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2>{{ section.settings.heading }}</h2>
+      {% endif %}
+    </div>
+
+    {% if section.blocks.size > 0 %}
+      <div class="print-faq__items">
+        {% for block in section.blocks %}
+          <details class="print-faq__item" {% if section.settings.open_first and forloop.first %}open{% endif %} {{ block.shopify_attributes }}>
+            <summary>{{ block.settings.question }} <span aria-hidden="true">+</span></summary>
+            <div class="print-faq__answer">{{ block.settings.answer }}</div>
+          </details>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .print-faq {
+    color: var(--pf-text);
+    background: var(--pf-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .print-faq__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(240px, .4fr) minmax(0, 1fr);
+    gap: clamp(32px, 8vw, 110px);
+  }
+
+  .print-faq__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .print-faq__inner--narrow {
+    width: min(1040px, calc(100vw - 96px));
+  }
+
+  .print-faq__header p {
+    margin: 0 0 16px;
+    color: var(--pf-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .print-faq__header h2 {
+    margin: 0;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(36px, 4vw, 62px);
+    font-weight: 500;
+    line-height: 1.05;
+  }
+
+  .print-faq__items {
+    border-top: 1px solid var(--pf-divider);
+  }
+
+  .print-faq__item {
+    border-bottom: 1px solid var(--pf-divider);
+  }
+
+  .print-faq__item summary {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 850;
+  }
+
+  .print-faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .print-faq__item[open] summary span {
+    transform: rotate(45deg);
+  }
+
+  .print-faq__answer {
+    max-width: 760px;
+    padding-bottom: 24px;
+    color: var(--pf-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .print-faq__answer p {
+    margin: 0;
+  }
+
+  .print-faq summary:focus-visible {
+    outline: 2px solid var(--pf-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 860px) {
+    .print-faq__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .print-faq__inner--page,
+    .print-faq__inner--narrow {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Print FAQ",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Before we print" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Questions, answered" },
+    { "type": "checkbox", "id": "open_first", "label": "Open first item", "default": true },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "narrow", "label": "Narrow" }
+    ] },
+    { "type": "color", "id": "background", "label": "Background", "default": "#FBF7F0" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#2B1823" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#73656C" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#D47A9E" },
+    { "type": "color", "id": "divider_color", "label": "Divider", "default": "#DED2C8" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 80 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 92 }
+  ],
+  "blocks": [
+    {
+      "type": "faq",
+      "name": "FAQ",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question", "default": "What image works best?" },
+        { "type": "richtext", "id": "answer", "label": "Answer", "default": "<p>Clear, well-lit photos with the subject easy to see usually produce the strongest print result.</p>" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Print FAQ",
+      "blocks": [
+        { "type": "faq", "settings": { "question": "What image works best?", "answer": "<p>Clear, well-lit photos with the subject easy to see usually produce the strongest print result.</p>" } },
+        { "type": "faq", "settings": { "question": "Will I receive a proof?", "answer": "<p>You can request a digital proof before printing when placing the order.</p>" } },
+        { "type": "faq", "settings": { "question": "How long does production take?", "answer": "<p>Timing depends on the selected format and current shop queue.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

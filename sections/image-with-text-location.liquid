@@ -1,0 +1,478 @@
+{% comment %}
+  Filename: image-with-text-location.liquid
+  Description: A responsive image with text section, featuring a distinct dual-tone heading and an optional image overlay label.
+{% endcomment %}
+
+<style>
+  /* 
+    Section Variables & Base Setup 
+    Using CSS custom properties mapped to Shopify schema settings for dynamic updates without inline styles on every element.
+  */
+  #shopify-section-{{ section.id }} .iwt-section {
+    --bg-color: {{ section.settings.bg_color }};
+    --text-color: {{ section.settings.text_color }};
+    --accent-color: {{ section.settings.accent_color }};
+    
+    --pt-mobile: {{ section.settings.padding_top_mobile }}px;
+    --pb-mobile: {{ section.settings.padding_bottom_mobile }}px;
+    --pt-desktop: {{ section.settings.padding_top }}px;
+    --pb-desktop: {{ section.settings.padding_bottom }}px;
+    
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding-top: var(--pt-mobile);
+    padding-bottom: var(--pb-mobile);
+    overflow: hidden;
+  }
+
+  .iwt-container {
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+  }
+
+  /* 
+    Grid Layout (Mobile First)
+    Default to a single column stack.
+  */
+  .iwt-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  /* Mobile Stacking Order based on Schema */
+  .iwt-image-col {
+    order: {% if section.settings.mobile_image_first %}1{% else %}2{% endif %};
+  }
+  .iwt-text-col {
+    order: {% if section.settings.mobile_image_first %}2{% else %}1{% endif %};
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Map text alignment */
+    text-align: {{ section.settings.content_alignment }};
+    align-items: {% if section.settings.content_alignment == 'center' %}center{% elsif section.settings.content_alignment == 'right' %}flex-end{% else %}flex-start{% endif %};
+  }
+
+  /* Image Column Styling */
+  .iwt-image-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.05); /* Placeholder background */
+    {% if section.settings.image_aspect_ratio != 'auto' %}
+      aspect-ratio: {{ section.settings.image_aspect_ratio }};
+    {% endif %}
+  }
+
+  .iwt-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    {% if section.settings.image_aspect_ratio == 'auto' %}
+      height: auto;
+    {% endif %}
+  }
+
+  .iwt-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    fill: #ccc;
+  }
+
+  .iwt-image-label {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background-color: #ffffff;
+    color: #000000;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 10px;
+    z-index: 2;
+  }
+
+  /* Text Column Styling */
+  .iwt-subheading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    color: var(--text-color);
+  }
+
+  .iwt-heading {
+    margin: 0 0 24px 0;
+    font-family: var(--font-heading-family), serif;
+    font-size: {{ section.settings.heading_size_mobile }}px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--text-color);
+  }
+  
+  .iwt-heading-accent {
+    display: block;
+    color: var(--accent-color);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .iwt-desc {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 500px;
+    color: var(--text-color);
+    opacity: 0.85;
+  }
+  .iwt-desc p { 
+    margin: 0 0 12px 0; 
+  }
+  .iwt-desc p:last-child { 
+    margin-bottom: 0; 
+  }
+
+  .iwt-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color);
+    text-decoration: none;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--text-color);
+    transition: opacity 0.3s ease, gap 0.3s ease;
+  }
+  
+  .iwt-link:hover {
+    opacity: 0.7;
+    gap: 12px;
+  }
+
+  .iwt-link svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* 
+    Breakpoints 
+    Tablet (768px+) & Desktop (1025px+) Grid restructuring
+  */
+  @media screen and (min-width: 768px) {
+    .iwt-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 60px;
+      align-items: center;
+    }
+    
+    .iwt-image-col {
+      order: {% if section.settings.desktop_image_position == 'left' %}1{% else %}2{% endif %};
+    }
+    
+    .iwt-text-col {
+      order: {% if section.settings.desktop_image_position == 'left' %}2{% else %}1{% endif %};
+      padding: 40px 0;
+    }
+  }
+
+  @media screen and (min-width: 1025px) {
+    #shopify-section-{{ section.id }} .iwt-section {
+      padding-top: var(--pt-desktop);
+      padding-bottom: var(--pb-desktop);
+    }
+    
+    .iwt-grid {
+      gap: 100px;
+    }
+
+    .iwt-heading {
+      font-size: {{ section.settings.heading_size_desktop }}px;
+    }
+
+    .iwt-desc {
+      font-size: 1rem;
+    }
+  }
+</style>
+
+<div class="iwt-section">
+  <div class="iwt-container">
+    <div class="iwt-grid">
+      
+      <!-- Image Column -->
+      <div class="iwt-image-col">
+        <div class="iwt-image-wrapper">
+          {% if section.settings.image != blank %}
+            {{ section.settings.image | image_url: width: 1200 | image_tag: 
+              class: 'iwt-image',
+              loading: 'lazy', 
+              sizes: '(min-width: 768px) 50vw, 100vw',
+              widths: '400, 600, 800, 1000, 1200',
+              alt: section.settings.image.alt | escape
+            }}
+          {% else %}
+            {{ 'collection-1' | placeholder_svg_tag: 'iwt-placeholder' }}
+          {% endif %}
+          
+          {% if section.settings.image_label != blank %}
+            <div class="iwt-image-label">{{ section.settings.image_label }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Text Column -->
+      <div class="iwt-text-col">
+        {% if section.settings.subheading != blank %}
+          <div class="iwt-subheading">{{ section.settings.subheading }}</div>
+        {% endif %}
+
+        {% if section.settings.heading_1 != blank or section.settings.heading_2 != blank %}
+          <h2 class="iwt-heading">
+            {% if section.settings.heading_1 != blank %}
+              {{ section.settings.heading_1 }}
+            {% endif %}
+            {% if section.settings.heading_2 != blank %}
+              <span class="iwt-heading-accent">{{ section.settings.heading_2 }}</span>
+            {% endif %}
+          </h2>
+        {% endif %}
+
+        {% if section.settings.description != blank %}
+          <div class="iwt-desc">
+            {{ section.settings.description }}
+          </div>
+        {% endif %}
+
+        {% if section.settings.link_text != blank and section.settings.link_url != blank %}
+          <a href="{{ section.settings.link_url }}" class="iwt-link">
+            {{ section.settings.link_text }}
+            <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+            </svg>
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Image (Location)",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Image Settings"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Main Image"
+    },
+    {
+      "type": "select",
+      "id": "image_aspect_ratio",
+      "label": "Image Aspect Ratio",
+      "options": [
+        { "value": "auto", "label": "Original (Auto)" },
+        { "value": "1/1", "label": "Square (1:1)" },
+        { "value": "4/3", "label": "Landscape (4:3)" },
+        { "value": "3/4", "label": "Portrait (3:4)" }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "text",
+      "id": "image_label",
+      "label": "Image Overlay Label",
+      "default": "Concept visualization based on the current shop"
+    },
+    {
+      "type": "select",
+      "id": "desktop_image_position",
+      "label": "Desktop Image Position",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "checkbox",
+      "id": "mobile_image_first",
+      "label": "Show image first on mobile",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Content Settings"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "VISIT GACHA TREASURES"
+    },
+    {
+      "type": "text",
+      "id": "heading_1",
+      "label": "Heading Line 1",
+      "default": "Find us in"
+    },
+    {
+      "type": "text",
+      "id": "heading_2",
+      "label": "Heading Line 2 (Accent/Italic)",
+      "default": "Las Vegas."
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description text",
+      "default": "<p>Visit the Fantastic Indoor Swap Meet today, with a second Fremont Street location planned for September.</p>"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Content Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "Link Settings"
+    },
+    {
+      "type": "text",
+      "id": "link_text",
+      "label": "Link Text",
+      "default": "View locations & contact"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Link URL"
+    },
+    {
+      "type": "header",
+      "content": "Styling & Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Section Background Color",
+      "default": "#F7EFE7"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Primary Text Color",
+      "default": "#2D1D24"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Text Color (Heading Line 2)",
+      "default": "#DD9B9B"
+    },
+    {
+      "type": "header",
+      "content": "Typography Settings"
+    },
+    {
+      "type": "range",
+      "id": "heading_size_desktop",
+      "min": 24,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Desktop)",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "min": 24,
+      "max": 56,
+      "step": 2,
+      "unit": "px",
+      "label": "Heading Size (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 800,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "label": "Max Container Width",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Desktop)",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top (Mobile)",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom (Mobile)",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "Image with Text (Location)"
+    }
+  ]
+}
+{% endschema %}

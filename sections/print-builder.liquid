@@ -1,0 +1,586 @@
+{% liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign form_id = 'print-builder-form-' | append: section.id | append: '-' | append: product.id
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .print-builder {
+    --pb-bg: {{ section.settings.background }};
+    --pb-panel: {{ section.settings.panel_background }};
+    --pb-text: {{ section.settings.text_color }};
+    --pb-muted: {{ section.settings.muted_text_color }};
+    --pb-accent: {{ section.settings.accent_color }};
+    --pb-border: {{ section.settings.border_color }};
+    --pb-button: {{ section.settings.button_background }};
+    --pb-button-text: {{ section.settings.button_text_color }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .print-builder {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="print-builder" data-print-builder>
+  <div class="print-builder__inner print-builder__inner--{{ section.settings.content_width }}">
+    <div class="print-builder__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p>{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      {% if section.settings.heading != blank %}
+        <h2>{{ section.settings.heading }}</h2>
+      {% endif %}
+      {% if section.settings.body != blank %}
+        <div>{{ section.settings.body }}</div>
+      {% endif %}
+    </div>
+
+    {% form 'product', product, id: form_id, class: 'print-builder__form', enctype: 'multipart/form-data', data-print-form: '' %}
+      <input type="hidden" name="id" value="{{ current_variant.id }}" data-print-variant-id>
+
+      {% unless product.has_only_default_variant %}
+        {% for option in product.options_with_values %}
+          {% liquid
+            assign selected_value = option.selected_value
+            if selected_value == blank
+              case option.position
+                when 1
+                  assign selected_value = current_variant.option1
+                when 2
+                  assign selected_value = current_variant.option2
+                when 3
+                  assign selected_value = current_variant.option3
+              endcase
+            endif
+          %}
+          <div class="print-builder__step">
+            <span>{{ forloop.index | prepend: '0' }}</span>
+            <label for="PrintOption-{{ section.id }}-{{ option.position }}">{{ option.name }}</label>
+            <select id="PrintOption-{{ section.id }}-{{ option.position }}" data-print-option data-option-position="{{ option.position }}">
+              {% for value in option.values %}
+                <option value="{{ value | escape }}" {% if value == selected_value %}selected{% endif %}>{{ value }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endfor %}
+      {% endunless %}
+
+      {% if section.settings.show_upload %}
+        <div class="print-builder__step">
+          <span>03</span>
+          <label for="PrintUpload-{{ section.id }}">{{ section.settings.upload_label }}</label>
+          <input id="PrintUpload-{{ section.id }}" type="file" name="properties[Reference photo]" accept="{{ section.settings.accepted_types }}" data-print-upload>
+          <small>{{ section.settings.upload_help }}</small>
+          <p class="print-builder__error" data-print-upload-error role="alert"></p>
+        </div>
+      {% endif %}
+
+      <div class="print-builder__step">
+        <span>04</span>
+        <label for="PrintInstructions-{{ section.id }}">{{ section.settings.instructions_label }}</label>
+        <textarea id="PrintInstructions-{{ section.id }}" name="properties[Print instructions]" rows="{{ section.settings.rows }}" placeholder="{{ section.settings.instructions_placeholder | escape }}"></textarea>
+      </div>
+
+      {% if section.settings.show_occasion %}
+        {% assign occasions = section.settings.occasion_options | split: ',' %}
+        <fieldset class="print-builder__pills">
+          <legend>{{ section.settings.occasion_label }}</legend>
+          {% for occasion in occasions %}
+            {% assign occasion_clean = occasion | strip %}
+            {% if occasion_clean != blank %}
+              <label>
+                <input type="radio" name="properties[Occasion]" value="{{ occasion_clean | escape }}" {% if forloop.first %}checked{% endif %}>
+                <span>{{ occasion_clean }}</span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </fieldset>
+      {% endif %}
+
+      {% if section.settings.show_proof %}
+        <label class="print-builder__check">
+          <input type="checkbox" name="properties[Proof requested]" value="Yes">
+          <span>{{ section.settings.proof_label }}</span>
+        </label>
+      {% endif %}
+
+      <div class="print-builder__purchase">
+        <p data-print-summary>{{ current_variant.title }}</p>
+        <strong data-print-price>
+          {% if current_variant.compare_at_price > current_variant.price %}
+            <s>{{ current_variant.compare_at_price | money }}</s>
+          {% endif %}
+          <span>{{ current_variant.price | money }}</span>
+        </strong>
+        {% if section.settings.show_quantity %}
+          <quantity-input class="print-builder__quantity">
+            <button type="button" name="minus" aria-label="Decrease quantity">-</button>
+            <label class="print-builder__sr" for="PrintQuantity-{{ section.id }}">Quantity</label>
+            <input id="PrintQuantity-{{ section.id }}" type="number" name="quantity" value="1" min="1" inputmode="numeric">
+            <button type="button" name="plus" aria-label="Increase quantity">+</button>
+          </quantity-input>
+        {% else %}
+          <input type="hidden" name="quantity" value="1">
+        {% endif %}
+        <button type="submit" name="add" class="print-builder__submit" data-print-submit {% unless current_variant.available %}disabled{% endunless %}>
+          <span data-print-submit-text data-available="{{ section.settings.button_label | escape }}" data-sold-out="{{ section.settings.sold_out_label | escape }}">
+            {% if current_variant.available %}{{ section.settings.button_label }}{% else %}{{ section.settings.sold_out_label }}{% endif %}
+          </span>
+        </button>
+      </div>
+
+      <script type="application/json" data-print-variants>
+        [
+          {% for variant in product.variants %}
+            {
+              "id": {{ variant.id | json }},
+              "title": {{ variant.title | json }},
+              "available": {{ variant.available | json }},
+              "options": {{ variant.options | json }},
+              "price": {{ variant.price | money | json }},
+              "compareAtPrice": {% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | json }}{% else %}null{% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      </script>
+    {% endform %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .print-builder {
+    color: var(--pb-text);
+    background: var(--pb-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .print-builder__inner {
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(260px, .46fr) minmax(0, 1fr);
+    gap: clamp(34px, 8vw, 110px);
+    align-items: start;
+  }
+
+  .print-builder__inner--page {
+    width: min(var(--page-width, 1360px), calc(100vw - 96px));
+  }
+
+  .print-builder__inner--wide {
+    width: min(1560px, calc(100vw - 64px));
+  }
+
+  .print-builder__copy p {
+    margin: 0 0 18px;
+    color: var(--pb-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .print-builder__copy h2 {
+    margin: 0;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .print-builder__copy div {
+    max-width: 520px;
+    margin-top: 22px;
+    color: var(--pb-muted);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .print-builder__copy div p {
+    margin: 0;
+  }
+
+  .print-builder__form {
+    padding: clamp(26px, 4vw, 46px);
+    background: var(--pb-panel);
+    border: 1px solid var(--pb-border);
+    display: grid;
+    gap: 22px;
+  }
+
+  .print-builder__step {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px 18px;
+    align-items: start;
+  }
+
+  .print-builder__step > span {
+    color: var(--pb-accent);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .12em;
+  }
+
+  .print-builder__step label,
+  .print-builder__pills legend {
+    color: var(--pb-text);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 22px;
+    line-height: 1.1;
+  }
+
+  .print-builder__step select,
+  .print-builder__step input[type="file"],
+  .print-builder__step textarea {
+    grid-column: 2;
+    width: 100%;
+    color: var(--pb-text);
+    background: #fff;
+    border: 1px solid var(--pb-border);
+    font: inherit;
+    font-size: 13px;
+  }
+
+  .print-builder__step select {
+    min-height: 46px;
+    padding: 0 12px;
+  }
+
+  .print-builder__step input[type="file"] {
+    padding: 12px;
+  }
+
+  .print-builder__step textarea {
+    min-height: 116px;
+    padding: 13px;
+    resize: vertical;
+  }
+
+  .print-builder__step small,
+  .print-builder__error {
+    grid-column: 2;
+    margin: 0;
+    color: var(--pb-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .print-builder__error {
+    color: var(--pb-accent);
+  }
+
+  .print-builder__pills {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: grid;
+    gap: 12px;
+  }
+
+  .print-builder__pills > div {
+    display: flex;
+  }
+
+  .print-builder__pills label {
+    display: inline-flex;
+    margin-right: 8px;
+    cursor: pointer;
+  }
+
+  .print-builder__pills input,
+  .print-builder__check input {
+    accent-color: var(--pb-accent);
+  }
+
+  .print-builder__pills span {
+    min-height: 36px;
+    padding: 9px 13px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--pb-border);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .print-builder__pills label:has(input:checked) span {
+    color: #fff;
+    background: var(--pb-accent);
+    border-color: var(--pb-accent);
+  }
+
+  .print-builder__check {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    color: var(--pb-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .print-builder__purchase {
+    padding-top: 18px;
+    border-top: 1px solid var(--pb-border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .print-builder__purchase p {
+    margin: 0;
+    color: var(--pb-muted);
+    font-size: 12px;
+  }
+
+  .print-builder__purchase strong {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: 34px;
+    line-height: 1;
+  }
+
+  .print-builder__purchase s {
+    color: var(--pb-muted);
+    font-size: .6em;
+  }
+
+  .print-builder__quantity {
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: 38px 1fr 38px;
+    border: 1px solid var(--pb-border);
+  }
+
+  .print-builder__quantity button,
+  .print-builder__quantity input {
+    width: 100%;
+    border: 0;
+    color: var(--pb-text);
+    background: #fff;
+    text-align: center;
+    font: inherit;
+    font-weight: 800;
+  }
+
+  .print-builder__submit {
+    min-height: 52px;
+    grid-column: 1 / -1;
+    color: var(--pb-button-text);
+    background: var(--pb-button);
+    border: 1px solid var(--pb-button);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .print-builder__submit:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .print-builder__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  .print-builder input:focus-visible,
+  .print-builder select:focus-visible,
+  .print-builder textarea:focus-visible,
+  .print-builder button:focus-visible {
+    outline: 2px solid var(--pb-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .print-builder__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .print-builder__inner--page,
+    .print-builder__inner--wide {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+
+    .print-builder__form {
+      padding: 24px 18px;
+    }
+
+    .print-builder__step {
+      grid-template-columns: 1fr;
+    }
+
+    .print-builder__step select,
+    .print-builder__step input[type="file"],
+    .print-builder__step textarea,
+    .print-builder__step small,
+    .print-builder__error {
+      grid-column: 1;
+    }
+
+    .print-builder__purchase {
+      grid-template-columns: 1fr;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  class PrintBuilder {
+    constructor(root) {
+      this.root = root;
+      this.variants = this.readVariants();
+      this.variantInput = root.querySelector('[data-print-variant-id]');
+      this.price = root.querySelector('[data-print-price]');
+      this.summary = root.querySelector('[data-print-summary]');
+      this.submit = root.querySelector('[data-print-submit]');
+      this.submitText = root.querySelector('[data-print-submit-text]');
+      this.bindOptions();
+      this.bindUpload();
+      this.bindQuantity();
+    }
+
+    readVariants() {
+      const script = this.root.querySelector('[data-print-variants]');
+      if (!script) return [];
+      try {
+        return JSON.parse(script.textContent);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    selectedOptions() {
+      const selected = [];
+      this.root.querySelectorAll('[data-print-option]').forEach((input) => {
+        selected[Number(input.dataset.optionPosition) - 1] = input.value;
+      });
+      return selected.filter(Boolean);
+    }
+
+    bindOptions() {
+      this.root.querySelectorAll('[data-print-option]').forEach((input) => {
+        input.addEventListener('change', () => this.updateVariant());
+      });
+      this.updateVariant();
+    }
+
+    updateVariant() {
+      const selected = this.selectedOptions();
+      const variant = this.variants.find((item) => item.options.every((value, index) => value === selected[index])) || this.variants[0];
+      if (!variant) return;
+      if (this.variantInput) this.variantInput.value = variant.id;
+      if (this.summary) this.summary.textContent = variant.title;
+      if (this.price) {
+        this.price.innerHTML = variant.compareAtPrice ? `<s>${variant.compareAtPrice}</s><span>${variant.price}</span>` : `<span>${variant.price}</span>`;
+      }
+      if (this.submit) this.submit.disabled = !variant.available;
+      if (this.submitText) this.submitText.textContent = variant.available ? this.submitText.dataset.available : this.submitText.dataset.soldOut;
+      const url = new URL(window.location.href);
+      url.searchParams.set('variant', variant.id);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    bindUpload() {
+      const upload = this.root.querySelector('[data-print-upload]');
+      const error = this.root.querySelector('[data-print-upload-error]');
+      if (!upload) return;
+      upload.addEventListener('change', () => {
+        if (error) error.textContent = '';
+        const file = upload.files && upload.files[0];
+        if (!file) return;
+        if (!['image/jpeg', 'image/png'].includes(file.type)) {
+          upload.value = '';
+          if (error) error.textContent = 'Please upload a JPG or PNG file.';
+          return;
+        }
+        if (file.size > 12000000) {
+          upload.value = '';
+          if (error) error.textContent = 'Please keep the reference photo under 12 MB.';
+        }
+      });
+    }
+
+    bindQuantity() {
+      this.root.querySelectorAll('.print-builder__quantity').forEach((quantity) => {
+        const input = quantity.querySelector('input');
+        const minus = quantity.querySelector('[name="minus"]');
+        const plus = quantity.querySelector('[name="plus"]');
+        if (!input || !minus || !plus) return;
+        minus.addEventListener('click', () => {
+          input.value = Math.max(Number(input.min || 1), Number(input.value || 1) - 1);
+        });
+        plus.addEventListener('click', () => {
+          input.value = Number(input.value || 1) + 1;
+        });
+      });
+    }
+  }
+
+  function initPrintBuilders(container = document) {
+    container.querySelectorAll('[data-print-builder]').forEach((root) => {
+      if (root.dataset.printBuilderInitialized) return;
+      root.dataset.printBuilderInitialized = 'true';
+      new PrintBuilder(root);
+    });
+  }
+
+  initPrintBuilders();
+  document.addEventListener('shopify:section:load', (event) => initPrintBuilders(event.target));
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Print Builder",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Start a custom print" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "Build your 3D print" },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Choose the real product options, upload a reference photo, and send notes with the order.</p>" },
+    { "type": "checkbox", "id": "show_upload", "label": "Show photo upload", "default": true },
+    { "type": "text", "id": "upload_label", "label": "Upload label", "default": "Reference photo" },
+    { "type": "text", "id": "upload_help", "label": "Upload help", "default": "Use a clear JPG or PNG for best results." },
+    { "type": "text", "id": "accepted_types", "label": "Accepted types", "default": ".jpg,.jpeg,.png,image/jpeg,image/png" },
+    { "type": "text", "id": "instructions_label", "label": "Instructions label", "default": "Print instructions" },
+    { "type": "textarea", "id": "instructions_placeholder", "label": "Instructions placeholder", "default": "Tell us anything important about the photo, crop, subject, or intended result." },
+    { "type": "range", "id": "rows", "label": "Instruction rows", "min": 3, "max": 8, "step": 1, "default": 4 },
+    { "type": "checkbox", "id": "show_occasion", "label": "Show occasion", "default": true },
+    { "type": "text", "id": "occasion_label", "label": "Occasion label", "default": "Occasion" },
+    { "type": "text", "id": "occasion_options", "label": "Occasion options", "default": "Gift, Memorial, Wedding, Family, Artwork" },
+    { "type": "checkbox", "id": "show_proof", "label": "Show proof checkbox", "default": true },
+    { "type": "text", "id": "proof_label", "label": "Proof label", "default": "Send me a digital proof before printing." },
+    { "type": "checkbox", "id": "show_quantity", "label": "Show quantity", "default": false },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Start my custom print" },
+    { "type": "text", "id": "sold_out_label", "label": "Sold out label", "default": "Sold out" },
+    { "type": "select", "id": "content_width", "label": "Content width", "default": "page", "options": [
+      { "value": "page", "label": "Page width" },
+      { "value": "wide", "label": "Wide" }
+    ] },
+    { "type": "color", "id": "background", "label": "Background", "default": "#F7F0E7" },
+    { "type": "color", "id": "panel_background", "label": "Panel background", "default": "#FBF7F0" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#2B1823" },
+    { "type": "color", "id": "muted_text_color", "label": "Muted text", "default": "#73656C" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#D47A9E" },
+    { "type": "color", "id": "border_color", "label": "Border", "default": "#DED2C8" },
+    { "type": "color", "id": "button_background", "label": "Button background", "default": "#C63B73" },
+    { "type": "color", "id": "button_text_color", "label": "Button text", "default": "#FFFFFF" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 80 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 40, "max": 140, "step": 4, "unit": "px", "default": 92 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 30, "max": 100, "step": 2, "unit": "px", "default": 56 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 30, "max": 100, "step": 2, "unit": "px", "default": 64 }
+  ],
+  "presets": [
+    { "name": "Print Builder" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,184 @@
+{% liquid
+  assign statement_image = section.settings.background_image
+%}
+
+{% style %}
+  #shopify-section-{{ section.id }} .armory-statement {
+    --as-bg: {{ section.settings.background }};
+    --as-heading: {{ section.settings.heading_color }};
+    --as-accent: {{ section.settings.accent_color }};
+    --as-body: {{ section.settings.body_color }};
+    --as-texture-opacity: {{ section.settings.texture_opacity | divided_by: 100.0 }};
+    --as-content: {{ section.settings.content_width }}px;
+    --as-heading-desktop: {{ section.settings.heading_size_desktop }}px;
+    --as-heading-mobile: {{ section.settings.heading_size_mobile }}px;
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .armory-statement {
+      padding-top: {{ section.settings.mobile_padding_top }}px;
+      padding-bottom: {{ section.settings.mobile_padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<section class="armory-statement armory-statement--{{ section.settings.text_alignment }}">
+  {% if statement_image != blank %}
+    <div class="armory-statement__image" aria-hidden="true">
+      {{ statement_image | image_url: width: 1800 | image_tag: widths: '720, 1000, 1400, 1800', sizes: '100vw', loading: 'lazy' }}
+    </div>
+  {% endif %}
+  <div class="armory-statement__texture" aria-hidden="true"></div>
+  <div class="armory-statement__inner">
+    {% if section.settings.eyebrow != blank %}
+      <p class="armory-statement__eyebrow">{{ section.settings.eyebrow }}</p>
+    {% endif %}
+    {% if section.settings.heading != blank or section.settings.accent_heading != blank %}
+      <h2>
+        {% if section.settings.heading != blank %}<span>{{ section.settings.heading }}</span>{% endif %}
+        {% if section.settings.accent_heading != blank %}<em>{{ section.settings.accent_heading }}</em>{% endif %}
+      </h2>
+    {% endif %}
+    {% if section.settings.body != blank %}
+      <div class="armory-statement__body">{{ section.settings.body }}</div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .armory-statement {
+    position: relative;
+    overflow: hidden;
+    color: var(--as-body);
+    background: var(--as-bg);
+    font-family: var(--font-body-family, Inter, ui-sans-serif, system-ui, sans-serif);
+  }
+
+  .armory-statement--center {
+    text-align: center;
+  }
+
+  .armory-statement--right {
+    text-align: right;
+  }
+
+  .armory-statement__image,
+  .armory-statement__image img,
+  .armory-statement__texture {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .armory-statement__image {
+    opacity: .18;
+  }
+
+  .armory-statement__image img {
+    object-fit: cover;
+  }
+
+  .armory-statement__texture {
+    opacity: var(--as-texture-opacity);
+    background-image: radial-gradient(rgba(250,245,238,.12) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+
+  .armory-statement__inner {
+    position: relative;
+    z-index: 1;
+    width: min(var(--as-content), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+
+  .armory-statement__eyebrow {
+    margin: 0 0 22px;
+    color: var(--as-body);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    opacity: .72;
+  }
+
+  .armory-statement h2 {
+    margin: 0;
+    color: var(--as-heading);
+    font-family: var(--font-heading-family, Georgia, serif);
+    font-size: clamp(var(--as-heading-mobile), 5.4vw, var(--as-heading-desktop));
+    font-weight: 500;
+    line-height: 1.02;
+  }
+
+  .armory-statement h2 span,
+  .armory-statement h2 em {
+    display: block;
+  }
+
+  .armory-statement h2 em {
+    color: var(--as-accent);
+    font-style: italic;
+  }
+
+  .armory-statement__body {
+    max-width: 620px;
+    margin: 28px auto 0;
+    font-size: 14px;
+    line-height: 1.75;
+    opacity: .76;
+  }
+
+  .armory-statement--left .armory-statement__body {
+    margin-left: 0;
+  }
+
+  .armory-statement--right .armory-statement__body {
+    margin-right: 0;
+  }
+
+  .armory-statement__body p {
+    margin: 0;
+  }
+
+  @media (max-width: 767px) {
+    .armory-statement__inner {
+      width: min(100% - 36px, var(--as-content));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Armory Statement",
+  "settings": [
+    { "type": "image_picker", "id": "background_image", "label": "Background image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Not a second store." },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "A quieter chamber inside the same" },
+    { "type": "inline_richtext", "id": "accent_heading", "label": "Accent heading", "default": "treasure world." },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Dark, richer, museum-lighting, and deliberate curation give the Armory its own atmosphere while keeping it unmistakably Gacha Treasures.</p>" },
+    { "type": "select", "id": "text_alignment", "label": "Text alignment", "default": "center", "options": [
+      { "value": "left", "label": "Left" },
+      { "value": "center", "label": "Center" },
+      { "value": "right", "label": "Right" }
+    ] },
+    { "type": "range", "id": "content_width", "label": "Content width", "min": 620, "max": 1000, "step": 20, "unit": "px", "default": 880 },
+    { "type": "range", "id": "heading_size_desktop", "label": "Heading size desktop", "min": 52, "max": 94, "step": 2, "unit": "px", "default": 74 },
+    { "type": "range", "id": "heading_size_mobile", "label": "Heading size mobile", "min": 34, "max": 58, "step": 2, "unit": "px", "default": 42 },
+    { "type": "range", "id": "texture_opacity", "label": "Texture opacity", "min": 0, "max": 70, "step": 5, "unit": "%", "default": 25 },
+    { "type": "color", "id": "background", "label": "Background", "default": "#210817" },
+    { "type": "color", "id": "heading_color", "label": "Heading", "default": "#FAF5EE" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#D692AB" },
+    { "type": "color", "id": "body_color", "label": "Body", "default": "#FAF5EE" },
+    { "type": "range", "id": "padding_top", "label": "Desktop padding top", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 140 },
+    { "type": "range", "id": "padding_bottom", "label": "Desktop padding bottom", "min": 60, "max": 180, "step": 4, "unit": "px", "default": 148 },
+    { "type": "range", "id": "mobile_padding_top", "label": "Mobile padding top", "min": 42, "max": 110, "step": 2, "unit": "px", "default": 70 },
+    { "type": "range", "id": "mobile_padding_bottom", "label": "Mobile padding bottom", "min": 42, "max": 110, "step": 2, "unit": "px", "default": 76 }
+  ],
+  "presets": [
+    { "name": "Armory Statement" }
+  ]
+}
+{% endschema %}

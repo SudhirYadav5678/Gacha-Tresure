@@ -1,0 +1,298 @@
+{% style %}
+  #shopify-section-{{ section.id }} .collector-products {
+    --collector-bg: {{ section.settings.background }};
+    --collector-text: {{ section.settings.text_color }};
+    --collector-accent: {{ section.settings.accent_color }};
+    --collector-card-bg: {{ section.settings.card_background }};
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+  #shopify-section-{{ section.id }} .lux-page-width {
+    width: min(var(--page-width, 1360px), calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  #shopify-section-{{ section.id }} .lux-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #shopify-section-{{ section.id }} .lux-button:hover { transform: translateY(-1px); }
+  #shopify-section-{{ section.id }} .lux-button:focus-visible {
+    outline: 2px solid var(--collector-accent);
+    outline-offset: 3px;
+  }
+  #shopify-section-{{ section.id }} .lux-button--outline {
+    color: inherit;
+    background: transparent;
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.72);
+    background: radial-gradient(circle at 70% 20%, rgba(231,162,188,.28), transparent 28%), linear-gradient(135deg, #4b1735, #170913 68%);
+  }
+  #shopify-section-{{ section.id }} .lux-placeholder svg {
+    width: min(220px, 56%);
+    opacity: .35;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} .lux-page-width {
+      width: min(100% - 36px, var(--page-width, 1360px));
+    }
+    #shopify-section-{{ section.id }} .lux-button {
+      width: 100%;
+      max-width: 320px;
+    }
+  }
+{% endstyle %}
+
+<section class="collector-products">
+  <div class="collector-products__inner lux-page-width">
+    <div class="collector-products__intro">
+      {% if section.settings.eyebrow != blank %}
+        <p>{{ section.settings.eyebrow }}</p>
+      {% endif %}
+      <h2>{{ section.settings.heading }}</h2>
+      {% if section.settings.body != blank %}
+        <div>{{ section.settings.body }}</div>
+      {% endif %}
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="lux-button lux-button--outline" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>
+      {% endif %}
+    </div>
+    <div class="collector-products__rail" role="list">
+      {% if section.blocks.size > 0 %}
+        {% for block in section.blocks %}
+          {% assign product = block.settings.product %}
+          <article class="collector-product" role="listitem" {{ block.shopify_attributes }}>
+            {% if product != blank %}
+              <a class="collector-product__link" href="{{ product.url }}">
+                <div class="collector-product__image-wrap">
+                  {% if product.featured_image != blank %}
+                    {{ product.featured_image | image_url: width: 760 | image_tag: widths: '320, 480, 640, 760', sizes: '(max-width: 767px) 74vw, 25vw', loading: 'lazy', class: 'collector-product__image' }}
+                  {% else %}
+                    <div class="lux-placeholder">{{ 'product-1' | placeholder_svg_tag }}</div>
+                  {% endif %}
+                </div>
+                <div class="collector-product__meta">
+                  {% if block.settings.badge != blank %}
+                    <span>{{ block.settings.badge }}</span>
+                  {% endif %}
+                  <h3>{{ product.title }}</h3>
+                  <p>
+                    {% if product.compare_at_price > product.price %}
+                      <s>{{ product.compare_at_price | money }}</s>
+                    {% endif %}
+                    {{ product.price | money }}
+                  </p>
+                </div>
+              </a>
+            {% else %}
+              <div class="collector-product__link">
+                <div class="collector-product__image-wrap">
+                  <div class="lux-placeholder">{{ 'product-2' | placeholder_svg_tag }}</div>
+                </div>
+                <div class="collector-product__meta">
+                  <span>{{ block.settings.badge }}</span>
+                  <h3>{{ block.settings.placeholder_title }}</h3>
+                  <p>{{ block.settings.placeholder_price }}</p>
+                </div>
+              </div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        {% for index in (1..4) %}
+          <article class="collector-product" role="listitem">
+            <div class="collector-product__link">
+              <div class="collector-product__image-wrap">
+                <div class="lux-placeholder">{{ 'product-2' | placeholder_svg_tag }}</div>
+              </div>
+              <div class="collector-product__meta">
+                <span>Editor pick</span>
+                <h3>Mystery capsule charm</h3>
+                <p>$18.00</p>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .collector-products {
+    color: var(--collector-text);
+    background: var(--collector-bg);
+    overflow: hidden;
+  }
+  .collector-products__inner {
+    display: grid;
+    grid-template-columns: minmax(250px, .45fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 70px);
+    align-items: end;
+  }
+  .collector-products__intro p:first-child {
+    margin: 0 0 14px;
+    color: var(--collector-accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .collector-products__intro h2 {
+    margin: 0;
+    font-family: var(--font-heading-family);
+    font-size: clamp(42px, 5vw, 74px);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .collector-products__intro h2 em {
+    display: block;
+    color: var(--collector-accent);
+    font-style: italic;
+  }
+  .collector-products__intro div {
+    margin-top: 22px;
+    max-width: 360px;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: .76;
+  }
+  .collector-products__intro .lux-button { margin-top: 28px; }
+  .collector-products__rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(230px, 28%);
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 10px;
+  }
+  .collector-product {
+    scroll-snap-align: start;
+    background: var(--collector-card-bg);
+    color: var(--lux-ink);
+    min-width: 0;
+  }
+  .collector-product__link {
+    display: grid;
+    color: inherit;
+    text-decoration: none;
+    min-height: 100%;
+  }
+  .collector-product__image-wrap {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #eee2d5;
+  }
+  .collector-product__image,
+  .collector-product__image-wrap .lux-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .45s ease;
+  }
+  .collector-product__meta {
+    padding: 16px 16px 18px;
+    border: 1px solid rgba(35,21,30,.1);
+    border-top: 0;
+  }
+  .collector-product__meta span {
+    display: block;
+    margin-bottom: 9px;
+    color: #9b315f;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .collector-product h3 {
+    min-height: 2.6em;
+    margin: 0 0 14px;
+    font-family: var(--font-heading-family);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .collector-product p {
+    margin: 0;
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .collector-product:hover .collector-product__image { transform: scale(1.05); }
+  .collector-product__link:focus-visible {
+    outline: 3px solid var(--collector-accent);
+    outline-offset: 3px;
+  }
+  @media (max-width: 900px) {
+    .collector-products__inner { grid-template-columns: 1fr; }
+    .collector-products__rail { grid-auto-columns: minmax(230px, 42%); }
+  }
+  @media (max-width: 560px) {
+    .collector-products__rail {
+      width: calc(100% + 18px);
+      grid-auto-columns: 76%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Collector products",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Collector favorites" },
+    { "type": "inline_richtext", "id": "heading", "label": "Heading", "default": "The finds shoppers <em>choose first.</em>" },
+    { "type": "richtext", "id": "body", "label": "Body", "default": "<p>Start with the capsules, characters, and keepsakes that collectors are reaching for now.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Browse all favorites" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#2A071D" },
+    { "type": "color", "id": "text_color", "label": "Text color", "default": "#FFF9F2" },
+    { "type": "color", "id": "accent_color", "label": "Accent color", "default": "#F0AFCA" },
+    { "type": "color", "id": "card_background", "label": "Card background", "default": "#FFF9F2" },
+    { "type": "range", "id": "padding_top", "label": "Padding top", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 88 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding bottom", "min": 40, "max": 160, "step": 4, "unit": "px", "default": 96 }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "limit": 8,
+      "settings": [
+        { "type": "product", "id": "product", "label": "Product" },
+        { "type": "text", "id": "badge", "label": "Badge", "default": "New" },
+        { "type": "text", "id": "placeholder_title", "label": "Placeholder title", "default": "Mystery capsule charm" },
+        { "type": "text", "id": "placeholder_price", "label": "Placeholder price", "default": "$18.00" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collector products",
+      "blocks": [
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" }
+      ]
+    }
+  ]
+}
+{% endschema %}
